@@ -1,0 +1,13 @@
+# RoomMatch
+
+### Plataforma para encontrar roomie y alojamiento para estudiantes
+
+El proyecto consiste en desarrollar una plataforma que permita a los estudiantes buscar alojamiento y posibles compañeros de vivienda según sus necesidades, preferencias y características de convivencia.
+
+La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamientos, realizar búsquedas mediante filtros y obtener coincidencias entre estudiantes.
+
+## Características principales
+* **Registro de usuarios** y creación de perfiles detallados.
+* **Publicación de alojamientos** con especificaciones.
+* **Búsquedas inteligentes** mediante filtros avanzados.
+* **Sistema de coincidencias** (match) entre estudiantes.
