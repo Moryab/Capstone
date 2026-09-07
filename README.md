@@ -11,3 +11,9 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 * **Publicación de alojamientos** con especificaciones.
 * **Búsquedas inteligentes** mediante filtros avanzados.
 * **Sistema de coincidencias** (match) entre estudiantes.
+
+## Integrantes 
+### Capstone_003D - Grupo 6 
+* Bayrom Caamaño.
+* Catalina Gonzales.
+* Noemí Goler.
