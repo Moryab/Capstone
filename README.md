@@ -15,5 +15,5 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 ## Integrantes 
 ### Capstone_003D - Grupo 6 
 * Bayrom Caamaño.
-* Catalina Gonzales.
+* Catalina Gonzáles.
 * Noemí Goler.
