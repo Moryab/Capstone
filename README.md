@@ -17,3 +17,9 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 * Bayrom Caamaño.
 * Catalina Gonzáles.
 * Noemí Goler.
+
+
+
+cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\desarrollo"
+despues..
+docker compose up --build
