@@ -1,0 +1,116 @@
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pymongo.errors import DuplicateKeyError
+
+from app.config import settings
+from app.db import db
+from app.deps import usuario_actual
+from app.schemas.usuarios import LoginIn, RegistroIn, TokenOut, UsuarioOut
+from app.security import cifrar_password, crear_token, verificar_password
+
+router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
+
+CREDENCIALES_INVALIDAS = "Correo o contraseña incorrectos"  # CA-02.2: mensaje genérico
+
+
+@router.post("/registro", status_code=status.HTTP_201_CREATED)
+async def registrar(datos: RegistroIn):
+    """HU-01: registro de estudiante."""
+    ahora = datetime.now(timezone.utc)
+    doc = {
+        "nombre": datos.nombre,
+        "ap_paterno": datos.ap_paterno,
+        "correo": datos.correo,
+        "password": cifrar_password(datos.password),  # CA-01.5
+        "fecha_registro": ahora,
+        "fecha_actualizacion": ahora,
+        "rol": "estudiante",
+        "estado_cuenta": "activa",
+        "advertencias_recibidas": 0,
+        "match_activo_id": None,
+        "correo_verificado": False,
+        "verificacion": {"estado": "no_verificado"},
+        "perfil": {
+            "perfil_completo": False,
+            "campos_faltantes": ["institucion_id", "carrera", "ciudad_origen"],
+        },
+        "seguridad": {"intentos_fallidos": 0, "bloqueado_hasta": None, "token_version": 0},
+    }
+    try:
+        resultado = await db.usuarios.insert_one(doc)
+    except DuplicateKeyError:
+        # CA-01.2
+        raise HTTPException(status.HTTP_409_CONFLICT, "El correo ya está en uso")
+
+    doc["_id"] = resultado.inserted_id
+    return {"mensaje": "Registro exitoso", "usuario": UsuarioOut.desde_doc(doc)}
+
+
+async def _iniciar_sesion(correo: str, password: str) -> TokenOut:
+    ahora = datetime.now(timezone.utc)
+    usuario = await db.usuarios.find_one({"correo": correo.lower()})
+    if not usuario:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, CREDENCIALES_INVALIDAS)
+
+    seguridad = usuario.get("seguridad", {})
+    bloqueado_hasta = seguridad.get("bloqueado_hasta")
+    if bloqueado_hasta and bloqueado_hasta > ahora:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Demasiados intentos fallidos. Intenta nuevamente en unos minutos",
+        )
+
+    if not verificar_password(password, usuario["password"]):
+        intentos = seguridad.get("intentos_fallidos", 0) + 1
+        cambios = {"seguridad.intentos_fallidos": intentos}
+        if intentos >= settings.max_intentos_login:
+            cambios["seguridad.bloqueado_hasta"] = ahora + timedelta(minutes=settings.bloqueo_minutos)
+            cambios["seguridad.intentos_fallidos"] = 0
+        await db.usuarios.update_one({"_id": usuario["_id"]}, {"$set": cambios})
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, CREDENCIALES_INVALIDAS)
+
+    # CA-02.3: se valida después de la contraseña para no revelar qué correos existen
+    if usuario["estado_cuenta"] in ("suspendida", "inhabilitada"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Tu cuenta está suspendida")
+
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]},
+        {
+            "$set": {
+                "seguridad.intentos_fallidos": 0,
+                "seguridad.bloqueado_hasta": None,
+                "seguridad.ultimo_inicio_sesion": ahora,
+                "seguridad.ultima_actividad": ahora,
+            }
+        },
+    )
+    token = crear_token(str(usuario["_id"]), usuario["rol"], seguridad.get("token_version", 0))
+    return TokenOut(access_token=token)
+
+
+@router.post("/login", response_model=TokenOut)
+async def login(datos: LoginIn):
+    """HU-02: inicio de sesión (lo usa el frontend)."""
+    return await _iniciar_sesion(datos.correo, datos.password)
+
+
+@router.post("/login-form", response_model=TokenOut, include_in_schema=False)
+async def login_form(form: OAuth2PasswordRequestForm = Depends()):
+    """Mismo login, en el formato del botón «Authorize» de /docs (el usuario es el correo)."""
+    return await _iniciar_sesion(form.username, form.password)
+
+
+@router.post("/logout")
+async def logout(usuario: dict = Depends(usuario_actual)):
+    """CA-02.5: invalida todos los tokens emitidos al usuario."""
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]}, {"$inc": {"seguridad.token_version": 1}}
+    )
+    return {"mensaje": "Sesión cerrada"}
+
+
+@router.get("/me", response_model=UsuarioOut)
+async def yo(usuario: dict = Depends(usuario_actual)):
+    return UsuarioOut.desde_doc(usuario)
