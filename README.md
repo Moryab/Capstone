@@ -23,3 +23,9 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\desarrollo"
 despues..
 docker compose up --build
+
+Frontend (en otra terminal, con la API ya levantada):
+cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\desarrollo\frontend"
+npm install
+npm run dev
+Abrir http://localhost:5173

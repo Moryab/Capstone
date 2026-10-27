@@ -1,0 +1,82 @@
+:root {
+  --fondo: #f5f6fa;
+  --tarjeta: #ffffff;
+  --texto: #1f2430;
+  --texto-suave: #5f6675;
+  --borde: #d6d9e0;
+  --primario: #4f46e5;
+  --primario-hover: #4338ca;
+  --error: #c62828;
+  --error-fondo: #fdecea;
+  --exito: #2e7d32;
+  --exito-fondo: #e8f5e9;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-height: 100vh; }
+
+.cabecera {
+  padding: 16px 24px;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--primario);
+}
+
+.tarjeta {
+  width: min(460px, calc(100% - 32px));
+  margin: 24px auto;
+  padding: 32px;
+  background: var(--tarjeta);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.06);
+}
+
+h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.subtitulo { margin: 0 0 24px; color: var(--texto-suave); }
+
+.fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .fila { grid-template-columns: 1fr; } }
+
+.campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.campo label { font-size: 0.9rem; font-weight: 600; }
+.campo input {
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.campo input:focus { outline: 2px solid var(--primario); outline-offset: 1px; }
+.campo input[aria-invalid='true'] { border-color: var(--error); }
+.campo-error { margin: 0; font-size: 0.85rem; color: var(--error); }
+
+.ayuda { margin: -8px 0 14px; font-size: 0.85rem; color: var(--texto-suave); }
+
+.alerta, .exito { padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; }
+.alerta { color: var(--error); background: var(--error-fondo); }
+.exito { color: var(--exito); background: var(--exito-fondo); }
+
+button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primario);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: var(--primario-hover); }
+button:disabled { opacity: 0.6; cursor: wait; }
+button.secundario { color: var(--primario); background: transparent; border: 1px solid var(--primario); }
+button.secundario:hover { background: var(--fondo); }
+
+.pie { margin: 20px 0 0; text-align: center; font-size: 0.9rem; }
+.pie a { color: var(--primario); }
+
+.cargando { text-align: center; color: var(--texto-suave); }
