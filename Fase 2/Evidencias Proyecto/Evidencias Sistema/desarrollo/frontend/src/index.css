@@ -26,6 +26,9 @@
 
 body { margin: 0; min-height: 100vh; background: var(--fondo); }
 
+/* La tarjeta queda centrada en el espacio bajo la cabecera */
+#root { min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 32px; }
+
 h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
 /* Cabecera alineada con la tarjeta de acceso */
@@ -86,11 +89,15 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   position: relative;
   width: min(880px, calc(100% - 32px));
   min-height: 640px;
-  margin: 8px auto 32px;
+  margin: auto;
   overflow: hidden;
   background: var(--tarjeta);
-  border-radius: 16px;
-  box-shadow: 0 14px 28px rgb(15 23 42 / 0.18), 0 10px 10px rgb(15 23 42 / 0.12);
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: 20px;
+  box-shadow:
+    0 32px 64px -16px rgb(11 31 58 / 0.28),
+    0 16px 32px -16px rgb(11 31 58 / 0.22),
+    0 0 0 1px rgb(11 31 58 / 0.04);
 }
 
 .panel-form {
@@ -337,12 +344,12 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
 .tarjeta {
   width: min(460px, calc(100% - 32px));
-  margin: 24px auto;
+  margin: auto;
   padding: 32px;
   text-align: center;
   background: var(--tarjeta);
-  border-radius: 16px;
-  box-shadow: 0 14px 28px rgb(15 23 42 / 0.12);
+  border-radius: 20px;
+  box-shadow: 0 32px 64px -16px rgb(11 31 58 / 0.28), 0 16px 32px -16px rgb(11 31 58 / 0.22);
 }
 .tarjeta h1 { margin: 0 0 4px; font-size: 1.6rem; }
 .tarjeta .subtitulo { margin: 0 0 24px; color: var(--texto-suave); }
