@@ -15,7 +15,7 @@ export default function Inicio() {
         </p>
       )}
 
-      <button type="button" className="secundario" onClick={cerrarSesion}>
+      <button type="button" className="boton secundario" onClick={cerrarSesion}>
         Cerrar sesión
       </button>
     </main>

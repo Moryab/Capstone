@@ -1,20 +1,17 @@
 import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import Campo from '../componentes/Campo.jsx'
+import { Link, useNavigate } from 'react-router-dom'
+import Campo from './Campo.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
-// HU-02: inicio de sesión
-export default function Login() {
-  const { usuario, aviso, iniciarSesion } = useSesion()
+// HU-02: inicio de sesión. `registrado` trae el correo recién registrado para precargarlo
+export default function FormLogin({ registrado }) {
+  const { aviso, iniciarSesion } = useSesion()
   const navegar = useNavigate()
-  const registrado = useLocation().state?.registrado
 
   const [datos, setDatos] = useState({ correo: registrado ?? '', password: '' })
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState('')
   const [enviando, setEnviando] = useState(false)
-
-  if (usuario) return <Navigate to="/" replace />
 
   const cambiar = (e) => {
     setDatos({ ...datos, [e.target.name]: e.target.value })
@@ -38,8 +35,8 @@ export default function Login() {
   }
 
   return (
-    <main className="tarjeta">
-      <h1>Inicia sesión</h1>
+    <form className="form-acceso" onSubmit={enviar} noValidate>
+      <h2>Inicia sesión</h2>
       <p className="subtitulo">Bienvenido/a de vuelta a RoomMatch</p>
 
       {registrado && !mensaje && (
@@ -47,22 +44,21 @@ export default function Login() {
       )}
       {aviso && !registrado && !mensaje && <p className="alerta" role="alert">{aviso}</p>}
 
-      <form onSubmit={enviar} noValidate>
-        <Campo etiqueta="Correo" nombre="correo" type="email" value={datos.correo} onChange={cambiar}
-          error={errores.correo} autoComplete="email" required />
-        <Campo etiqueta="Contraseña" nombre="password" type="password" value={datos.password}
-          onChange={cambiar} error={errores.password} autoComplete="current-password" required />
+      <Campo etiqueta="Correo" nombre="correo" type="email" value={datos.correo} onChange={cambiar}
+        error={errores.correo} autoComplete="email" required />
+      <Campo etiqueta="Contraseña" nombre="password" type="password" value={datos.password}
+        onChange={cambiar} error={errores.password} autoComplete="current-password" required />
 
-        {mensaje && <p className="alerta" role="alert">{mensaje}</p>}
+      {mensaje && <p className="alerta" role="alert">{mensaje}</p>}
 
-        <button type="submit" disabled={enviando}>
-          {enviando ? 'Ingresando…' : 'Ingresar'}
-        </button>
-      </form>
+      <button type="submit" className="boton" disabled={enviando}>
+        {enviando ? 'Ingresando…' : 'Ingresar'}
+      </button>
 
-      <p className="pie">
+      {/* En pantallas chicas no hay panel deslizante, así que se cambia con este enlace */}
+      <p className="pie solo-movil">
         ¿No tienes cuenta? <Link to="/registro">Regístrate</Link>
       </p>
-    </main>
+    </form>
   )
 }

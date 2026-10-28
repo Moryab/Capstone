@@ -1,8 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
+import Acceso from './paginas/Acceso.jsx'
 import Inicio from './paginas/Inicio.jsx'
-import Login from './paginas/Login.jsx'
-import Registro from './paginas/Registro.jsx'
 
 export default function App() {
   return (
@@ -10,8 +9,12 @@ export default function App() {
       <header className="cabecera">RoomMatch</header>
       <Routes>
         <Route path="/" element={<RutaProtegida><Inicio /></RutaProtegida>} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/registro" element={<Registro />} />
+        {/* Ruta padre compartida: Acceso no se desmonta al cambiar entre /login y /registro,
+            así el panel se desliza en vez de recargar la página */}
+        <Route element={<Acceso />}>
+          <Route path="/login" element={null} />
+          <Route path="/registro" element={null} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
