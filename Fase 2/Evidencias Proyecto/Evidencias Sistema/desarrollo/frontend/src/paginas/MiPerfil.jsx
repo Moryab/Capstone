@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import { IconoCamara } from '../componentes/Iconos.jsx'
+import PublicacionesPerfil from '../componentes/PublicacionesPerfil.jsx'
 import VistaPerfil from '../componentes/VistaPerfil.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { describirFaltantes, FOTO_MAX_MB, FOTO_TIPOS } from '../perfil.js'
@@ -100,5 +101,9 @@ export default function MiPerfil() {
     </div>
   )
 
-  return <VistaPerfil perfil={perfil} sobreAvatar={controlesFoto} acciones={acciones} aviso={aviso} />
+  return (
+    <VistaPerfil perfil={perfil} sobreAvatar={controlesFoto} acciones={acciones} aviso={aviso}>
+      <PublicacionesPerfil />
+    </VistaPerfil>
+  )
 }

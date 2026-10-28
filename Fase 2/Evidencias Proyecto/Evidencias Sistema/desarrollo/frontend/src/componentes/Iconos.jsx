@@ -56,3 +56,64 @@ export const IconoHogar = () => (
     <path d="M10 20v-6h4v6" />
   </Icono>
 )
+
+export const IconoLlave = () => (
+  <Icono>
+    <circle cx="7.5" cy="15.5" r="4.5" />
+    <path d="M10.7 12.3L20 3M16 7l3 3M14 9l2 2" />
+  </Icono>
+)
+
+export const IconoMas = () => (
+  <Icono tamano={16}>
+    <path d="M12 5v14M5 12h14" />
+  </Icono>
+)
+
+export const IconoEditar = () => (
+  <Icono tamano={15}>
+    <path d="M4 20h4L19 9l-4-4L4 16z" />
+    <path d="M13.5 6.5l4 4" />
+  </Icono>
+)
+
+export const IconoPapelera = () => (
+  <Icono tamano={15}>
+    <path d="M4 7h16M10 11v6M14 11v6" />
+    <path d="M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </Icono>
+)
+
+export const IconoLupa = () => (
+  <Icono tamano={22}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </Icono>
+)
+
+export const IconoRoomies = () => (
+  <Icono tamano={22}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+  </Icono>
+)
+
+export const IconoCheck = () => (
+  <Icono tamano={14}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </Icono>
+)
+
+export const IconoFlecha = () => (
+  <Icono tamano={16}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icono>
+)
+
+export const IconoSalir = () => (
+  <Icono tamano={16}>
+    <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" />
+    <path d="M10 8l-4 4 4 4M6 12h10" />
+  </Icono>
+)

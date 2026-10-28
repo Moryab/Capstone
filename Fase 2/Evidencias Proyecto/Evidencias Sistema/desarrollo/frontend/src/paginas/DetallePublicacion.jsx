@@ -47,7 +47,7 @@ export default function DetallePublicacion() {
 
   return (
     <main className="detalle-publicacion">
-      <Link to={pub.es_propia ? '/publicaciones' : '/'} className="volver">← Volver</Link>
+      <Link to={pub.es_propia ? '/perfil' : '/'} className="volver">← Volver</Link>
 
       {pub.es_propia && pub.estado !== 'activa' && (
         <p className="alerta">

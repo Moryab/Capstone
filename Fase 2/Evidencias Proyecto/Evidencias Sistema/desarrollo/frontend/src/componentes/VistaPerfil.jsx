@@ -18,8 +18,9 @@ function Dato({ etiqueta, valor }) {
 }
 
 // Perfil tal como lo ven los demás estudiantes (HU-16). Lo usan «Mi perfil» y el perfil de otra persona.
-// `sobreAvatar` son los controles de la foto (solo en el propio) y `acciones` los botones de la cabecera
-export default function VistaPerfil({ perfil, sobreAvatar, acciones, aviso }) {
+// `sobreAvatar` son los controles de la foto (solo en el propio), `acciones` los botones de la cabecera
+// y `children` secciones extra a todo el ancho, bajo los datos (por ejemplo, las publicaciones)
+export default function VistaPerfil({ perfil, sobreAvatar, acciones, aviso, children }) {
   const propio = perfil.es_propio
   const edadYGenero = [perfil.edad && `${perfil.edad} años`, textoGenero(perfil.genero)]
     .filter(Boolean)
@@ -106,6 +107,8 @@ export default function VistaPerfil({ perfil, sobreAvatar, acciones, aviso }) {
             </dl>
           </section>
         </aside>
+
+        {children && <div className="perfil-ancho">{children}</div>}
       </div>
     </article>
   )

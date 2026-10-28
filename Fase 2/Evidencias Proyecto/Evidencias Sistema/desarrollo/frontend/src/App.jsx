@@ -9,7 +9,6 @@ import FormPublicacion from './paginas/FormPublicacion.jsx'
 import Inicio from './paginas/Inicio.jsx'
 import LayoutPerfil from './paginas/LayoutPerfil.jsx'
 import MiPerfil from './paginas/MiPerfil.jsx'
-import MisPublicaciones from './paginas/MisPublicaciones.jsx'
 import PerfilUsuario from './paginas/PerfilUsuario.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
@@ -50,7 +49,8 @@ export default function App() {
         </Route>
         <Route path="/usuarios/:id" element={<RutaProtegida><PerfilUsuario /></RutaProtegida>} />
         {/* EP-03: publicación de alojamientos */}
-        <Route path="/publicaciones" element={<RutaProtegida><MisPublicaciones /></RutaProtegida>} />
+        {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
+        <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />
         <Route path="/publicaciones/nueva" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
         <Route path="/publicaciones/:id/editar" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
         <Route path="/alojamientos/:id" element={<RutaProtegida><DetallePublicacion /></RutaProtegida>} />
