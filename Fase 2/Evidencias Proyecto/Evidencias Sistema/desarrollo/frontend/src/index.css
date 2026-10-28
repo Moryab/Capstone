@@ -1,13 +1,16 @@
 :root {
-  --fondo: #f1f4f9;
+  /* Paleta profesional: azul marino + verde azulado */
+  --fondo: #f4f7f9;
   --tarjeta: #ffffff;
-  --texto: #1e293b;
+  --texto: #0f172a;
   --texto-suave: #475569;
-  --campo: #eef2f8;
-  --borde: #d5dce8;
-  --primario: #2563eb;
-  --primario-hover: #1d4ed8;
-  --degradado: linear-gradient(120deg, #2563eb 0%, #4f46e5 55%, #7c3aed 100%);
+  --marca: #0b1f3a;
+  --campo: #f1f5f9;
+  --borde: #d6dee6;
+  --primario: #0f766e;
+  --primario-hover: #115e59;
+  --foco: #5eead4;
+  --degradado: linear-gradient(135deg, #0b1f3a 0%, #0e3a4f 50%, #0f766e 100%);
   --error: #c62828;
   --error-fondo: #fdecea;
   --exito: #2e7d32;
@@ -25,12 +28,56 @@ body { margin: 0; min-height: 100vh; background: var(--fondo); }
 
 h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
+/* Cabecera alineada con la tarjeta de acceso */
 .cabecera {
-  padding: 16px 24px;
+  width: min(880px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 22px 0 18px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--marca);
+  text-decoration: none;
+  border-radius: 12px;
+}
+.logo:focus-visible { outline: 3px solid var(--foco); outline-offset: 4px; }
+
+.logo-icono {
+  flex-shrink: 0;
+  border-radius: 11px;
+  box-shadow: 0 6px 14px rgb(15 118 110 / 0.28);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.logo:hover .logo-icono { transform: translateY(-2px) rotate(-4deg); box-shadow: 0 10px 20px rgb(15 118 110 / 0.34); }
+
+.logo-textos { display: flex; flex-direction: column; line-height: 1; }
+.logo-nombre {
   font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 1.75rem;
   font-weight: 700;
-  font-size: 1.35rem;
-  color: var(--primario);
+  letter-spacing: -0.02em;
+}
+.logo-acento {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.logo-lema {
+  margin-top: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+@media (max-width: 480px) {
+  .logo-nombre { font-size: 1.45rem; }
+  .logo-lema { display: none; }
 }
 
 /* ---------- Pantalla de acceso con panel deslizante ---------- */
@@ -139,6 +186,34 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 .overlay-derecha { right: 0; transform: translateX(0); }
 .registro-activo .overlay-derecha { transform: translateX(20%); }
 
+/* Ilustraciones animadas del panel (solo transform y opacity, para que vayan fluidas) */
+.ilustracion { width: min(250px, 100%); height: auto; margin-bottom: 18px; overflow: visible; }
+.ilustracion * { transform-box: fill-box; transform-origin: center; }
+
+.roomie { animation: flotar 3.2s ease-in-out infinite; }
+.roomie-b { animation-delay: -1.6s; }
+.match { animation: latido 1.8s ease-in-out infinite; }
+.conexion { stroke-dasharray: 4 7; animation: flujo 1s linear infinite; }
+.ventana { animation: parpadeo 4s ease-in-out infinite; }
+.chispa { animation: titilar 2.4s ease-in-out infinite; }
+.humo { opacity: 0; animation: subir 3s ease-out infinite; }
+.llave { transform-origin: 30% 50%; animation: balanceo 4s ease-in-out infinite; }
+
+@keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes latido { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } 30% { transform: scale(1); } 45% { transform: scale(1.1); } }
+@keyframes flujo { to { stroke-dashoffset: -22; } }
+@keyframes parpadeo { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@keyframes titilar { 0%, 100% { opacity: 0.2; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes subir {
+  0% { opacity: 0; transform: translateY(0) scale(0.6); }
+  25% { opacity: 0.7; }
+  100% { opacity: 0; transform: translateY(-34px) scale(1.4); }
+}
+@keyframes balanceo {
+  0%, 100% { transform: translateY(0) rotate(-10deg); }
+  50% { transform: translateY(-8px) rotate(8deg); }
+}
+
 .solo-movil { display: none; }
 
 /* En pantallas chicas no caben dos columnas: se muestra solo el formulario activo */
@@ -162,6 +237,8 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 @media (prefers-reduced-motion: reduce) {
   .panel-form, .overlay-contenedor, .overlay, .overlay-panel { transition: none; }
   .registro-activo .panel-registro { animation: none; }
+  .ilustracion * { animation: none !important; }
+  .humo { opacity: 0.5; }
 }
 
 /* ---------- Campos y mensajes ---------- */
@@ -243,7 +320,7 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 }
 .boton:hover:not(:disabled) { background: var(--primario-hover); }
 .boton:active:not(:disabled) { transform: scale(0.95); }
-.boton:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.boton:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
 .boton:disabled { opacity: 0.6; cursor: wait; }
 
 .boton.fantasma { background: transparent; border-color: #fff; }

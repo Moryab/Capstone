@@ -1,6 +1,7 @@
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import FormLogin from '../componentes/FormLogin.jsx'
 import FormRegistro from '../componentes/FormRegistro.jsx'
+import Ilustracion from '../componentes/Ilustracion.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
 // Login y registro en una sola pantalla con panel deslizante ("double slider").
@@ -30,6 +31,7 @@ export default function Acceso() {
       <div className="overlay-contenedor">
         <div className="overlay">
           <div className="overlay-panel overlay-izquierda" inert={!enRegistro}>
+            <Ilustracion tipo="hogar" />
             <h2>¡Bienvenido/a de vuelta!</h2>
             <p>Si ya tienes cuenta, inicia sesión y sigue buscando tu roomie ideal.</p>
             <button type="button" className="boton fantasma" onClick={() => navegar('/login')}>
@@ -37,6 +39,7 @@ export default function Acceso() {
             </button>
           </div>
           <div className="overlay-panel overlay-derecha" inert={enRegistro}>
+            <Ilustracion tipo="match" />
             <h2>¡Hola, futuro roomie!</h2>
             <p>Crea tu cuenta y encuentra alojamiento según tu estilo de convivencia.</p>
             <button type="button" className="boton fantasma" onClick={() => navegar('/registro')}>
