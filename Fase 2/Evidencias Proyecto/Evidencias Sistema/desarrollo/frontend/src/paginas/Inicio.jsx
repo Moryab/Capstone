@@ -25,7 +25,8 @@ export default function Inicio() {
         <button type="button" className="boton secundario" onClick={cerrarSesion}>
           Cerrar sesión
         </button>
-        <Link to="/perfil" className="boton">
+        {/* Con el perfil incompleto se va directo al formulario */}
+        <Link to={usuario.perfil_completo ? '/perfil' : '/perfil/editar'} className="boton">
           {usuario.perfil_completo ? 'Mi perfil' : 'Completar perfil'}
         </Link>
       </div>

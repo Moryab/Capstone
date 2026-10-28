@@ -19,9 +19,12 @@ export const configurarExpiracion = (funcion) => {
   alExpirarSesion = funcion
 }
 
+// `datos` puede ser un objeto (se envía como JSON) o un FormData (para subir archivos, como la foto)
 export async function api(ruta, { metodo = 'GET', datos } = {}) {
   const token = obtenerToken()
-  const cabeceras = { 'Content-Type': 'application/json' }
+  const esArchivo = datos instanceof FormData
+  // Con FormData el navegador pone solo el Content-Type, con el separador de las partes
+  const cabeceras = esArchivo ? {} : { 'Content-Type': 'application/json' }
   if (token) cabeceras.Authorization = `Bearer ${token}`
 
   let respuesta
@@ -29,7 +32,7 @@ export async function api(ruta, { metodo = 'GET', datos } = {}) {
     respuesta = await fetch(`/api${ruta}`, {
       method: metodo,
       headers: cabeceras,
-      body: datos ? JSON.stringify(datos) : undefined,
+      body: datos ? (esArchivo ? datos : JSON.stringify(datos)) : undefined,
     })
   } catch {
     throw new ErrorApi(0, 'No se pudo conectar con el servidor. Intenta nuevamente')

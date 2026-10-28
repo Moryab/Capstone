@@ -2,12 +2,15 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pymongo.errors import DuplicateKeyError
 
+from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
+from app.media import borrar_foto, guardar_foto, tipo_imagen
 from app.routers.auth import datos_en_uso
 from app.schemas.perfil import PerfilIn, PerfilOut, calcular_faltantes
 from app.schemas.usuarios import fecha_a_datetime
@@ -81,3 +84,33 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
 
     actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
     return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}
+
+
+@router.post("/foto")
+async def subir_foto(foto: UploadFile = File(...), usuario: dict = Depends(usuario_actual)):
+    """Foto de perfil: JPG, PNG o WebP de hasta 5 MB. Reemplaza la anterior."""
+    limite = settings.max_foto_mb * 1024 * 1024
+    contenido = await foto.read(limite + 1)
+    if len(contenido) > limite:
+        return datos_invalidos({"foto": f"La foto debe pesar como máximo {settings.max_foto_mb} MB"})
+    extension = tipo_imagen(contenido)
+    if not extension:
+        return datos_invalidos({"foto": "La foto debe ser una imagen JPG, PNG o WebP"})
+
+    url = await run_in_threadpool(guardar_foto, str(usuario["_id"]), contenido, extension)
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]},
+        {"$set": {"perfil.foto_url": url, "fecha_actualizacion": datetime.now(timezone.utc)}},
+    )
+    await run_in_threadpool(borrar_foto, usuario.get("perfil", {}).get("foto_url"))
+    return {"mensaje": "Foto actualizada", "foto_url": url}
+
+
+@router.delete("/foto")
+async def quitar_foto(usuario: dict = Depends(usuario_actual)):
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]},
+        {"$set": {"perfil.foto_url": None, "fecha_actualizacion": datetime.now(timezone.utc)}},
+    )
+    await run_in_threadpool(borrar_foto, usuario.get("perfil", {}).get("foto_url"))
+    return {"mensaje": "Foto eliminada"}

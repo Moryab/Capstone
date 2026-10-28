@@ -18,3 +18,9 @@ export const GENEROS = [
   { valor: 'masculino', texto: 'Masculino' },
   { valor: 'no_binario', texto: 'No binario' },
 ]
+
+export const textoGenero = (valor) => GENEROS.find((g) => g.valor === valor)?.texto
+
+// Mismo límite y formatos que valida el backend para la foto de perfil
+export const FOTO_MAX_MB = 5
+export const FOTO_TIPOS = ['image/jpeg', 'image/png', 'image/webp']

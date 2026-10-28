@@ -13,5 +13,9 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:5173"]  # Vite en desarrollo
 
+    # Archivos subidos por los usuarios (fotos de perfil). En Docker es un volumen
+    media_dir: str = "/app/media"
+    max_foto_mb: int = 5
+
 
 settings = Settings()

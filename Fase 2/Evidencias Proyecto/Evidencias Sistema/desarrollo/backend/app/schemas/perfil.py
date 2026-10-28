@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -97,6 +97,7 @@ class PerfilIn(DatosPersonales):
 
 
 class PerfilOut(BaseModel):
+    id: str
     # Los datos personales pueden faltar en cuentas creadas antes de que el registro los pidiera
     rut: str | None = None
     nombre: str
@@ -114,6 +115,7 @@ class PerfilOut(BaseModel):
     region_origen: str | None = None
     telefono: str | None = None
     descripcion: str | None = None
+    foto_url: str | None = None
     perfil_completo: bool
     campos_faltantes: list[str]
 
@@ -123,6 +125,7 @@ class PerfilOut(BaseModel):
         institucion_id = perfil.get("institucion_id")
         fecha_nac = doc.get("fecha_nac")
         return cls(
+            id=str(doc["_id"]),
             rut=doc.get("rut"),
             nombre=doc["nombre"],
             ap_paterno=doc.get("ap_paterno"),
@@ -139,6 +142,65 @@ class PerfilOut(BaseModel):
             region_origen=perfil.get("region_origen"),
             telefono=perfil.get("telefono"),
             descripcion=perfil.get("descripcion"),
+            foto_url=perfil.get("foto_url"),
             perfil_completo=perfil.get("perfil_completo", False),
             campos_faltantes=perfil.get("campos_faltantes", calcular_faltantes(perfil)),
+        )
+
+
+def calcular_edad(fecha_nac: datetime | None) -> int | None:
+    if not fecha_nac:
+        return None
+    hoy, nac = date.today(), fecha_nac.date()
+    return hoy.year - nac.year - ((hoy.month, hoy.day) < (nac.month, nac.day))
+
+
+class PerfilPublicoOut(BaseModel):
+    """HU-16: lo que otros estudiantes ven de un perfil (CA-16.1).
+
+    CA-16.3: no incluye correo, teléfono, RUT, dirección, fecha de nacimiento exacta ni
+    documentos de verificación; solo la edad.
+    """
+
+    id: str
+    nombre: str
+    ap_paterno: str | None = None
+    edad: int | None = None
+    genero: str | None = None
+    institucion: str | None = None
+    institucion_sigla: str | None = None
+    sede: str | None = None
+    carrera: str | None = None
+    anio_ingreso: int | None = None
+    ciudad_origen: str | None = None
+    region_origen: str | None = None
+    descripcion: str | None = None
+    foto_url: str | None = None
+    verificado: bool
+    perfil_completo: bool
+    miembro_desde: datetime
+    es_propio: bool
+
+    @classmethod
+    def desde_doc(cls, doc: dict, institucion: dict | None, es_propio: bool) -> "PerfilPublicoOut":
+        perfil = doc.get("perfil", {})
+        return cls(
+            id=str(doc["_id"]),
+            nombre=doc["nombre"],
+            ap_paterno=doc.get("ap_paterno"),
+            edad=calcular_edad(doc.get("fecha_nac")),
+            genero=doc.get("genero"),
+            institucion=institucion["nombre"] if institucion else None,
+            institucion_sigla=institucion["sigla"] if institucion else None,
+            sede=perfil.get("sede"),
+            carrera=perfil.get("carrera"),
+            anio_ingreso=perfil.get("anio_ingreso"),
+            ciudad_origen=perfil.get("ciudad_origen"),
+            region_origen=perfil.get("region_origen"),
+            descripcion=perfil.get("descripcion"),
+            foto_url=perfil.get("foto_url"),
+            verificado=doc.get("verificacion", {}).get("estado") == "verificado",
+            perfil_completo=perfil.get("perfil_completo", False),
+            miembro_desde=doc["fecha_registro"],
+            es_propio=es_propio,
         )

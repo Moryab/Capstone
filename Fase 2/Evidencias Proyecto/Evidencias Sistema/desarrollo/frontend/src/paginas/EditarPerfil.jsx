@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Campo from '../componentes/Campo.jsx'
-import { useFondoCiudad } from '../fondo.js'
+import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { describirFaltantes, GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
@@ -19,8 +19,8 @@ const CAMPOS = [
 const aFormulario = (perfil) =>
   Object.fromEntries(CAMPOS.map((campo) => [campo, perfil[campo] == null ? '' : String(perfil[campo])]))
 
-// HU-03 (completar perfil) y HU-04 (editar perfil)
-export default function MiPerfil() {
+// HU-03 (completar perfil) y HU-04 (editar perfil). Es la pestaña «Editar perfil» de Mi perfil
+export default function EditarPerfil() {
   const { recargarUsuario } = useSesion()
   const [perfil, setPerfil] = useState(null)
   const [catalogo, setCatalogo] = useState(null)
@@ -28,8 +28,6 @@ export default function MiPerfil() {
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [enviando, setEnviando] = useState(false)
-
-  useFondoCiudad()
 
   useEffect(() => {
     Promise.all([api('/perfil'), api('/catalogos/perfil')])
@@ -42,7 +40,7 @@ export default function MiPerfil() {
   }, [])
 
   if (!datos || !catalogo) {
-    return <p className="cargando">{mensaje.texto || 'Cargando tu perfil…'}</p>
+    return <CargandoPerfil texto={mensaje.texto} />
   }
 
   const institucion = catalogo.instituciones.find((i) => i.id === datos.institucion_id)
@@ -96,7 +94,7 @@ export default function MiPerfil() {
 
   return (
     <main className="tarjeta pagina-perfil">
-      <h1>Mi perfil</h1>
+      <h1>Editar perfil</h1>
       <p className="subtitulo">
         {perfil.rut ? `RUT ${perfil.rut}` : 'Mantén tus datos al día para encontrar roomies compatibles'}
       </p>
@@ -178,7 +176,7 @@ export default function MiPerfil() {
         )}
 
         <div className="acciones">
-          <Link to="/" className="boton secundario">Volver</Link>
+          <Link to="/perfil" className="boton secundario">Ver mi perfil</Link>
           <button type="submit" className="boton" disabled={enviando}>
             {enviando ? 'Guardando…' : 'Guardar cambios'}
           </button>

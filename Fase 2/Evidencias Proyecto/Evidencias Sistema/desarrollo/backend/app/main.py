@@ -4,11 +4,13 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
-from app.routers import auth, catalogos, perfil
+from app.media import CARPETA_FOTOS, URL_MEDIA
+from app.routers import auth, catalogos, perfil, usuarios
 
 
 @asynccontextmanager
@@ -59,6 +61,11 @@ async def errores_validacion(request: Request, exc: RequestValidationError):
 app.include_router(auth.router)
 app.include_router(perfil.router)
 app.include_router(catalogos.router)
+app.include_router(usuarios.router)
+
+# Fotos de perfil subidas por los usuarios
+CARPETA_FOTOS.mkdir(parents=True, exist_ok=True)
+app.mount(URL_MEDIA, StaticFiles(directory=settings.media_dir), name="media")
 
 
 @app.get("/api/health", tags=["Sistema"])

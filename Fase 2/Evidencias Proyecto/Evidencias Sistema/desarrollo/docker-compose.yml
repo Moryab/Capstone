@@ -17,6 +17,9 @@ services:
       - mongo
     ports:
       - "8000:8000"   # en el servidor esto lo reemplazará Nginx
+    volumes:
+      - media_data:/app/media   # fotos de perfil: no se pierden al reconstruir la API
 
 volumes:
   mongo_data:
+  media_data:
