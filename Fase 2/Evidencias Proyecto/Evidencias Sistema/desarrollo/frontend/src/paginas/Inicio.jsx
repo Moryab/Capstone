@@ -110,7 +110,7 @@ export default function Inicio() {
               texto="Ofrece una habitación o departamento a otros estudiantes." />
             <Acceso a="/perfil" icono={<IconoPersona />} titulo="Mi perfil"
               texto="Revisa cómo te ven los demás y administra tus publicaciones." />
-            <Acceso icono={<IconoLupa />} titulo="Buscar alojamiento"
+            <Acceso a="/alojamientos" icono={<IconoLupa />} titulo="Buscar alojamiento"
               texto="Filtra por precio, comuna y cercanía a tu sede." />
             <Acceso icono={<IconoRoomies />} titulo="Encontrar roomie"
               texto="Te propondremos estudiantes compatibles con tus hábitos." />

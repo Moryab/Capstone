@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Logo from './componentes/Logo.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import Acceso from './paginas/Acceso.jsx'
+import Alojamientos from './paginas/Alojamientos.jsx'
 import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
 import FormPublicacion from './paginas/FormPublicacion.jsx'
@@ -54,6 +55,8 @@ export default function App() {
         <Route path="/publicaciones/nueva" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
         <Route path="/publicaciones/:id/editar" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
         <Route path="/alojamientos/:id" element={<RutaProtegida><DetallePublicacion /></RutaProtegida>} />
+        {/* EP-04: búsqueda y filtros */}
+        <Route path="/alojamientos" element={<RutaProtegida><Alojamientos /></RutaProtegida>} />
         {/* Ruta padre compartida: Acceso no se desmonta al cambiar entre /login y /registro,
             así el panel se desliza en vez de recargar la página */}
         <Route element={<Acceso />}>

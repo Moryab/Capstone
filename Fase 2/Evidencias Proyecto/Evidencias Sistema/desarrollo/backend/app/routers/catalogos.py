@@ -1,9 +1,22 @@
+from bson import ObjectId
+from bson.errors import InvalidId
 from fastapi import APIRouter
 
 from app.db import db
 from app.schemas.perfil import REGIONES
 
 router = APIRouter(prefix="/api/catalogos", tags=["Catálogos"])
+
+
+async def ids_comunas(ids: list[str]) -> list[ObjectId] | None:
+    """Los ids como ObjectId, o None si alguno no corresponde a una comuna."""
+    try:
+        oids = list({ObjectId(i) for i in ids})
+    except InvalidId:
+        return None
+    if await db.comunas.count_documents({"_id": {"$in": oids}}) != len(oids):
+        return None
+    return oids
 
 
 @router.get("/perfil")

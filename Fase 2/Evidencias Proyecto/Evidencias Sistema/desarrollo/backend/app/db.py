@@ -1,4 +1,4 @@
-from pymongo import ASCENDING, GEOSPHERE, AsyncMongoClient, ReturnDocument
+from pymongo import ASCENDING, DESCENDING, GEOSPHERE, AsyncMongoClient, ReturnDocument
 
 from app.config import settings
 
@@ -40,4 +40,9 @@ async def crear_indices() -> None:
     await db.publicaciones.create_index(
         [("estado", ASCENDING), ("costo_mensual", ASCENDING), ("ubicacion.comuna_id", ASCENDING)],
         name="estado_1_costo_mensual_1_ubicacion.comuna_id_1",
+    )
+    # Listado de alojamientos: activos, del más reciente al más antiguo (CA-09.1)
+    await db.publicaciones.create_index(
+        [("estado", ASCENDING), ("fecha_publicacion", DESCENDING)],
+        name="estado_1_fecha_publicacion_-1",
     )

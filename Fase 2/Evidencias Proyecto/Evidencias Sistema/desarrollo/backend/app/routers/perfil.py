@@ -12,6 +12,8 @@ from app.db import db
 from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto, tipo_imagen
 from app.routers.auth import datos_en_uso
+from app.routers.catalogos import ids_comunas
+from app.schemas.busqueda import Preferencias, PreferenciasIn, error_rango
 from app.schemas.perfil import PerfilIn, PerfilOut, calcular_faltantes
 from app.schemas.usuarios import fecha_a_datetime
 
@@ -84,6 +86,39 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
 
     actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
     return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}
+
+
+def preferencias_out(usuario: dict) -> dict:
+    guardadas = usuario.get("preferencias_busqueda") or {}
+    return {
+        **Preferencias.model_validate(guardadas).model_dump(),
+        "comunas_ids": [str(c) for c in guardadas.get("comunas_ids", [])],
+    }
+
+
+@router.get("/preferencias-busqueda")
+async def ver_preferencias(usuario: dict = Depends(usuario_actual)):
+    """CA-12.2: filtros guardados para «Usar mis preferencias»."""
+    return preferencias_out(usuario)
+
+
+@router.put("/preferencias-busqueda")
+async def guardar_preferencias(datos: PreferenciasIn, usuario: dict = Depends(usuario_actual)):
+    if error := error_rango(datos.costo_min, datos.costo_max):
+        return datos_invalidos(error)
+    comunas = await ids_comunas(datos.comunas_ids)
+    if comunas is None:
+        return datos_invalidos({"comunas_ids": "Selecciona comunas de la lista"})
+
+    preferencias = {**datos.model_dump(), "comunas_ids": comunas}
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]},
+        {"$set": {"preferencias_busqueda": preferencias, "fecha_actualizacion": datetime.now(timezone.utc)}},
+    )
+    return {
+        "mensaje": "Preferencias guardadas",
+        "preferencias": preferencias_out({"preferencias_busqueda": preferencias}),
+    }
 
 
 @router.post("/foto")
