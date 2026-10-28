@@ -30,6 +30,12 @@ export default function Inicio() {
           {usuario.perfil_completo ? 'Mi perfil' : 'Completar perfil'}
         </Link>
       </div>
+
+      {/* CA-05.1: se publica con la misma cuenta que se usa para buscar */}
+      <div className="acciones">
+        <Link to="/publicaciones" className="boton secundario">Mis publicaciones</Link>
+        <Link to="/publicaciones/nueva" className="boton">Publicar alojamiento</Link>
+      </div>
     </main>
   )
 }

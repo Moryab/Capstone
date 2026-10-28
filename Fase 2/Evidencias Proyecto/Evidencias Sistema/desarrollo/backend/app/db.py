@@ -32,3 +32,12 @@ async def crear_indices() -> None:
     await db.instituciones.create_index(
         [("sedes.coordenadas", GEOSPHERE)], name="sedes.coordenadas_2dsphere"
     )
+
+    await db.publicaciones.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.publicaciones.create_index(
+        [("ubicacion.coordenadas", GEOSPHERE)], name="ubicacion.coordenadas_2dsphere"
+    )
+    await db.publicaciones.create_index(
+        [("estado", ASCENDING), ("costo_mensual", ASCENDING), ("ubicacion.comuna_id", ASCENDING)],
+        name="estado_1_costo_mensual_1_ubicacion.comuna_id_1",
+    )

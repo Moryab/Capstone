@@ -3,10 +3,13 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Logo from './componentes/Logo.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import Acceso from './paginas/Acceso.jsx'
+import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
+import FormPublicacion from './paginas/FormPublicacion.jsx'
 import Inicio from './paginas/Inicio.jsx'
 import LayoutPerfil from './paginas/LayoutPerfil.jsx'
 import MiPerfil from './paginas/MiPerfil.jsx'
+import MisPublicaciones from './paginas/MisPublicaciones.jsx'
 import PerfilUsuario from './paginas/PerfilUsuario.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
@@ -46,6 +49,11 @@ export default function App() {
           <Route path="editar" element={<EditarPerfil />} />
         </Route>
         <Route path="/usuarios/:id" element={<RutaProtegida><PerfilUsuario /></RutaProtegida>} />
+        {/* EP-03: publicación de alojamientos */}
+        <Route path="/publicaciones" element={<RutaProtegida><MisPublicaciones /></RutaProtegida>} />
+        <Route path="/publicaciones/nueva" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
+        <Route path="/publicaciones/:id/editar" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
+        <Route path="/alojamientos/:id" element={<RutaProtegida><DetallePublicacion /></RutaProtegida>} />
         {/* Ruta padre compartida: Acceso no se desmonta al cambiar entre /login y /registro,
             así el panel se desliza en vez de recargar la página */}
         <Route element={<Acceso />}>
