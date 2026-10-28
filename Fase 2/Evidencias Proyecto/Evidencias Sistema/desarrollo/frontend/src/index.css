@@ -624,7 +624,7 @@ a.inicio-acceso:hover .inicio-acceso-flecha { transform: translateX(3px); }
 .pestanas {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   padding: 4px;
   background: rgb(255 255 255 / 0.85);
   border: 1px solid var(--borde);
@@ -637,13 +637,14 @@ a.inicio-acceso:hover .inicio-acceso-flecha { transform: translateX(3px); }
   top: 4px;
   bottom: 4px;
   left: 4px;
-  width: calc(50% - 4px);
+  width: calc((100% - 8px) / 3);
   background: var(--primario);
   border-radius: 999px;
   box-shadow: 0 4px 10px rgb(15 118 110 / 0.3);
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.pestanas.en-segunda .pestanas-indicador { transform: translateX(100%); }
+/* --pestana es el índice de la pestaña activa (PestanasPerfil) */
+.pestanas-indicador { transform: translateX(calc(var(--pestana, 0) * 100%)); }
 .pestana {
   position: relative;
   z-index: 1;
@@ -1370,4 +1371,68 @@ a.inicio-acceso:hover .inicio-acceso-flecha { transform: translateX(3px); }
 @media (prefers-reduced-motion: reduce) {
   .alojamiento, .alojamientos-lista { transition: none; }
   .alojamiento:hover { transform: none; }
+}
+
+/* ===== Cuestionario de hábitos (HU-13) ===== */
+.cuestionario-avance { margin: -12px 0 20px; text-align: center; font-weight: 600; color: var(--primario); }
+.pagina-cuestionario .habito { padding-bottom: 14px; }
+.pagina-cuestionario .habito.con-error { border-color: var(--error); }
+.habito-pregunta { margin: 0 0 10px; font-weight: 600; }
+.habito-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.habito-opcion { position: relative; cursor: pointer; }
+.habito-opcion input { position: absolute; opacity: 0; }
+.habito-opcion span {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  background: var(--campo);
+  border: 2px solid var(--borde);
+  border-radius: 10px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.habito-opcion:hover span { border-color: var(--primario); }
+.habito-opcion input:checked + span { font-weight: 600; color: var(--primario); background: #e6f4f2; border-color: var(--primario); }
+.habito-opcion input:focus-visible + span { outline: 3px solid var(--foco); outline-offset: 2px; }
+.habito .campo-error { margin-top: 6px; }
+
+.habito-importancia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--borde);
+}
+.habito-importancia > span { font-size: 0.85rem; color: var(--texto-suave); }
+.segmentos { display: inline-flex; padding: 3px; background: var(--campo); border: 1px solid var(--borde); border-radius: 999px; }
+.segmento { position: relative; cursor: pointer; }
+.segmento input { position: absolute; opacity: 0; }
+.segmento span { display: block; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; color: var(--texto-suave); border-radius: 999px; }
+.segmento input:checked + span { color: #fff; background: var(--primario); }
+.segmento input[value='imprescindible']:checked + span { background: var(--marca); }
+.segmento input:focus-visible + span { outline: 3px solid var(--foco); outline-offset: 1px; }
+.segmento.deshabilitado { cursor: not-allowed; opacity: 0.5; }
+.cuestionario-contador { margin: 0 0 12px; text-align: right; }
+
+.perfil-habitos dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.imprescindible {
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--marca);
+  border-radius: 999px;
+}
+@media (max-width: 480px) {
+  .segmentos { width: 100%; }
+  .segmento { flex: 1; text-align: center; }
+  .segmento span { padding: 6px 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .habito-opcion span { transition: none; }
 }

@@ -4,6 +4,7 @@ import Logo from './componentes/Logo.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import Acceso from './paginas/Acceso.jsx'
 import Alojamientos from './paginas/Alojamientos.jsx'
+import Cuestionario from './paginas/Cuestionario.jsx'
 import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
 import FormPublicacion from './paginas/FormPublicacion.jsx'
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/perfil" element={<RutaProtegida><LayoutPerfil /></RutaProtegida>}>
           <Route index element={<MiPerfil />} />
           <Route path="editar" element={<EditarPerfil />} />
+          <Route path="cuestionario" element={<Cuestionario />} />
         </Route>
         <Route path="/usuarios/:id" element={<RutaProtegida><PerfilUsuario /></RutaProtegida>} />
         {/* EP-03: publicación de alojamientos */}

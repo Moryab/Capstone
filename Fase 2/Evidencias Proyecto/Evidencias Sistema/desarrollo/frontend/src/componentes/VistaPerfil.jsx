@@ -1,3 +1,6 @@
+import { Fragment } from 'react'
+import { Link } from 'react-router-dom'
+import { CATEGORIAS, textoRespuesta } from '../cuestionario.js'
 import { textoGenero } from '../perfil.js'
 import Avatar from './Avatar.jsx'
 import {
@@ -78,13 +81,28 @@ export default function VistaPerfil({ perfil, sobreAvatar, acciones, aviso, chil
             )}
           </section>
 
-          {/* CA-16.1 pide mostrar las respuestas del cuestionario de hábitos (HU-13), que aún no existe */}
+          {/* CA-16.1 y CA-03.4: respuestas del cuestionario de hábitos (HU-13) */}
           <section className="perfil-seccion">
             <h2><IconoHogar /> Hábitos de convivencia</h2>
-            <p className="sin-dato">
-              Aquí aparecerán los hábitos y preferencias de convivencia cuando
-              {propio ? ' completes' : ' complete'} el cuestionario.
-            </p>
+            {perfil.habitos ? (
+              <dl className="perfil-lista perfil-habitos">
+                {CATEGORIAS.map(({ clave, titulo }) => (
+                  <Fragment key={clave}>
+                    <dt>{titulo}</dt>
+                    <dd>
+                      {textoRespuesta(clave, perfil.habitos[clave])}
+                      {perfil.imprescindibles.includes(clave) && <span className="imprescindible">Imprescindible</span>}
+                    </dd>
+                  </Fragment>
+                ))}
+              </dl>
+            ) : propio ? (
+              <p className="sin-dato">
+                Aún no respondes el cuestionario. <Link to="/perfil/cuestionario">Responderlo ahora</Link>
+              </p>
+            ) : (
+              <p className="sin-dato">Este estudiante aún no responde el cuestionario de hábitos.</p>
+            )}
           </section>
         </div>
 

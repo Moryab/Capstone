@@ -61,7 +61,7 @@ export default function Inicio() {
     { titulo: 'Crea tu cuenta', hecho: true },
     { titulo: 'Completa tu perfil', hecho: usuario.perfil_completo, a: '/perfil/editar' },
     { titulo: 'Sube tu foto de perfil', hecho: Boolean(usuario.foto_url), a: '/perfil' },
-    { titulo: 'Responde el cuestionario de convivencia', pronto: true },
+    { titulo: 'Responde el cuestionario de convivencia', hecho: usuario.cuestionario_completo, a: '/perfil/cuestionario' },
     { titulo: 'Recibe tus propuestas de match', pronto: true },
   ]
   const disponibles = pasos.filter((p) => !p.pronto)

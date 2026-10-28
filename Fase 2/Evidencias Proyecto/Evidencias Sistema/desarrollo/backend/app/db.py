@@ -46,3 +46,9 @@ async def crear_indices() -> None:
         [("estado", ASCENDING), ("fecha_publicacion", DESCENDING)],
         name="estado_1_fecha_publicacion_-1",
     )
+
+    # Cambios del cuestionario de hábitos (HU-13), según el modelo de datos
+    await db.historial_cuestionario.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.historial_cuestionario.create_index(
+        [("usuario_id", ASCENDING), ("fecha", DESCENDING)], name="usuario_id_1_fecha_-1"
+    )

@@ -10,7 +10,7 @@ from app.config import settings
 from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
 from app.media import CARPETA_FOTOS, URL_MEDIA
-from app.routers import auth, catalogos, perfil, publicaciones, usuarios
+from app.routers import auth, catalogos, cuestionario, perfil, publicaciones, usuarios
 
 
 @asynccontextmanager
@@ -91,6 +91,7 @@ app.include_router(auth.router)
 app.include_router(perfil.router)
 app.include_router(catalogos.router)
 app.include_router(usuarios.router)
+app.include_router(cuestionario.router)
 app.include_router(publicaciones.router)
 
 # Fotos subidas por los usuarios (perfil y alojamientos)
