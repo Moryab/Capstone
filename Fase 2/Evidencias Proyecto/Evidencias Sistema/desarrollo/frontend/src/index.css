@@ -26,6 +26,12 @@
 
 body { margin: 0; min-height: 100vh; background: var(--fondo); }
 
+/* Fondo con la ciudad, solo en la pantalla de login/registro (Acceso.jsx agrega la clase) */
+body.fondo-acceso {
+  min-height: 100vh;
+  background: #f4f8fa url('./assets/roommatch-bg.svg') center bottom / cover no-repeat;
+}
+
 /* La tarjeta queda centrada en el espacio bajo la cabecera */
 #root { min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 32px; }
 
@@ -94,10 +100,7 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   background: var(--tarjeta);
   border: 1px solid rgb(255 255 255 / 0.7);
   border-radius: 20px;
-  box-shadow:
-    0 32px 64px -16px rgb(11 31 58 / 0.28),
-    0 16px 32px -16px rgb(11 31 58 / 0.22),
-    0 0 0 1px rgb(11 31 58 / 0.04);
+  box-shadow: 0 30px 70px rgba(15, 59, 74, 0.28);
 }
 
 .panel-form {
