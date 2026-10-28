@@ -1,4 +1,4 @@
-from pymongo import ASCENDING, AsyncMongoClient, ReturnDocument
+from pymongo import ASCENDING, GEOSPHERE, AsyncMongoClient, ReturnDocument
 
 from app.config import settings
 
@@ -20,10 +20,15 @@ async def siguiente_codigo(coleccion: str) -> int:
 async def crear_indices() -> None:
     """Índices definidos en el modelo de datos. Si ya existen, Mongo no hace nada."""
     await db.usuarios.create_index([("correo", ASCENDING)], unique=True, name="correo_1")
-    # El RUT se pide después del registro, por eso el índice único solo aplica cuando existe
-    await db.usuarios.create_index(
-        [("rut", ASCENDING)],
-        unique=True,
-        name="rut_1",
-        partialFilterExpression={"rut": {"$type": "string"}},
+    # Antes el RUT era opcional y su índice era parcial; ahora se pide en el registro (CA-01.1)
+    indices = await db.usuarios.index_information()
+    if "partialFilterExpression" in indices.get("rut_1", {}):
+        await db.usuarios.drop_index("rut_1")
+    await db.usuarios.create_index([("rut", ASCENDING)], unique=True, name="rut_1")
+
+    await db.comunas.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.comunas.create_index([("centro", GEOSPHERE)], name="centro_2dsphere")
+    await db.instituciones.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.instituciones.create_index(
+        [("sedes.coordenadas", GEOSPHERE)], name="sedes.coordenadas_2dsphere"
     )

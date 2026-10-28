@@ -21,23 +21,38 @@ const OjoTachado = () => (
 
 // Campo de formulario con su etiqueta y el mensaje de error que devuelve la API.
 // `id` es opcional: sirve cuando dos formularios en la misma página usan el mismo `nombre`.
-// Los campos de contraseña traen un botón para mostrar u ocultar lo escrito
-export default function Campo({ etiqueta, nombre, id = nombre, error, type, ...props }) {
+// Los campos de contraseña traen un botón para mostrar u ocultar lo escrito.
+// Con `opciones` ([{ valor, texto }]) se dibuja una lista desplegable, con `multilinea` un área de
+// texto, y `ayuda` muestra una indicación bajo el campo
+export default function Campo({
+  etiqueta, nombre, id = nombre, error, ayuda, type, opciones, multilinea, ...props
+}) {
   const [visible, setVisible] = useState(false)
   const esPassword = type === 'password'
+  const descripciones = [ayuda && `${id}-ayuda`, error && `${id}-error`].filter(Boolean).join(' ')
+  const comunes = {
+    id,
+    name: nombre,
+    'aria-invalid': Boolean(error),
+    'aria-describedby': descripciones || undefined,
+  }
 
   return (
     <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
       <div className={esPassword ? 'campo-password' : undefined}>
-        <input
-          id={id}
-          name={nombre}
-          type={esPassword && visible ? 'text' : type}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-          {...props}
-        />
+        {opciones ? (
+          <select {...comunes} {...props}>
+            <option value="" disabled>Selecciona…</option>
+            {opciones.map(({ valor, texto }) => (
+              <option key={valor} value={valor}>{texto}</option>
+            ))}
+          </select>
+        ) : multilinea ? (
+          <textarea {...comunes} {...props} />
+        ) : (
+          <input {...comunes} type={esPassword && visible ? 'text' : type} {...props} />
+        )}
         {esPassword && (
           <button
             type="button"
@@ -51,6 +66,11 @@ export default function Campo({ etiqueta, nombre, id = nombre, error, type, ...p
           </button>
         )}
       </div>
+      {ayuda && (
+        <p className="campo-ayuda" id={`${id}-ayuda`}>
+          {ayuda}
+        </p>
+      )}
       {error && (
         <p className="campo-error" id={`${id}-error`}>
           {error}

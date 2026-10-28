@@ -1,27 +1,50 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pymongo.errors import DuplicateKeyError
 
 from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
-from app.schemas.usuarios import LoginIn, RegistroIn, TokenOut, UsuarioOut
+from app.schemas.perfil import CAMPOS_OBLIGATORIOS
+from app.schemas.usuarios import LoginIn, RegistroIn, TokenOut, UsuarioOut, fecha_a_datetime
 from app.security import cifrar_password, crear_token, verificar_password
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
 CREDENCIALES_INVALIDAS = "Correo o contraseña incorrectos"  # CA-02.2: mensaje genérico
 
+EN_USO = {"correo": "El correo ya está en uso", "rut": "El RUT ya está registrado"}
+
+
+def datos_en_uso(campos: list[str]) -> JSONResponse:
+    """CA-01.2: indica cuál de los datos únicos ya pertenece a otra cuenta."""
+    errores = {campo: EN_USO[campo] for campo in campos}
+    detalle = next(iter(errores.values())) if len(errores) == 1 else "El RUT y el correo ya están en uso"
+    return JSONResponse(status_code=409, content={"detail": detalle, "errores": errores})
+
 
 @router.post("/registro", status_code=status.HTTP_201_CREATED)
 async def registrar(datos: RegistroIn):
     """HU-01: registro de estudiante."""
+    repetidos = [
+        campo
+        for campo in ("rut", "correo")
+        if await db.usuarios.find_one({campo: getattr(datos, campo)}, {"_id": 1})
+    ]
+    if repetidos:
+        return datos_en_uso(repetidos)
+
     ahora = datetime.now(timezone.utc)
     doc = {
+        "rut": datos.rut,
         "nombre": datos.nombre,
         "ap_paterno": datos.ap_paterno,
+        "ap_materno": datos.ap_materno,
+        "fecha_nac": fecha_a_datetime(datos.fecha_nac),
+        "genero": datos.genero,
         "correo": datos.correo,
         "password": cifrar_password(datos.password),  # CA-01.5
         "fecha_registro": ahora,
@@ -32,17 +55,14 @@ async def registrar(datos: RegistroIn):
         "match_activo_id": None,
         "correo_verificado": False,
         "verificacion": {"estado": "no_verificado"},
-        "perfil": {
-            "perfil_completo": False,
-            "campos_faltantes": ["institucion_id", "carrera", "ciudad_origen"],
-        },
+        "perfil": {"perfil_completo": False, "campos_faltantes": list(CAMPOS_OBLIGATORIOS)},
         "seguridad": {"intentos_fallidos": 0, "bloqueado_hasta": None, "token_version": 0},
     }
     try:
         resultado = await db.usuarios.insert_one(doc)
-    except DuplicateKeyError:
-        # CA-01.2
-        raise HTTPException(status.HTTP_409_CONFLICT, "El correo ya está en uso")
+    except DuplicateKeyError as e:
+        # Dos registros simultáneos con el mismo dato pasan la revisión de arriba
+        return datos_en_uso(list(e.details.get("keyPattern", {"correo": 1})))
 
     doc["_id"] = resultado.inserted_id
     return {"mensaje": "Registro exitoso", "usuario": UsuarioOut.desde_doc(doc)}
