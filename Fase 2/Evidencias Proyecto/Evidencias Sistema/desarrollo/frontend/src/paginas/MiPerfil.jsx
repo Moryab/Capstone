@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Campo from '../componentes/Campo.jsx'
+import { useFondoCiudad } from '../fondo.js'
 import { describirFaltantes, GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
@@ -27,6 +28,8 @@ export default function MiPerfil() {
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [enviando, setEnviando] = useState(false)
+
+  useFondoCiudad()
 
   useEffect(() => {
     Promise.all([api('/perfil'), api('/catalogos/perfil')])

@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import FormLogin from '../componentes/FormLogin.jsx'
 import FormRegistro from '../componentes/FormRegistro.jsx'
 import Ilustracion from '../componentes/Ilustracion.jsx'
+import { useFondoCiudad } from '../fondo.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
 // Login y registro en una sola pantalla con panel deslizante ("double slider").
@@ -12,11 +12,7 @@ export default function Acceso() {
   const { pathname, state } = useLocation()
   const navegar = useNavigate()
 
-  // El fondo con la ciudad va solo en esta pantalla: se activa al entrar y se quita al salir
-  useEffect(() => {
-    document.body.classList.add('fondo-acceso')
-    return () => document.body.classList.remove('fondo-acceso')
-  }, [])
+  useFondoCiudad()
 
   if (usuario) return <Navigate to="/" replace />
 

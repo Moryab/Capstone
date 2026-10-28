@@ -26,10 +26,12 @@
 
 body { margin: 0; min-height: 100vh; background: var(--fondo); }
 
-/* Fondo con la ciudad, solo en la pantalla de login/registro (Acceso.jsx agrega la clase) */
-body.fondo-acceso {
+/* Fondo con la ciudad: login/registro y perfil (lo activa useFondoCiudad en fondo.js) */
+body.fondo-ciudad {
   min-height: 100vh;
   background: #f4f8fa url('./assets/roommatch-bg.svg') center bottom / cover no-repeat;
+  /* Fijo a la ventana: en páginas largas como el perfil la ciudad no se estira ni se pierde al bajar */
+  background-attachment: fixed;
 }
 
 /* La tarjeta queda centrada en el espacio bajo la cabecera */
