@@ -88,7 +88,7 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 .acceso {
   position: relative;
   width: min(880px, calc(100% - 32px));
-  min-height: 640px;
+  min-height: 720px;
   margin: auto;
   overflow: hidden;
   background: var(--tarjeta);
@@ -107,7 +107,6 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   width: 50%;
   height: 100%;
   display: flex;
-  align-items: center;
   overflow-y: auto;
   /* Fondo opaco: el formulario de arriba tapa al que queda detrás */
   background: var(--tarjeta);
@@ -133,8 +132,10 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   50%, 100% { opacity: 1; z-index: 5; }
 }
 
+/* margin auto centra en vertical, pero si el formulario no cabe deja hacer scroll desde arriba */
 .form-acceso {
   width: 100%;
+  margin: auto 0;
   padding: 32px 44px;
   text-align: center;
 }
@@ -256,7 +257,9 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
 .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .campo label { font-size: 0.85rem; font-weight: 600; }
-.campo input {
+.campo input,
+.campo select,
+.campo textarea {
   width: 100%;
   padding: 12px 15px;
   font: inherit;
@@ -266,14 +269,21 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   border-radius: 8px;
   transition: border-color 0.2s, background-color 0.2s;
 }
-.campo input:focus {
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
   background: #fff;
   border-color: var(--primario);
   outline: 2px solid var(--primario);
   outline-offset: 1px;
 }
-.campo input[aria-invalid='true'] { border-color: var(--error); }
+.campo input[aria-invalid='true'],
+.campo select[aria-invalid='true'],
+.campo textarea[aria-invalid='true'] { border-color: var(--error); }
+.campo textarea { resize: vertical; }
+.campo select:disabled { opacity: 0.6; cursor: not-allowed; }
 .campo-error { margin: 0; font-size: 0.85rem; color: var(--error); }
+.campo-ayuda { margin: 0; font-size: 0.8rem; color: var(--texto-suave); }
 
 /* Botón de ojo dentro del campo de contraseña */
 .campo-password { position: relative; }
@@ -325,6 +335,9 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   cursor: pointer;
   transition: transform 80ms ease-in, background-color 0.2s;
 }
+/* Los enlaces con clase boton (Link) se ven igual que los botones */
+a.boton { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
 .boton:hover:not(:disabled) { background: var(--primario-hover); }
 .boton:active:not(:disabled) { transform: scale(0.95); }
 .boton:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
@@ -355,3 +368,27 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 .tarjeta .subtitulo { margin: 0 0 24px; color: var(--texto-suave); }
 
 .cargando { text-align: center; color: var(--texto-suave); }
+
+/* Botones lado a lado que pasan a columna en pantallas chicas */
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 8px; }
+.acciones .boton { margin-top: 0; }
+
+/* ---------- Mi perfil ---------- */
+
+.pagina-perfil { width: min(720px, calc(100% - 32px)); text-align: left; }
+.pagina-perfil h1,
+.pagina-perfil > .subtitulo { text-align: center; }
+.pagina-perfil fieldset {
+  margin: 0 0 20px;
+  padding: 16px 18px 6px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+.pagina-perfil legend { padding: 0 6px; font-weight: 700; color: var(--primario); }
+.pagina-perfil .alerta,
+.pagina-perfil .exito { margin: 0 0 16px; }
+.pagina-perfil .acciones { justify-content: flex-end; }
+@media (max-width: 480px) {
+  .tarjeta { padding: 24px 16px; }
+  .pagina-perfil fieldset { padding: 12px 12px 4px; }
+}

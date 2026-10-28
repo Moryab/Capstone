@@ -6,13 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
+from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
-from app.routers import auth
+from app.routers import auth, catalogos, perfil
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await crear_indices()
+    await cargar_datos_iniciales()
     yield
     await client.close()
 
@@ -28,6 +30,15 @@ app.add_middleware(
 )
 
 
+# Reemplazan los mensajes en inglés de Pydantic cuando el valor no tiene el tipo esperado
+MENSAJES_FORMATO = {
+    "correo": "El correo no tiene un formato válido",
+    "fecha_nac": "Ingresa una fecha de nacimiento válida",
+    "genero": "Selecciona una opción válida",
+    "anio_ingreso": "Ingresa un año válido",
+}
+
+
 @app.exception_handler(RequestValidationError)
 async def errores_validacion(request: Request, exc: RequestValidationError):
     """Devuelve los errores como {campo: mensaje} para que el formulario los marque (CA-01.3)."""
@@ -35,15 +46,19 @@ async def errores_validacion(request: Request, exc: RequestValidationError):
     for err in exc.errors():
         campo = err["loc"][-1] if len(err["loc"]) > 1 else "general"
         mensaje = err["msg"].removeprefix("Value error, ")
-        if err["type"] == "missing":
+        if err["type"] == "missing" or err.get("input") in ("", None):
             mensaje = "Este campo es obligatorio"
-        elif campo == "correo":
-            mensaje = "El correo no tiene un formato válido"
+        elif err["type"] == "string_too_long":
+            mensaje = f"Máximo {err['ctx']['max_length']} caracteres"
+        elif err["type"] != "value_error" and campo in MENSAJES_FORMATO:
+            mensaje = MENSAJES_FORMATO[campo]
         errores[str(campo)] = mensaje
     return JSONResponse(status_code=422, content={"detail": "Datos inválidos", "errores": errores})
 
 
 app.include_router(auth.router)
+app.include_router(perfil.router)
+app.include_router(catalogos.router)
 
 
 @app.get("/api/health", tags=["Sistema"])

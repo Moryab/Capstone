@@ -29,6 +29,11 @@ export function SesionProvider({ children }) {
     setAviso('')
   }, [])
 
+  // Tras editar el perfil, para que el resto de la app vea los datos nuevos
+  const recargarUsuario = useCallback(async () => {
+    setUsuario(await api('/auth/me'))
+  }, [])
+
   const cerrarSesion = useCallback(async () => {
     try {
       await api('/auth/logout', { metodo: 'POST' })
@@ -39,7 +44,9 @@ export function SesionProvider({ children }) {
   }, [])
 
   return (
-    <SesionContext.Provider value={{ usuario, cargando, aviso, iniciarSesion, cerrarSesion }}>
+    <SesionContext.Provider
+      value={{ usuario, cargando, aviso, iniciarSesion, recargarUsuario, cerrarSesion }}
+    >
       {children}
     </SesionContext.Provider>
   )
