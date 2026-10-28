@@ -17,8 +17,8 @@ const PASOS = [
     texto: 'Te mostramos estudiantes ordenados por porcentaje de compatibilidad y en qué coinciden contigo.',
   },
   {
-    titulo: 'Haz match',
-    texto: 'Propón convivencia. Si la otra persona acepta, el match queda confirmado para ambos.',
+    titulo: 'Acepta tu match',
+    texto: 'RoomMatch te propone un match con quien más coincides. Si ambos aceptan, el match queda confirmado.',
   },
 ]
 

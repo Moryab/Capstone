@@ -2,10 +2,10 @@ import { useRef } from 'react'
 import { aparecer, gsap, useAnimacion } from '../animaciones.js'
 import { Encabezado } from '../componentes.jsx'
 
-// Lo que hace la plataforma después del match, según HU-17, HU-18 y HU-19
+// Lo que hace la plataforma después del match (HU-17 a HU-19). Es RoomMatch quien propone el match
 const ETAPAS = [
-  { titulo: 'Proponen convivencia', texto: 'Uno de los dos propone vivir juntos y la otra persona recibe la solicitud.' },
-  { titulo: 'Confirman el match', texto: 'Si acepta, el match queda confirmado y ambos reciben una notificación.' },
+  { titulo: 'RoomMatch te propone un match', texto: 'Cuando encontramos a un estudiante compatible contigo, te lo sugerimos como posible roomie.' },
+  { titulo: 'Ambos deciden', texto: 'Cada uno revisa el perfil del otro y decide si acepta. Si los dos aceptan, el match queda confirmado y ambos reciben una notificación.' },
   { titulo: 'Comienza la convivencia', texto: 'RoomMatch registra la fecha de inicio de su convivencia.' },
   { titulo: 'Evaluación al mes', texto: 'A los 30 días te preguntamos cómo va, con una nota de 1 a 5. Si no respondes, te lo recordamos a los 7 días.' },
   { titulo: 'Mejores recomendaciones', texto: 'Si no funcionó, nos cuentas por qué y usamos esas razones para mejorar tus próximas sugerencias.' },

@@ -5,7 +5,7 @@ import { Encabezado } from '../componentes.jsx'
 // Todo esto existe o está definido en los criterios de aceptación (CA-16.3, HU-21, HU-23, CA-01.5, CA-02.5)
 const PUNTOS = [
   {
-    titulo: 'Tus datos privados, privados',
+    titulo: 'Tus datos personales, protegidos',
     texto: 'Tu correo, teléfono, RUT y dirección nunca aparecen en tu perfil. Los demás solo ven lo necesario para conocerte.',
     icono: <><rect x="4" y="10.5" width="16" height="10" rx="2.5" pathLength="1" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" pathLength="1" /><path d="M12 14.5v2.5" pathLength="1" /></>,
   },
