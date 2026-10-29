@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { GENEROS } from '../perfil.js'
+import { useSesion } from '../sesion/SesionContext.jsx'
 import Campo from './Campo.jsx'
 
 const VACIO = {
@@ -12,6 +13,7 @@ const VACIO = {
 // HU-01: registro de estudiante
 export default function FormRegistro() {
   const navegar = useNavigate()
+  const { iniciarSesion } = useSesion()
   const [datos, setDatos] = useState(VACIO)
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState('')
@@ -30,7 +32,14 @@ export default function FormRegistro() {
       await api('/auth/registro', { metodo: 'POST', datos })
       // El formulario sigue montado tras deslizar al login, así que se limpia
       setDatos(VACIO)
-      navegar('/login', { state: { registrado: datos.correo } })
+      // Registro → cuestionario de convivencia (obligatorio) → inicio: se entra de inmediato.
+      // Si el inicio de sesión automático fallara, queda el camino de siempre por el login
+      try {
+        await iniciarSesion(datos.correo, datos.password)
+        navegar('/cuestionario', { replace: true })
+      } catch {
+        navegar('/login', { state: { registrado: datos.correo } })
+      }
     } catch (err) {
       // 422 datos inválidos (CA-01.3) y 409 correo o RUT en uso (CA-01.2) traen errores por campo
       setErrores(err.errores ?? {})

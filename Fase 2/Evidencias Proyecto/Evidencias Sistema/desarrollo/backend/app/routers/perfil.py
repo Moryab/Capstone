@@ -14,7 +14,7 @@ from app.media import borrar_foto, guardar_foto, tipo_imagen
 from app.routers.auth import datos_en_uso
 from app.routers.catalogos import ids_comunas
 from app.schemas.busqueda import Preferencias, PreferenciasIn, error_rango
-from app.schemas.perfil import PerfilIn, PerfilOut, calcular_faltantes
+from app.schemas.perfil import EstudiosIn, OrigenIn, PerfilIn, PerfilOut, calcular_faltantes
 from app.schemas.usuarios import fecha_a_datetime
 
 router = APIRouter(prefix="/api/perfil", tags=["Perfil"])
@@ -86,6 +86,49 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
 
     actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
     return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}
+
+
+async def guardar_parte(usuario: dict, campos: dict) -> dict:
+    """Guarda solo algunos campos del perfil y recalcula qué falta (CA-03.5)."""
+    perfil = {**usuario.get("perfil", {}), **campos}
+    faltantes = calcular_faltantes(perfil)
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]},
+        {"$set": {
+            **{f"perfil.{campo}": valor for campo, valor in campos.items()},
+            "perfil.campos_faltantes": faltantes,
+            "perfil.perfil_completo": not faltantes,
+            "fecha_actualizacion": datetime.now(timezone.utc),
+        }},
+    )
+    actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
+    return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}
+
+
+@router.put("/estudios")
+async def guardar_estudios(datos: EstudiosIn, usuario: dict = Depends(usuario_actual)):
+    """Paso «Tus estudios» del cuestionario de bienvenida: institución, sede y carrera."""
+    try:
+        institucion_id = ObjectId(datos.institucion_id)
+    except InvalidId:
+        return datos_invalidos({"institucion_id": "Selecciona una institución válida"})
+    institucion = await db.instituciones.find_one({"_id": institucion_id, "activa": True})
+    if not institucion:
+        return datos_invalidos({"institucion_id": "Selecciona una institución válida"})
+    if datos.sede not in [sede["nombre"] for sede in institucion.get("sedes", [])]:
+        return datos_invalidos({"sede": "Selecciona una sede de tu institución"})
+    return await guardar_parte(usuario, {
+        "institucion_id": institucion_id,
+        "sede": datos.sede,
+        "carrera": datos.carrera,
+        "anio_ingreso": datos.anio_ingreso,
+    })
+
+
+@router.put("/origen")
+async def guardar_origen(datos: OrigenIn, usuario: dict = Depends(usuario_actual)):
+    """Paso «De dónde eres» del cuestionario de bienvenida: ciudad, región y dirección."""
+    return await guardar_parte(usuario, datos.model_dump())
 
 
 def preferencias_out(usuario: dict) -> dict:

@@ -97,6 +97,30 @@ class PerfilIn(DatosPersonales):
         return (v or "").strip() or None
 
 
+class EstudiosIn(BaseModel):
+    """Primer paso del cuestionario de bienvenida: los datos de estudiante del perfil."""
+
+    institucion_id: str
+    sede: str = Field(max_length=100)
+    carrera: str = Field(max_length=100)
+    anio_ingreso: int | None = None
+
+    texto_obligatorio = field_validator("institucion_id", "sede", "carrera")(PerfilIn.texto_obligatorio.__func__)
+    anio_valido = field_validator("anio_ingreso")(PerfilIn.anio_valido.__func__)
+
+
+class OrigenIn(BaseModel):
+    """Segundo paso: de dónde viene y dónde vive mientras estudia. La dirección no se muestra
+    en el perfil público; solo la ciudad y la región."""
+
+    ciudad_origen: str = Field(max_length=80)
+    region_origen: str
+    direccion: str = Field(max_length=150)
+
+    texto_obligatorio = field_validator("ciudad_origen", "direccion")(PerfilIn.texto_obligatorio.__func__)
+    region_valida = field_validator("region_origen")(PerfilIn.region_valida.__func__)
+
+
 class PerfilOut(BaseModel):
     id: str
     # Los datos personales pueden faltar en cuentas creadas antes de que el registro los pidiera

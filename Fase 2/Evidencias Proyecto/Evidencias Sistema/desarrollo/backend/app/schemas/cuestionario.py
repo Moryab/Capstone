@@ -33,6 +33,20 @@ class CuestionarioIn(BaseModel):
         return {categoria: v.get(categoria, NIVEL_POR_DEFECTO) for categoria in CATEGORIAS}
 
 
+class CuestionarioAvanceIn(BaseModel):
+    """Autoguardado mientras se responde por primera vez: llegan solo las respuestas que cambiaron.
+    Mismos valores permitidos que CuestionarioIn; ninguna es obligatoria."""
+
+    horario_sueno: Literal["temprano", "intermedio", "tarde"] | None = None
+    horario_estudio: Literal["manana", "tarde", "noche", "variable"] | None = None
+    orden_limpieza: Literal["alto", "medio", "bajo"] | None = None
+    ruido: Literal["bajo", "moderado", "alto"] | None = None
+    visitas: Literal["nunca", "ocasional", "frecuente"] | None = None
+    fumar: Literal["no_fuma_no_tolera", "no_fuma_tolera", "fuma"] | None = None
+    mascotas: Literal["no_tiene_no_tolera", "no_tiene_tolera", "tiene"] | None = None
+    importancia: dict[Categoria, Nivel] = {}
+
+
 def respuestas_de(cuestionario: dict) -> dict:
     return {categoria: cuestionario.get(categoria) for categoria in CATEGORIAS}
 

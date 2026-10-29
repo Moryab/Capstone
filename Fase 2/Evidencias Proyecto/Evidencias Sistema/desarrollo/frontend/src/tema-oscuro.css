@@ -69,12 +69,9 @@ html.tema-oscuro .logo-lema { color: var(--texto-suave); }
 html.tema-oscuro .tarjeta,
 html.tema-oscuro .perfil-vista { box-shadow: 0 30px 70px rgb(0 0 0 / 0.55); }
 
-/* Búsqueda de alojamientos y cuestionario de hábitos */
-html.tema-oscuro .alojamiento-etiquetas li,
-html.tema-oscuro .habito-opcion input:checked + span { background: rgb(45 212 191 / 0.14); }
-html.tema-oscuro .segmento input:checked + span { color: var(--sobre-primario); }
+/* Búsqueda de alojamientos y hábitos del perfil */
+html.tema-oscuro .alojamiento-etiquetas li { background: rgb(45 212 191 / 0.14); }
 /* «Imprescindible» usa el color de marca de fondo, que de noche es claro: el texto pasa a oscuro */
-html.tema-oscuro .segmento input[value='imprescindible']:checked + span,
 html.tema-oscuro .imprescindible { color: var(--fondo); }
 /* Enlaces de texto sin estilo propio: el azul por defecto del navegador casi no se lee de noche */
 html.tema-oscuro a:not([class]) { color: var(--primario); }
