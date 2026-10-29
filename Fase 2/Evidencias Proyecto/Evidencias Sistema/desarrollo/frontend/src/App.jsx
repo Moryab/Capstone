@@ -14,6 +14,9 @@ import PerfilUsuario from './paginas/PerfilUsuario.jsx'
 import Propuestas from './paginas/Propuestas.jsx'
 import Roomies from './paginas/Roomies.jsx'
 import PaginaVerificacion from './paginas/verificacion/PaginaVerificacion.jsx'
+import RevisarSolicitud from './paginas/verificacion/RevisarSolicitud.jsx'
+import SolicitudesVerificacion from './paginas/verificacion/SolicitudesVerificacion.jsx'
+import { esAdmin } from './sesion/roles.js'
 import { useSesion } from './sesion/SesionContext.jsx'
 
 // La landing y el inicio se descargan solo cuando hacen falta (traen GSAP)
@@ -28,7 +31,7 @@ function Raiz() {
   const { usuario, cargando } = useSesion()
   if (cargando) return <p className="cargando">Cargando…</p>
   // El cuestionario es obligatorio antes de entrar al inicio
-  if (usuario && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
+  if (usuario && !esAdmin(usuario) && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
   return (
     <Suspense fallback={usuario ? <p className="cargando">Cargando…</p> : null}>
       {usuario ? <Marco><Inicio /></Marco> : <Landing />}
@@ -78,6 +81,9 @@ export default function App() {
           <Route path="/propuestas" element={<Propuestas />} />
           {/* EP-02: verificación de la condición de estudiante */}
           <Route path="/verificacion" element={<PaginaVerificacion />} />
+          {/* HU-22: solo administradores */}
+          <Route path="/admin/verificaciones" element={<RutaProtegida soloAdmin><SolicitudesVerificacion /></RutaProtegida>} />
+          <Route path="/admin/verificaciones/:id" element={<RutaProtegida soloAdmin><RevisarSolicitud /></RutaProtegida>} />
         </Route>
         {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
         <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />

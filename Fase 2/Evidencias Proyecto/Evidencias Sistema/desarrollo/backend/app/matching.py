@@ -33,8 +33,14 @@ def es_buscador(usuario: dict | None = None) -> dict:
     }
 
 
-async def notificar(usuario_id: ObjectId, tipo: str, titulo: str, mensaje: str, publicacion_id: ObjectId) -> None:
-    """Deja el aviso en notificaciones (CA-17.2 y CA-17.3), según el modelo de datos."""
+async def notificar(
+    usuario_id: ObjectId, tipo: str, titulo: str, mensaje: str, entidad_id: ObjectId,
+    tipo_entidad: str = "publicacion",
+) -> None:
+    """Deja el aviso en notificaciones (CA-17.2 y CA-17.3), según el modelo de datos.
+
+    La verificación de estudiante (HU-22) también la usa, con tipo_entidad «usuario».
+    """
     ahora = datetime.now(timezone.utc)
     await db.notificaciones.insert_one({
         "codigo": await siguiente_codigo("notificaciones"),
@@ -47,7 +53,7 @@ async def notificar(usuario_id: ObjectId, tipo: str, titulo: str, mensaje: str, 
         "estado_envio": "enviado",
         "fecha_programada": None,
         "fecha_notificacion": ahora,
-        "referencia": {"tipo_entidad": "publicacion", "entidad_id": publicacion_id},
+        "referencia": {"tipo_entidad": tipo_entidad, "entidad_id": entidad_id},
     })
 
 

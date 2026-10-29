@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 # Mismos valores que el enum del modelo de datos (colección solicitudes_verificacion)
 TipoComprobante = Literal["certificado_alumno_regular", "comprobante_matricula", "credencial_estudiantil"]
@@ -37,6 +37,63 @@ class SolicitudOut(BaseModel):
             archivo_nombre=doc["archivo"]["nombre_original"],
             archivo_formato=doc["archivo"]["formato"],
         )
+
+
+class SolicitudResumenOut(BaseModel):
+    """Fila del listado «Solicitudes de verificación» del administrador (CA-22.1)."""
+
+    id: str
+    codigo: int
+    usuario_id: str
+    nombre: str
+    correo: str
+    institucion_nombre: str | None = None
+    tipo_comprobante: str
+    estado: str
+    fecha_solicitud: datetime
+    fecha_revision: datetime | None = None
+
+
+class SolicitanteOut(BaseModel):
+    """Datos del perfil que el administrador compara con el comprobante (CA-22.1)."""
+
+    id: str
+    rut: str | None = None
+    nombre: str
+    ap_paterno: str | None = None
+    nombre_completo: str
+    correo: str
+    telefono: str | None = None
+    fecha_nac: date | None = None
+    foto_url: str | None = None
+    institucion_nombre: str | None = None  # la del perfil, que puede no coincidir con la de la solicitud
+    sede: str | None = None
+    carrera: str | None = None
+    anio_ingreso: int | None = None
+    fecha_registro: datetime
+    verificacion_estado: str
+
+
+class SolicitudAdminOut(SolicitudOut):
+    """Detalle de una solicitud para el administrador: el comprobante y los datos del perfil."""
+
+    observaciones: str | None = None
+    admin_revisor: str | None = None
+    solicitante: SolicitanteOut
+
+
+class RechazoIn(BaseModel):
+    """CA-22.3: rechazar exige un motivo, que se le muestra al estudiante."""
+
+    motivo: str = Field(max_length=300)
+
+    @field_validator("motivo")
+    @classmethod
+    def motivo_obligatorio(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Escribe el motivo del rechazo")
+        return v
 
 
 class VerificacionOut(BaseModel):

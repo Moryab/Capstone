@@ -3,20 +3,7 @@ import { Link } from 'react-router-dom'
 import { api, apiArchivo } from '../../api.js'
 import Campo from '../../componentes/Campo.jsx'
 import { useSesion } from '../../sesion/SesionContext.jsx'
-
-// Mismos valores que el tipo `TipoComprobante` del backend
-const TIPOS_COMPROBANTE = [
-  { valor: 'certificado_alumno_regular', texto: 'Certificado de alumno regular' },
-  { valor: 'comprobante_matricula', texto: 'Comprobante de matrícula' },
-  { valor: 'credencial_estudiantil', texto: 'Credencial estudiantil vigente' },
-]
-const textoTipo = (valor) => TIPOS_COMPROBANTE.find((t) => t.valor === valor)?.texto ?? valor
-
-// Mismo límite y formatos que valida el backend (CA-21.3)
-const COMPROBANTE_MAX_MB = 5
-const COMPROBANTE_TIPOS = ['application/pdf', 'image/jpeg', 'image/png']
-
-const fechaHora = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long', timeStyle: 'short' })
+import { COMPROBANTE_MAX_MB, COMPROBANTE_TIPOS, fechaHora, textoTipo, TIPOS_COMPROBANTE } from './datos.js'
 
 // Situación de la verificación (CA-21.4): qué se le muestra al estudiante según el estado
 function EstadoVerificacion({ verificacion, verComprobante, abriendo }) {
