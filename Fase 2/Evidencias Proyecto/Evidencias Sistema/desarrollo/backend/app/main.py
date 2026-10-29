@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -27,13 +28,17 @@ from app.routers import (
     usuarios,
     verificacion,
 )
+from app.seguimiento import revisar_periodicamente
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await crear_indices()
     await cargar_datos_iniciales()
+    # EP-08 · HU-18: avisos y recordatorios para evaluar la convivencia
+    revision = asyncio.create_task(revisar_periodicamente())
     yield
+    revision.cancel()
     await client.close()
 
 

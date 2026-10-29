@@ -1376,6 +1376,8 @@ p.compat-oferente { font-size: 0.85rem; }
 .propuesta-estado { margin: 0; font-size: 0.9rem; }
 .propuesta-estado span { color: var(--texto-suave); }
 .propuesta .exito, .propuesta .alerta { margin: 0; }
+.propuesta > .boton { justify-self: start; margin: 0; }
+.propuesta-evaluacion { font-size: 0.9rem; font-weight: 600; color: var(--primario); }
 .propuesta-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
 .propuesta-acciones .boton { flex: 1; margin: 0; padding: 10px 16px; }
 .propuesta-rechazo { display: grid; gap: 10px; }

@@ -10,6 +10,8 @@ from app.db import db
 from app.deps import usuario_actual
 from app.matching import ABIERTAS, VIGENCIA, MatchNoDisponible, generar_propuestas, responder
 from app.routers.compatibilidades import el_otro, resumenes
+from app.routers.evaluaciones import estado_evaluacion
+from app.seguimiento import avisar_evaluaciones
 
 router = APIRouter(prefix="/api/matches", tags=["Match"])
 
@@ -63,6 +65,8 @@ async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
             "fecha_sugerencia": m["fecha_sugerencia"],
             "vence": m["fecha_sugerencia"] + VIGENCIA if m["estado"] in ABIERTAS else None,
             "fecha_confirmacion": m["fecha_confirmacion"],
+            # HU-18: evaluación de la convivencia al mes
+            "evaluacion": estado_evaluacion(m, yo) if m["estado"] == "confirmado" else None,
         }
 
     return [una(m) for m in matches]
@@ -73,6 +77,7 @@ async def mis_propuestas(usuario: dict = Depends(usuario_actual)):
     """HU-17: las propuestas de match de RoomMatch, como buscador y como oferente."""
     yo = usuario["_id"]
     await generar_propuestas(usuario)  # también vence las que pasaron su plazo
+    await avisar_evaluaciones()
     usuario = await db.usuarios.find_one({"_id": yo})
 
     mias = {"$or": [{"usuario_a_id": yo}, {"usuario_b_id": yo}]}
