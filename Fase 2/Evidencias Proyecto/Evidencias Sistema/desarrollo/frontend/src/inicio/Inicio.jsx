@@ -13,10 +13,11 @@ import TarjetaPublicar from './tarjetas/TarjetaPublicar.jsx'
 import { momentoDelDia } from './utilidades.js'
 import './inicio.css'
 
-const PRONTO = [
-  { tipo: 'busqueda', titulo: 'Buscar alojamiento', texto: 'Filtra habitaciones y departamentos por precio, comuna y cercanía a tu sede.' },
+// Funciones de la plataforma: con `a` ya están disponibles; sin `a`, se muestran como «Muy pronto»
+const FUNCIONES = [
+  { tipo: 'busqueda', titulo: 'Buscar alojamiento', a: '/alojamientos', texto: 'Filtra habitaciones y departamentos por precio, comuna y cercanía a tu sede.' },
+  { tipo: 'cuestionario', titulo: 'Cuestionario de convivencia', a: '/perfil/cuestionario', texto: 'Cuéntanos tus horarios, orden, ruido, visitas y mascotas.' },
   { tipo: 'roomie', titulo: 'Encontrar roomie', texto: 'Conoce estudiantes con hábitos parecidos a los tuyos.' },
-  { tipo: 'cuestionario', titulo: 'Cuestionario de convivencia', texto: 'Cuéntanos tus horarios, orden, ruido, visitas y mascotas.' },
   { tipo: 'match', titulo: 'Propuestas de match', texto: 'RoomMatch te propondrá un match y ambos deciden si aceptan.' },
 ]
 
@@ -92,11 +93,11 @@ export default function Inicio() {
 
       <section className="i-proximamente" aria-labelledby="i-titulo-pronto">
         <div className="i-seccion-encabezado">
-          <p className="i-etiqueta">En camino</p>
-          <h2 id="i-titulo-pronto">Lo que viene en RoomMatch</h2>
+          <p className="i-etiqueta">Explora</p>
+          <h2 id="i-titulo-pronto">Todo lo que puedes hacer en RoomMatch</h2>
         </div>
         <div className="i-pronto-grilla">
-          {PRONTO.map((p) => <TarjetaPronto key={p.tipo} {...p} />)}
+          {FUNCIONES.map((f) => <TarjetaPronto key={f.tipo} {...f} />)}
         </div>
       </section>
     </main>

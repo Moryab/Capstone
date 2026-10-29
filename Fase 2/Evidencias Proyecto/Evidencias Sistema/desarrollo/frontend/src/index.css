@@ -424,7 +424,7 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
 .pestanas {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   padding: 4px;
   background: rgb(255 255 255 / 0.85);
   border: 1px solid var(--borde);
@@ -437,13 +437,14 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
   top: 4px;
   bottom: 4px;
   left: 4px;
-  width: calc(50% - 4px);
+  width: calc((100% - 8px) / 3);
   background: var(--primario);
   border-radius: 999px;
   box-shadow: 0 4px 10px rgb(15 118 110 / 0.3);
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.pestanas.en-segunda .pestanas-indicador { transform: translateX(100%); }
+/* --pestana es el índice de la pestaña activa (PestanasPerfil) */
+.pestanas-indicador { transform: translateX(calc(var(--pestana, 0) * 100%)); }
 .pestana {
   position: relative;
   z-index: 1;
@@ -1048,4 +1049,190 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
 .detalle-lista dd { margin: 0; font-weight: 600; text-align: right; }
 @media (max-width: 760px) {
   .detalle-cuerpo { grid-template-columns: 1fr; }
+}
+
+/* ===== Alojamientos: búsqueda y filtros (EP-04) ===== */
+.pagina-alojamientos { width: min(1180px, calc(100% - 32px)); margin: 8px auto 32px; }
+.alojamientos-cuerpo {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.filtros {
+  position: sticky;
+  top: 16px;
+  padding: 20px;
+  background: var(--tarjeta);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px -12px rgb(11 31 58 / 0.25);
+}
+.filtros h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 1.2rem; }
+.filtros fieldset { margin: 0 0 16px; padding: 14px 0 0; border: 0; border-top: 1px solid var(--borde); }
+.filtros legend { padding: 0 8px 0 0; font-weight: 700; color: var(--marca); }
+.filtros .fila { gap: 8px; }
+.filtros .casillas { flex-direction: column; gap: 6px; margin: 6px 0 0 26px; }
+.filtros .casilla { font-size: 0.9rem; }
+.filtros .casilla .cantidad { color: var(--texto-suave); font-size: 0.8rem; }
+.filtros .casilla.zona { font-weight: 600; }
+.filtros .casilla input:disabled { cursor: not-allowed; }
+.filtros .campo-ayuda, .filtros .campo-error { margin: 4px 0 0; }
+.filtro-zona { margin-top: 10px; }
+.filtros-preferencias { width: 100%; margin: 0 0 16px; padding: 10px 16px; }
+.filtros > .alerta, .filtros > .exito { margin: 0 0 12px; }
+.filtros-acciones { display: flex; flex-direction: column; gap: 8px; }
+.filtros-acciones .boton { width: 100%; margin: 0; padding: 12px 16px; }
+.enlace-boton {
+  padding: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--primario);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.enlace-boton:disabled { opacity: 0.6; cursor: wait; }
+.enlace-boton:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
+
+.alojamientos-total { margin: 0 0 12px; font-weight: 600; color: var(--texto-suave); }
+.alojamientos-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: opacity 0.2s;
+}
+.alojamientos-lista.actualizando { opacity: 0.5; }
+.alojamiento {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--tarjeta);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px -12px rgb(11 31 58 / 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.alojamiento:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -14px rgb(11 31 58 / 0.4); }
+.alojamiento-foto {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  background: var(--campo);
+}
+.alojamiento-foto img { width: 100%; height: 100%; object-fit: cover; }
+.alojamiento-info { padding: 14px 16px 16px; }
+.alojamiento-info h2 { margin: 2px 0 6px; font-size: 1.05rem; line-height: 1.3; }
+.alojamiento-info .publicacion-meta { display: flex; align-items: center; gap: 4px; }
+.alojamiento-info .publicacion-meta svg { width: 16px; height: 16px; flex: none; }
+.alojamiento-enlace { color: var(--texto); text-decoration: none; }
+/* El enlace del título cubre toda la tarjeta */
+.alojamiento-enlace::after { content: ''; position: absolute; inset: 0; border-radius: 16px; }
+.alojamiento-enlace:focus-visible { outline: none; }
+.alojamiento-enlace:focus-visible::after { outline: 3px solid var(--foco); outline-offset: 2px; }
+.alojamiento:hover .alojamiento-enlace { color: var(--primario); }
+.alojamiento-etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.alojamiento-etiquetas li {
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primario);
+  background: #e6f4f2;
+  border-radius: 999px;
+}
+.alojamiento-etiquetas li.propia { color: var(--marca); background: var(--campo); }
+
+.alojamientos-vacio {
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--tarjeta);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px -12px rgb(11 31 58 / 0.25);
+}
+.alojamientos-vacio h3 { margin: 0 0 6px; font-size: 1.15rem; }
+.alojamientos-vacio p { margin: 0; color: var(--texto-suave); }
+.alojamientos-vacio .boton { margin-top: 16px; }
+
+.paginacion { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 24px; }
+.paginacion .boton { margin: 0; padding: 10px 24px; }
+.paginacion .boton:disabled { cursor: not-allowed; }
+.paginacion span { color: var(--texto-suave); font-size: 0.9rem; }
+
+@media (max-width: 860px) {
+  .alojamientos-cuerpo { grid-template-columns: 1fr; }
+  .filtros { position: static; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .alojamiento, .alojamientos-lista { transition: none; }
+  .alojamiento:hover { transform: none; }
+}
+
+/* ===== Cuestionario de hábitos (HU-13) ===== */
+.cuestionario-avance { margin: -12px 0 20px; text-align: center; font-weight: 600; color: var(--primario); }
+.pagina-cuestionario .habito { padding-bottom: 14px; }
+.pagina-cuestionario .habito.con-error { border-color: var(--error); }
+.habito-pregunta { margin: 0 0 10px; font-weight: 600; }
+.habito-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.habito-opcion { position: relative; cursor: pointer; }
+.habito-opcion input { position: absolute; opacity: 0; }
+.habito-opcion span {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  background: var(--campo);
+  border: 2px solid var(--borde);
+  border-radius: 10px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.habito-opcion:hover span { border-color: var(--primario); }
+.habito-opcion input:checked + span { font-weight: 600; color: var(--primario); background: #e6f4f2; border-color: var(--primario); }
+.habito-opcion input:focus-visible + span { outline: 3px solid var(--foco); outline-offset: 2px; }
+.habito .campo-error { margin-top: 6px; }
+
+.habito-importancia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--borde);
+}
+.habito-importancia > span { font-size: 0.85rem; color: var(--texto-suave); }
+.segmentos { display: inline-flex; padding: 3px; background: var(--campo); border: 1px solid var(--borde); border-radius: 999px; }
+.segmento { position: relative; cursor: pointer; }
+.segmento input { position: absolute; opacity: 0; }
+.segmento span { display: block; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; color: var(--texto-suave); border-radius: 999px; }
+.segmento input:checked + span { color: #fff; background: var(--primario); }
+.segmento input[value='imprescindible']:checked + span { background: var(--marca); }
+.segmento input:focus-visible + span { outline: 3px solid var(--foco); outline-offset: 1px; }
+.segmento.deshabilitado { cursor: not-allowed; opacity: 0.5; }
+.cuestionario-contador { margin: 0 0 12px; text-align: right; }
+
+.perfil-habitos dd { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.imprescindible {
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--marca);
+  border-radius: 999px;
+}
+@media (max-width: 480px) {
+  .segmentos { width: 100%; }
+  .segmento { flex: 1; text-align: center; }
+  .segmento span { padding: 6px 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .habito-opcion span { transition: none; }
 }

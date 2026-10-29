@@ -139,3 +139,10 @@ export const IconoEscudo = () => (
     <path d="M9 12l2 2 4-4" />
   </Icono>
 )
+
+export const IconoLupa = () => (
+  <Icono>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </Icono>
+)

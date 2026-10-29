@@ -127,6 +127,7 @@ class UsuarioOut(BaseModel):
     verificacion_estado: str
     perfil_completo: bool
     campos_faltantes: list[str]
+    cuestionario_completo: bool  # HU-13
     foto_url: str | None = None
     fecha_registro: datetime
 
@@ -148,6 +149,7 @@ class UsuarioOut(BaseModel):
             verificacion_estado=doc.get("verificacion", {}).get("estado", "no_verificado"),
             perfil_completo=doc.get("perfil", {}).get("perfil_completo", False),
             campos_faltantes=doc.get("perfil", {}).get("campos_faltantes", []),
+            cuestionario_completo=(doc.get("cuestionario") or {}).get("completo", False),
             foto_url=doc.get("perfil", {}).get("foto_url"),
             fecha_registro=doc["fecha_registro"],
         )

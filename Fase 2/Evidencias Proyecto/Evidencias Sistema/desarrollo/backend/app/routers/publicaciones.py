@@ -1,15 +1,18 @@
 from datetime import datetime, timezone
+from typing import Annotated
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.db import db, siguiente_codigo
 from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto_publicacion, tipo_imagen
+from app.routers.catalogos import ids_comunas
 from app.routers.perfil import datos_invalidos
+from app.schemas.busqueda import TAMANO_PAGINA, FiltrosBusqueda, error_rango
 from app.schemas.publicaciones import MAX_FOTOS, PublicacionIn, PublicacionOut
 
 router = APIRouter(prefix="/api/publicaciones", tags=["Publicaciones"])
@@ -106,6 +109,122 @@ async def publicar(datos: PublicacionIn, usuario: dict = Depends(usuario_actual)
         "mensaje": "Publicación creada",
         "publicacion": PublicacionOut.desde_doc(doc, es_propia=True, oferente=usuario),
     }
+
+
+async def comunas_cerca_de(usuario: dict) -> list[ObjectId] | None:
+    """CA-11.3: comunas cercanas a la sede del perfil, según las zonas cargadas en instituciones.
+
+    Si la sede no calza con ninguna, se usan las de todas las sedes de la institución.
+    """
+    perfil = usuario.get("perfil", {})
+    if not perfil.get("institucion_id"):
+        return None
+    institucion = await db.instituciones.find_one({"_id": perfil["institucion_id"]})
+    if not institucion:
+        return None
+    sedes = institucion.get("sedes", [])
+    sedes = [s for s in sedes if s["nombre"] == perfil.get("sede")] or sedes
+    return list({c for s in sedes for c in s.get("comunas_cercanas_ids", [])})
+
+
+@router.get("")
+async def buscar_alojamientos(
+    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
+):
+    """HU-09 a HU-12: alojamientos activos, del más reciente al más antiguo y de a 10 (CA-09.1).
+
+    Todos los filtros se combinan a la vez (CA-11.4 y CA-12.3).
+    """
+    if error := error_rango(filtros.costo_min, filtros.costo_max):
+        return datos_invalidos(error)
+
+    # CA-09.5: eliminadas, suspendidas por un administrador o sin cupos no aparecen
+    consulta: dict = {"estado": "activa"}
+
+    costo = {}
+    if filtros.costo_min is not None:
+        costo["$gte"] = filtros.costo_min  # CA-10.1: los extremos se incluyen
+    if filtros.costo_max is not None:
+        costo["$lte"] = filtros.costo_max
+    if costo:
+        consulta["costo_mensual"] = costo
+
+    zonas: set | None = None
+    if filtros.comunas:
+        comunas = await ids_comunas(filtros.comunas)
+        if comunas is None:
+            return datos_invalidos({"comunas": "Selecciona comunas de la lista"})
+        zonas = set(comunas)
+    if filtros.cerca_institucion:
+        cercanas = await comunas_cerca_de(usuario)
+        if cercanas is None:
+            return datos_invalidos({
+                "cerca_institucion": "Indica tu institución y sede en tu perfil para usar esta opción"
+            })
+        zonas = set(cercanas) if zonas is None else zonas & set(cercanas)
+    if zonas is not None:
+        consulta["ubicacion.comuna_id"] = {"$in": list(zonas)}
+
+    if filtros.tipo_alojamiento:
+        consulta["tipo"] = filtros.tipo_alojamiento
+    for regla, valor in (
+        ("permite_mascotas", filtros.requiere_mascotas),
+        ("permite_fumar", filtros.requiere_fumar),
+        ("permite_visitas", filtros.requiere_visitas),
+    ):
+        if valor is not None:
+            consulta[f"reglas.{regla}"] = valor
+    if filtros.gastos_incluidos:
+        consulta["gastos.todos_incluidos"] = True
+    if filtros.amoblado:
+        consulta["caracteristicas.amoblado"] = True
+    if filtros.estacionamiento:
+        consulta["caracteristicas.estacionamiento"] = True
+
+    total = await db.publicaciones.count_documents(consulta)
+    cursor = (
+        db.publicaciones.find(consulta)
+        .sort([("fecha_publicacion", -1), ("_id", -1)])
+        .skip((filtros.pagina - 1) * TAMANO_PAGINA)
+        .limit(TAMANO_PAGINA)
+    )
+    return {
+        "total": total,
+        "pagina": filtros.pagina,
+        "paginas": max(1, -(-total // TAMANO_PAGINA)),
+        "resultados": [
+            PublicacionOut.desde_doc(doc, es_propia=doc["oferente_id"] == usuario["_id"])
+            async for doc in cursor
+        ],
+    }
+
+
+@router.get("/filtros")
+async def opciones_de_filtro(usuario: dict = Depends(usuario_actual)):
+    """Opciones del panel de filtros.
+
+    CA-11.2: solo las comunas que tienen publicaciones activas, con su zona (norte, centro o sur).
+    CA-11.3: la institución del perfil, para la opción «Cerca de mi institución».
+    """
+    conteo = {
+        fila["_id"]: fila["cantidad"]
+        async for fila in await db.publicaciones.aggregate([
+            {"$match": {"estado": "activa"}},
+            {"$group": {"_id": "$ubicacion.comuna_id", "cantidad": {"$sum": 1}}},
+        ])
+    }
+    comunas = [
+        {"id": str(c["_id"]), "nombre": c["nombre"], "sector": c["sector"], "cantidad": conteo[c["_id"]]}
+        async for c in db.comunas.find({"_id": {"$in": list(conteo)}}).sort("nombre")
+    ]
+
+    perfil = usuario.get("perfil", {})
+    institucion = None
+    if perfil.get("institucion_id"):
+        inst = await db.instituciones.find_one({"_id": perfil["institucion_id"]}, {"sigla": 1})
+        if inst:
+            institucion = {"sigla": inst["sigla"], "sede": perfil.get("sede")}
+    return {"comunas": comunas, "institucion": institucion}
 
 
 @router.get("/mias", response_model=list[PublicacionOut])

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Avatar from '../componentes/Avatar.jsx'
 import Logo, { IconoLogo } from '../componentes/Logo.jsx'
 import {
-  IconoContraer, IconoInicio, IconoLista, IconoSalir, IconoTuerca, IconoUsuario,
+  IconoContraer, IconoInicio, IconoLista, IconoLupa, IconoSalir, IconoTuerca, IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 
@@ -47,8 +47,8 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
  * «Mis publicaciones» baja hasta esa tarjeta del inicio. El perfil se abre desde la cuenta
  * y publicar, desde la tarjeta grande del inicio.
  */
-export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, contraida, setContraida, abrirConfig, enInicio }) {
-  const actual = enInicio ? 'page' : undefined
+export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, contraida, setContraida, abrirConfig, pathname }) {
+  const actual = (ruta) => (pathname === ruta ? 'page' : undefined)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const idMenu = useId()
   const nombre = mayusculaInicial(usuario.nombre)
@@ -78,8 +78,13 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
         <nav aria-label="Principal">
           <ul className="i-nav">
             <li>
-              <Link to="/" className="i-nav-item" aria-current={actual} data-titulo="Inicio">
+              <Link to="/" className="i-nav-item" aria-current={actual('/')} data-titulo="Inicio">
                 <IconoInicio /> <span className="i-nav-texto">Inicio</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/alojamientos" className="i-nav-item" aria-current={actual('/alojamientos')} data-titulo="Buscar alojamiento">
+                <IconoLupa /> <span className="i-nav-texto">Buscar alojamiento</span>
               </Link>
             </li>
             <li>
@@ -112,7 +117,8 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
         <Logo />
       </header>
       <nav className="i-nav-movil" aria-label="Principal (móvil)">
-        <Link to="/" className="i-movil-item" aria-current={actual}><IconoInicio /><span>Inicio</span></Link>
+        <Link to="/" className="i-movil-item" aria-current={actual('/')}><IconoInicio /><span>Inicio</span></Link>
+        <Link to="/alojamientos" className="i-movil-item" aria-current={actual('/alojamientos')}><IconoLupa /><span>Buscar</span></Link>
         <button type="button" className="i-movil-item" onClick={irAPublicaciones}><IconoLista /><span>Publicaciones</span></button>
         <button type="button" className="i-movil-item" onClick={abrirConfig} aria-haspopup="dialog"><IconoTuerca /><span>Ajustes</span></button>
         <div className="i-cuenta movil">

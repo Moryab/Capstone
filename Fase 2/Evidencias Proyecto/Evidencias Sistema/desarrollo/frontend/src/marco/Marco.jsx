@@ -44,7 +44,7 @@ export default function Marco({ children }) {
       <a href="#contenido" className="i-saltar">Saltar al contenido</a>
       <Navegacion usuario={usuario} cerrarSesion={cerrarSesion} irAPublicaciones={irAPublicaciones}
         contraida={contraida} setContraida={setContraida} abrirConfig={() => setConfigAbierta(true)}
-        enInicio={pathname === '/'} />
+        pathname={pathname} />
 
       <div id="contenido" className={`i-pagina${pathname === '/' ? ' es-inicio' : ''}`} tabIndex={-1}>
         {children ?? <Outlet />}

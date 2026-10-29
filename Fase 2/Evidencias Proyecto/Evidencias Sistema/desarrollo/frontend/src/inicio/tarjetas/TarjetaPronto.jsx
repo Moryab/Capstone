@@ -1,5 +1,6 @@
+import { Link } from 'react-router-dom'
 import { Tarjeta } from '../comunes.jsx'
-import { IconoCandado } from '../iconos.jsx'
+import { IconoCandado, IconoCheck, IconoFlecha } from '../iconos.jsx'
 
 // Ilustraciones pequeñas de cada función que viene
 const ILUSTRACIONES = {
@@ -54,14 +55,22 @@ const ILUSTRACIONES = {
   ),
 }
 
-// Adelanto de una función que todavía no existe: se ve, pero está bloqueada
-export default function TarjetaPronto({ tipo, titulo, texto }) {
+// Función de la plataforma. Con `a` ya existe y toda la tarjeta lleva ahí; sin `a` es un adelanto
+// bloqueado («Muy pronto»)
+export default function TarjetaPronto({ tipo, titulo, texto, a }) {
   const id = `i-pronto-${tipo}`
   return (
-    <Tarjeta className="i-area-pronto" cuerpo="i-pronto" etiqueta={id}>
-      <span className="i-candado"><IconoCandado /> Muy pronto</span>
+    <Tarjeta className="i-area-pronto" cuerpo={`i-pronto${a ? ' disponible' : ''}`} etiqueta={id}>
+      {a ? (
+        <span className="i-candado disponible"><IconoCheck tamano={12} /> Disponible</span>
+      ) : (
+        <span className="i-candado"><IconoCandado /> Muy pronto</span>
+      )}
       <div className="i-pronto-ilustracion">{ILUSTRACIONES[tipo]}</div>
-      <h3 id={id}>{titulo}</h3>
+      <h3 id={id}>
+        {/* El enlace del título cubre toda la tarjeta */}
+        {a ? <Link to={a} className="i-pronto-enlace">{titulo} <IconoFlecha /></Link> : titulo}
+      </h3>
       <p>{texto}</p>
     </Tarjeta>
   )

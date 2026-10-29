@@ -614,7 +614,7 @@ body.pagina-inicio #root { padding-bottom: 0; }
 .i-seccion-encabezado h2 { font-size: clamp(1.4rem, 2.2vw, 1.8rem); }
 .i-pronto-grilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .i-pronto { gap: 10px; background: var(--i-sup-3); border-style: dashed; border-color: var(--i-borde-fuerte); }
-.i-pronto h3 { font-size: 1.08rem; }
+.i-pronto h3 { position: static; font-size: 1.08rem; } /* así el enlace estirado cubre la tarjeta */
 .i-pronto p { font-size: 0.88rem; line-height: 1.5; color: var(--i-suave); }
 .i-candado {
   position: absolute;
@@ -647,7 +647,17 @@ body.pagina-inicio #root { padding-bottom: 0; }
 .i-pronto:hover .i-pronto-mover { transform: translateY(-5px); }
 .i-pronto:hover .i-pronto-mover.lento { transform: translateY(-9px); }
 .i-pronto:hover .i-pronto-latido { transform: scale(1.25); }
-.i-pronto:hover .i-candado { animation: i-sacudir 0.5s ease-in-out; }
+.i-pronto:not(.disponible):hover .i-candado { animation: i-sacudir 0.5s ease-in-out; }
+/* Funciones ya disponibles: tarjeta normal y clicable entera */
+.i-pronto.disponible { background: var(--i-sup); border-style: solid; border-color: var(--i-borde); }
+.i-pronto.disponible:hover { border-color: var(--i-acento); }
+.i-candado.disponible { color: #fff; background: var(--l-teal); }
+.i-pronto-enlace { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+.i-pronto-enlace::after { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: var(--i-radio); }
+.i-pronto-enlace:focus-visible { outline: none; }
+.i-pronto-enlace:focus-visible::after { outline: 3px solid var(--i-acento); outline-offset: 3px; }
+.i-pronto-enlace svg { color: var(--i-acento); transition: transform 0.2s; }
+.i-pronto.disponible:hover .i-pronto-enlace svg { transform: translateX(3px); }
 
 /* ---------- Animaciones ---------- */
 
@@ -902,7 +912,7 @@ a.i-config-fila:hover { background: var(--i-hover); }
     left: 0;
     z-index: 40;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     align-items: end;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: var(--i-barra-movil);

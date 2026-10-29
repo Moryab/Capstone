@@ -8,7 +8,7 @@ import { lanzarConfeti } from '../confeti.js'
 import { IconoCamara, IconoCandado, IconoCheck } from '../iconos.jsx'
 import { guardarLocal, leerLocal } from '../utilidades.js'
 
-const PROXIMOS = ['Cuestionario de convivencia', 'Propuestas de match']
+const PROXIMOS = ['Propuestas de match']
 
 // Anillo de avance. Parte vacío y se llena al aparecer (con «reducir movimiento» ya está lleno)
 function Anillo({ hechos, total }) {
@@ -91,6 +91,8 @@ export default function TarjetaPasos() {
     { clave: 'cuenta', titulo: 'Crea tu cuenta', hecho: true },
     { clave: 'perfil', titulo: 'Completa tu perfil', hecho: usuario.perfil_completo },
     { clave: 'foto', titulo: 'Sube tu foto de perfil', hecho: Boolean(usuario.foto_url) },
+    // HU-13: el cuestionario de hábitos alimenta el cálculo de compatibilidad
+    { clave: 'cuestionario', titulo: 'Responde el cuestionario de convivencia', hecho: Boolean(usuario.cuestionario_completo) },
   ]
   const hechos = pasos.filter((p) => p.hecho).length
   const siguiente = pasos.find((p) => !p.hecho)
@@ -152,6 +154,16 @@ export default function TarjetaPasos() {
               <p className="i-siguiente-texto">Falta: {describirFaltantes(usuario.campos_faltantes)}.</p>
             )}
             <Link to="/perfil/editar" className="l-boton">Completar perfil</Link>
+          </>
+        )}
+        {siguiente?.clave === 'cuestionario' && (
+          <>
+            <p className="i-siguiente-titulo">Siguiente paso: responde el cuestionario de convivencia</p>
+            <p className="i-siguiente-texto">
+              Horarios, orden, ruido, visitas, fumar y mascotas. Con tus respuestas calculamos qué tan
+              compatible eres con otros estudiantes.
+            </p>
+            <Link to="/perfil/cuestionario" className="l-boton">Responder cuestionario</Link>
           </>
         )}
         {siguiente?.clave === 'foto' && (

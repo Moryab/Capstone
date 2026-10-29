@@ -5,6 +5,7 @@ import { useFondoCiudad } from '../fondo.js'
 const NOTAS = {
   '/perfil': 'Así ven tu perfil los demás estudiantes. Tu correo, teléfono, RUT y dirección no se muestran.',
   '/perfil/editar': 'Los cambios que guardes se verán al tiro en tu perfil.',
+  '/perfil/cuestionario': 'Los demás estudiantes ven tus respuestas y lo que marcaste como imprescindible.',
 }
 
 // Mientras carga una pestaña se reserva su espacio, para que la página no salte al aparecer

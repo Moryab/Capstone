@@ -10,7 +10,7 @@ from app.config import settings
 from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
 from app.media import CARPETA_FOTOS, URL_MEDIA
-from app.routers import auth, catalogos, perfil, publicaciones, usuarios
+from app.routers import auth, catalogos, compatibilidades, cuestionario, perfil, publicaciones, usuarios
 
 
 @asynccontextmanager
@@ -40,6 +40,8 @@ MENSAJES_FORMATO = {
     "anio_ingreso": "Ingresa un año válido",
     "costo_mensual": "Ingresa el monto en pesos, solo números",
     "monto_estimado": "Ingresa el monto en pesos, solo números",
+    "costo_min": "Ingresa el monto en pesos, solo números",
+    "costo_max": "Ingresa el monto en pesos, solo números",
 }
 
 # Límites incumplidos: van antes que MENSAJES_FORMATO porque el valor sí tenía el tipo correcto.
@@ -89,6 +91,8 @@ app.include_router(auth.router)
 app.include_router(perfil.router)
 app.include_router(catalogos.router)
 app.include_router(usuarios.router)
+app.include_router(cuestionario.router)
+app.include_router(compatibilidades.router)
 app.include_router(publicaciones.router)
 
 # Fotos subidas por los usuarios (perfil y alojamientos)

@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Logo from './componentes/Logo.jsx'
 import RutaProtegida from './componentes/RutaProtegida.jsx'
 import Acceso from './paginas/Acceso.jsx'
+import Alojamientos from './paginas/Alojamientos.jsx'
+import Cuestionario from './paginas/Cuestionario.jsx'
 import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
 import FormPublicacion from './paginas/FormPublicacion.jsx'
@@ -49,12 +51,15 @@ export default function App() {
           <Route path="/perfil" element={<LayoutPerfil />}>
             <Route index element={<MiPerfil />} />
             <Route path="editar" element={<EditarPerfil />} />
+            <Route path="cuestionario" element={<Cuestionario />} />
           </Route>
           <Route path="/usuarios/:id" element={<PerfilUsuario />} />
           {/* EP-03: publicación de alojamientos */}
           <Route path="/publicaciones/nueva" element={<FormPublicacion />} />
           <Route path="/publicaciones/:id/editar" element={<FormPublicacion />} />
           <Route path="/alojamientos/:id" element={<DetallePublicacion />} />
+          {/* EP-04: búsqueda y filtros */}
+          <Route path="/alojamientos" element={<Alojamientos />} />
         </Route>
         {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
         <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />

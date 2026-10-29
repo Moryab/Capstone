@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
 import {
@@ -11,6 +11,7 @@ import {
 // lo ve siempre y desde aquí puede ir a editarlo
 export default function DetallePublicacion() {
   const { id } = useParams()
+  const { state } = useLocation()
   const [resultado, setResultado] = useState({ id: null, pub: null, error: '' })
   const [fotoActual, setFotoActual] = useState(0)
 
@@ -47,7 +48,8 @@ export default function DetallePublicacion() {
 
   return (
     <main className="detalle-publicacion">
-      <Link to={pub.es_propia ? '/perfil' : '/'} className="volver">← Volver</Link>
+      {/* CA-12.5: desde el listado se vuelve con los mismos filtros */}
+      <Link to={state?.desde ?? (pub.es_propia ? '/perfil' : '/alojamientos')} className="volver">← Volver</Link>
 
       {pub.es_propia && pub.estado !== 'activa' && (
         <p className="alerta">

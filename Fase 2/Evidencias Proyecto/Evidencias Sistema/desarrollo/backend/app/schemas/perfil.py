@@ -3,6 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.cuestionario import importancia_de, respuestas_de
 from app.schemas.usuarios import DatosPersonales
 
 REGIONES = [
@@ -178,12 +179,17 @@ class PerfilPublicoOut(BaseModel):
     foto_url: str | None = None
     verificado: bool
     perfil_completo: bool
+    # CA-16.1 y CA-03.4: respuestas del cuestionario de hábitos (None si aún no lo responde)
+    habitos: dict[str, str] | None = None
+    imprescindibles: list[str] = []
     miembro_desde: datetime
     es_propio: bool
 
     @classmethod
     def desde_doc(cls, doc: dict, institucion: dict | None, es_propio: bool) -> "PerfilPublicoOut":
         perfil = doc.get("perfil", {})
+        cuestionario = doc.get("cuestionario") or {}
+        completo = cuestionario.get("completo", False)
         return cls(
             id=str(doc["_id"]),
             nombre=doc["nombre"],
@@ -201,6 +207,10 @@ class PerfilPublicoOut(BaseModel):
             foto_url=perfil.get("foto_url"),
             verificado=doc.get("verificacion", {}).get("estado") == "verificado",
             perfil_completo=perfil.get("perfil_completo", False),
+            habitos=respuestas_de(cuestionario) if completo else None,
+            imprescindibles=[c for c, n in importancia_de(cuestionario).items() if n == "imprescindible"]
+            if completo
+            else [],
             miembro_desde=doc["fecha_registro"],
             es_propio=es_propio,
         )
