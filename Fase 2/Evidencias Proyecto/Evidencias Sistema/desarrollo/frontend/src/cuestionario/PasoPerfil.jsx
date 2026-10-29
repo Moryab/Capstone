@@ -56,7 +56,7 @@ export default function PasoPerfil({ tipo, perfil, errores, catalogo, alCambiar,
                 <Campo etiqueta="Región de origen" nombre="region_origen" id="c-region" value={perfil.region_origen}
                   onChange={cambiar} error={errores.region_origen} opciones={opcionesRegion} required />
               </div>
-              <Campo etiqueta="Dirección en la ciudad donde estudias" nombre="direccion" id="c-direccion"
+              <Campo etiqueta="Dirección de tu ciudad de origen" nombre="direccion" id="c-direccion"
                 value={perfil.direccion} onChange={cambiar} error={errores.direccion} maxLength={150} required
                 ayuda="Privada: no aparece en tu perfil." />
             </>

@@ -3,7 +3,7 @@ export const ETIQUETAS_PERFIL = {
   institucion_id: 'Institución',
   sede: 'Sede',
   carrera: 'Carrera',
-  direccion: 'Dirección en la ciudad donde estudias',
+  direccion: 'Dirección de tu ciudad de origen',
   ciudad_origen: 'Ciudad de origen',
   region_origen: 'Región de origen',
   telefono: 'Teléfono',

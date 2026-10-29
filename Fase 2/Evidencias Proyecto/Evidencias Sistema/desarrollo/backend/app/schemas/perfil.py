@@ -101,7 +101,7 @@ class EstudiosIn(BaseModel):
 
 
 class OrigenIn(BaseModel):
-    """Segundo paso: de dónde viene y dónde vive mientras estudia. La dirección no se muestra
+    """Segundo paso: de dónde viene y su dirección allá. La dirección no se muestra
     en el perfil público; solo la ciudad y la región."""
 
     ciudad_origen: str = Field(max_length=80)

@@ -155,7 +155,7 @@ export default function EditarPerfil() {
             <Campo etiqueta="Región de origen" nombre="region_origen" value={datos.region_origen}
               onChange={cambiar} error={errores.region_origen} opciones={opcionesRegion} required />
           </div>
-          <Campo etiqueta="Dirección en la ciudad donde estudias" nombre="direccion"
+          <Campo etiqueta="Dirección de tu ciudad de origen" nombre="direccion"
             value={datos.direccion} onChange={cambiar} error={errores.direccion} maxLength={150}
             autoComplete="street-address" required
             ayuda="Si aún no tienes alojamiento, indica dónde te estás quedando." />
