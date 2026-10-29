@@ -37,6 +37,38 @@ class FiltrosBusqueda(Preferencias):
     cerca_institucion: bool = False  # CA-11.3
 
 
+def filtro_preferencias(p: Preferencias) -> dict:
+    """Condiciones de Mongo para costo, tipo, reglas y extras (sin la ubicación).
+
+    Lo usan la búsqueda de alojamientos y las propuestas de match (HU-17).
+    """
+    consulta: dict = {}
+    costo = {}
+    if p.costo_min is not None:
+        costo["$gte"] = p.costo_min  # CA-10.1: los extremos se incluyen
+    if p.costo_max is not None:
+        costo["$lte"] = p.costo_max
+    if costo:
+        consulta["costo_mensual"] = costo
+
+    if p.tipo_alojamiento:
+        consulta["tipo"] = p.tipo_alojamiento
+    for regla, valor in (
+        ("permite_mascotas", p.requiere_mascotas),
+        ("permite_fumar", p.requiere_fumar),
+        ("permite_visitas", p.requiere_visitas),
+    ):
+        if valor is not None:
+            consulta[f"reglas.{regla}"] = valor
+    if p.gastos_incluidos:
+        consulta["gastos.todos_incluidos"] = True
+    if p.amoblado:
+        consulta["caracteristicas.amoblado"] = True
+    if p.estacionamiento:
+        consulta["caracteristicas.estacionamiento"] = True
+    return consulta
+
+
 def error_rango(costo_min: int | None, costo_max: int | None) -> dict | None:
     """CA-10.3: el mínimo no puede superar al máximo."""
     if costo_min is not None and costo_max is not None and costo_min > costo_max:

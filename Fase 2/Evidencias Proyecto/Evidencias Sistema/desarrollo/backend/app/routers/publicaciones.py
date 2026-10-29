@@ -12,7 +12,8 @@ from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto_publicacion, tipo_imagen
 from app.routers.catalogos import ids_comunas
 from app.routers.perfil import datos_invalidos
-from app.schemas.busqueda import TAMANO_PAGINA, FiltrosBusqueda, error_rango
+from app.matching import cerrar_propuestas_de_publicacion, generar_propuestas
+from app.schemas.busqueda import TAMANO_PAGINA, FiltrosBusqueda, error_rango, filtro_preferencias
 from app.schemas.publicaciones import MAX_FOTOS, PublicacionIn, PublicacionOut
 
 router = APIRouter(prefix="/api/publicaciones", tags=["Publicaciones"])
@@ -105,6 +106,7 @@ async def publicar(datos: PublicacionIn, usuario: dict = Depends(usuario_actual)
     }
     resultado = await db.publicaciones.insert_one(doc)
     doc["_id"] = resultado.inserted_id
+    await generar_propuestas()  # HU-17: el alojamiento nuevo se puede proponer a quienes buscan
     return {
         "mensaje": "Publicación creada",
         "publicacion": PublicacionOut.desde_doc(doc, es_propia=True, oferente=usuario),
@@ -139,15 +141,7 @@ async def buscar_alojamientos(
         return datos_invalidos(error)
 
     # CA-09.5: eliminadas, suspendidas por un administrador o sin cupos no aparecen
-    consulta: dict = {"estado": "activa"}
-
-    costo = {}
-    if filtros.costo_min is not None:
-        costo["$gte"] = filtros.costo_min  # CA-10.1: los extremos se incluyen
-    if filtros.costo_max is not None:
-        costo["$lte"] = filtros.costo_max
-    if costo:
-        consulta["costo_mensual"] = costo
+    consulta: dict = {"estado": "activa", **filtro_preferencias(filtros)}
 
     zonas: set | None = None
     if filtros.comunas:
@@ -164,22 +158,6 @@ async def buscar_alojamientos(
         zonas = set(cercanas) if zonas is None else zonas & set(cercanas)
     if zonas is not None:
         consulta["ubicacion.comuna_id"] = {"$in": list(zonas)}
-
-    if filtros.tipo_alojamiento:
-        consulta["tipo"] = filtros.tipo_alojamiento
-    for regla, valor in (
-        ("permite_mascotas", filtros.requiere_mascotas),
-        ("permite_fumar", filtros.requiere_fumar),
-        ("permite_visitas", filtros.requiere_visitas),
-    ):
-        if valor is not None:
-            consulta[f"reglas.{regla}"] = valor
-    if filtros.gastos_incluidos:
-        consulta["gastos.todos_incluidos"] = True
-    if filtros.amoblado:
-        consulta["caracteristicas.amoblado"] = True
-    if filtros.estacionamiento:
-        consulta["caracteristicas.estacionamiento"] = True
 
     total = await db.publicaciones.count_documents(consulta)
     cursor = (
@@ -263,6 +241,10 @@ async def editar(publicacion_id: str, datos: PublicacionIn, usuario: dict = Depe
     campos["fecha_ultima_modificacion"] = datetime.now(timezone.utc)  # CA-07.5
     await db.publicaciones.update_one({"_id": doc["_id"]}, {"$set": campos})
     actualizado = await db.publicaciones.find_one({"_id": doc["_id"]})
+    # HU-17: sin cupos se cierran sus propuestas abiertas; con los cambios puede calzar con otros
+    if actualizado["estado"] != "activa":
+        await cerrar_propuestas_de_publicacion(doc["_id"])
+    await generar_propuestas()
     return {
         "mensaje": "Cambios guardados",
         "publicacion": PublicacionOut.desde_doc(actualizado, es_propia=True, oferente=usuario),
@@ -283,6 +265,7 @@ async def eliminar(publicacion_id: str, usuario: dict = Depends(usuario_actual))
             }
         },
     )
+    await cerrar_propuestas_de_publicacion(doc["_id"])
     return {"mensaje": "Publicación eliminada"}
 
 

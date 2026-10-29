@@ -11,6 +11,8 @@ import LayoutPerfil from './paginas/LayoutPerfil.jsx'
 import Marco from './marco/Marco.jsx'
 import MiPerfil from './paginas/MiPerfil.jsx'
 import PerfilUsuario from './paginas/PerfilUsuario.jsx'
+import Propuestas from './paginas/Propuestas.jsx'
+import Roomies from './paginas/Roomies.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
 // La landing y el inicio se descargan solo cuando hacen falta (traen GSAP)
@@ -70,6 +72,9 @@ export default function App() {
           <Route path="/alojamientos/:id" element={<DetallePublicacion />} />
           {/* EP-04: búsqueda y filtros */}
           <Route path="/alojamientos" element={<Alojamientos />} />
+          {/* EP-05: posibles roomies según la compatibilidad */}
+          <Route path="/roomies" element={<Roomies />} />
+          <Route path="/propuestas" element={<Propuestas />} />
         </Route>
         {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
         <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />

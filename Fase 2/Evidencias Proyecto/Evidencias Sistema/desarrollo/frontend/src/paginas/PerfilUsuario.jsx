@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
+import { SeccionCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import VistaPerfil from '../componentes/VistaPerfil.jsx'
 import { useFondoCiudad } from '../fondo.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
-// HU-16: perfil de otro estudiante (/usuarios/:id). Desde aquí enlazarán la lista de posibles roomies
+// HU-16: perfil de otro estudiante (/usuarios/:id), con la compatibilidad entre ambos (CA-16.2)
 export default function PerfilUsuario() {
   const { id } = useParams()
   const { usuario } = useSesion()
+  const { state } = useLocation()
   const [resultado, setResultado] = useState({ id: null, perfil: null, error: '' })
 
   useFondoCiudad()
@@ -42,8 +44,11 @@ export default function PerfilUsuario() {
 
   return (
     <div className="contenedor-perfil">
-      <Link to="/" className="volver">← Volver</Link>
-      <VistaPerfil perfil={resultado.perfil} />
+      {/* Desde «Posibles roomies» o un alojamiento se vuelve a esa misma página */}
+      <Link to={state?.desde ?? '/'} className="volver">← Volver</Link>
+      <VistaPerfil perfil={resultado.perfil}>
+        <SeccionCompatibilidad otroId={id} nombre={resultado.perfil.nombre} />
+      </VistaPerfil>
     </div>
   )
 }

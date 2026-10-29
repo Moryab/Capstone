@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.compatibilidad import recalcular
+from app.matching import generar_propuestas
 from app.db import db, siguiente_codigo
 from app.deps import usuario_actual
 from app.routers.perfil import datos_invalidos
@@ -77,6 +78,7 @@ async def guardar_cuestionario(datos: CuestionarioIn, usuario: dict = Depends(us
 
     # CA-14.5 y CA-04.4: la compatibilidad se recalcula con las respuestas nuevas
     calculadas = await recalcular({**usuario, "cuestionario": cuestionario})
+    await generar_propuestas()  # HU-17: con la compatibilidad nueva pueden aparecer propuestas
 
     return {
         "mensaje": "Cuestionario guardado",

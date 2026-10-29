@@ -66,6 +66,7 @@ async def registrar(datos: RegistroIn):
         "estado_cuenta": "activa",
         "advertencias_recibidas": 0,
         "match_activo_id": None,
+        "buscando_alojamiento": False,  # HU-17: se activa en «Propuestas de match»
         "correo_verificado": False,
         "verificacion": {"estado": "no_verificado"},
         # El teléfono se pide al registrarse; el resto del perfil se completa después

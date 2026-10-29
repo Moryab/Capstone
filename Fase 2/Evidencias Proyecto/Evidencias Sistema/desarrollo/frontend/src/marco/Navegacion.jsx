@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import Avatar from '../componentes/Avatar.jsx'
 import Logo, { IconoLogo } from '../componentes/Logo.jsx'
 import {
-  IconoContraer, IconoInicio, IconoLista, IconoLupa, IconoSalir, IconoTuerca, IconoUsuario,
+  IconoContraer, IconoInicio, IconoLista, IconoLupa, IconoMatch, IconoPersonas, IconoSalir, IconoTuerca,
+  IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 
@@ -88,6 +89,16 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
               </Link>
             </li>
             <li>
+              <Link to="/roomies" className="i-nav-item" aria-current={actual('/roomies')} data-titulo="Encontrar roomie">
+                <IconoPersonas /> <span className="i-nav-texto">Encontrar roomie</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/propuestas" className="i-nav-item" aria-current={actual('/propuestas')} data-titulo="Propuestas de match">
+                <IconoMatch /> <span className="i-nav-texto">Propuestas de match</span>
+              </Link>
+            </li>
+            <li>
               <button type="button" className="i-nav-item" onClick={irAPublicaciones} data-titulo="Mis publicaciones">
                 <IconoLista /> <span className="i-nav-texto">Mis publicaciones</span>
               </button>
@@ -119,6 +130,8 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
       <nav className="i-nav-movil" aria-label="Principal (móvil)">
         <Link to="/" className="i-movil-item" aria-current={actual('/')}><IconoInicio /><span>Inicio</span></Link>
         <Link to="/alojamientos" className="i-movil-item" aria-current={actual('/alojamientos')}><IconoLupa /><span>Buscar</span></Link>
+        {/* No caben 7 botones: «Encontrar roomie» queda en el inicio y en la barra de escritorio */}
+        <Link to="/propuestas" className="i-movil-item" aria-current={actual('/propuestas')}><IconoMatch /><span>Match</span></Link>
         <button type="button" className="i-movil-item" onClick={irAPublicaciones}><IconoLista /><span>Publicaciones</span></button>
         <button type="button" className="i-movil-item" onClick={abrirConfig} aria-haspopup="dialog"><IconoTuerca /><span>Ajustes</span></button>
         <div className="i-cuenta movil">

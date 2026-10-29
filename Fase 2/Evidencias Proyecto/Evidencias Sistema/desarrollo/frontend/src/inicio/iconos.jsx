@@ -140,6 +140,22 @@ export const IconoEscudo = () => (
   </Icono>
 )
 
+export const IconoPersonas = () => (
+  <Icono>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M16 4.5a3.5 3.5 0 0 1 0 7" />
+    <path d="M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+  </Icono>
+)
+
+export const IconoMatch = () => (
+  <Icono>
+    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
+    <path d="M9 11l2 2 4-4" />
+  </Icono>
+)
+
 export const IconoLupa = () => (
   <Icono>
     <circle cx="11" cy="11" r="6.5" />

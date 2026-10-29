@@ -73,3 +73,16 @@ async def crear_indices() -> None:
     await db.compatibilidades.create_index(
         [("usuario_b_id", ASCENDING), ("vigente", ASCENDING)], name="usuario_b_id_1_vigente_1"
     )
+
+    # Propuestas de match (HU-17) y avisos, según el modelo de datos
+    await db.matches.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.matches.create_index(
+        [("usuario_a_id", ASCENDING), ("estado", ASCENDING)], name="usuario_a_id_1_estado_1"
+    )
+    await db.matches.create_index(
+        [("usuario_b_id", ASCENDING), ("estado", ASCENDING)], name="usuario_b_id_1_estado_1"
+    )
+    await db.notificaciones.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.notificaciones.create_index(
+        [("usuario_id", ASCENDING), ("leido", ASCENDING)], name="usuario_id_1_leido_1"
+    )

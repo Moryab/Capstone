@@ -21,6 +21,30 @@ def el_otro(compatibilidad: dict, yo: ObjectId) -> ObjectId:
     return compatibilidad["usuario_b_id"] if compatibilidad["usuario_a_id"] == yo else compatibilidad["usuario_a_id"]
 
 
+async def resumenes(usuarios: list[dict]) -> dict[ObjectId, dict]:
+    """Datos de tarjeta de cada estudiante (foto, carrera, institución), por id.
+
+    Los usan «Posibles roomies» y las propuestas de match.
+    """
+    ids_instituciones = {u.get("perfil", {}).get("institucion_id") for u in usuarios}
+    siglas = {
+        i["_id"]: i["sigla"]
+        async for i in db.instituciones.find({"_id": {"$in": [i for i in ids_instituciones if i]}}, {"sigla": 1})
+    }
+    return {
+        u["_id"]: {
+            "id": str(u["_id"]),
+            "nombre": u["nombre"],
+            "ap_paterno": u.get("ap_paterno"),
+            "foto_url": u.get("perfil", {}).get("foto_url"),
+            "carrera": u.get("perfil", {}).get("carrera"),
+            "institucion_sigla": siglas.get(u.get("perfil", {}).get("institucion_id")),
+            "verificado": u.get("verificacion", {}).get("estado") == "verificado",
+        }
+        for u in usuarios
+    }
+
+
 @router.get("")
 async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict = Depends(usuario_actual)):
     """HU-14: estudiantes compatibles, del más al menos compatible, de a 10.
@@ -32,7 +56,16 @@ async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict =
     if not (usuario.get("cuestionario") or {}).get("completo"):
         return {"cuestionario_completo": False, "total": 0, "pagina": 1, "paginas": 1, "resultados": []}
 
+    # CA-17.6: con quien ya se confirmó un match deja de aparecer como posible roomie
+    con_match = [
+        el_otro(m, yo)
+        async for m in db.matches.find(
+            {"$or": [{"usuario_a_id": yo}, {"usuario_b_id": yo}], "estado": {"$in": ["confirmado", "finalizado"]}},
+            {"usuario_a_id": 1, "usuario_b_id": 1},
+        )
+    ]
     calculos = [c async for c in db.compatibilidades.find({**de_usuario(yo), "descartado": False})]
+    calculos = [c for c in calculos if el_otro(c, yo) not in con_match]
     otros = {
         u["_id"]: u
         async for u in db.usuarios.find({**CANDIDATOS, "_id": {"$in": [el_otro(c, yo) for c in calculos]}})
@@ -42,25 +75,11 @@ async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict =
     )
     pagina_actual = calculos[(pagina - 1) * TAMANO_PAGINA : pagina * TAMANO_PAGINA]
 
-    ids_instituciones = {otros[el_otro(c, yo)].get("perfil", {}).get("institucion_id") for c in pagina_actual}
-    siglas = {
-        i["_id"]: i["sigla"]
-        async for i in db.instituciones.find({"_id": {"$in": [i for i in ids_instituciones if i]}}, {"sigla": 1})
-    }
+    tarjetas = await resumenes([otros[el_otro(c, yo)] for c in pagina_actual])
 
     def resumen(c: dict) -> dict:
-        otro = otros[el_otro(c, yo)]
-        perfil = otro.get("perfil", {})
         return {
-            "usuario": {
-                "id": str(otro["_id"]),
-                "nombre": otro["nombre"],
-                "ap_paterno": otro.get("ap_paterno"),
-                "foto_url": perfil.get("foto_url"),
-                "carrera": perfil.get("carrera"),
-                "institucion_sigla": siglas.get(perfil.get("institucion_id")),
-                "verificado": otro.get("verificacion", {}).get("estado") == "verificado",
-            },
+            "usuario": tarjetas[el_otro(c, yo)],
             "porcentaje": c["porcentaje"],
             "nivel": c["nivel"],
             "categorias_coincidentes": c["categorias_coincidentes"],

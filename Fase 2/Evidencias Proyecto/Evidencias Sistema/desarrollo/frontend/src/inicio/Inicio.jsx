@@ -17,8 +17,8 @@ import './inicio.css'
 const FUNCIONES = [
   { tipo: 'busqueda', titulo: 'Buscar alojamiento', a: '/alojamientos', texto: 'Filtra habitaciones y departamentos por precio, comuna y cercanía a tu sede.' },
   { tipo: 'cuestionario', titulo: 'Cuestionario de convivencia', a: '/perfil/cuestionario', texto: 'Cuéntanos tus horarios, orden, ruido, visitas y mascotas.' },
-  { tipo: 'roomie', titulo: 'Encontrar roomie', texto: 'Conoce estudiantes con hábitos parecidos a los tuyos.' },
-  { tipo: 'match', titulo: 'Propuestas de match', texto: 'RoomMatch te propondrá un match y ambos deciden si aceptan.' },
+  { tipo: 'roomie', titulo: 'Encontrar roomie', a: '/roomies', texto: 'Conoce estudiantes con hábitos parecidos a los tuyos.' },
+  { tipo: 'match', titulo: 'Propuestas de match', a: '/propuestas', texto: 'RoomMatch te propone alojamientos compatibles y ambos deciden si aceptan.' },
 ]
 
 /**

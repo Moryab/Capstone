@@ -75,3 +75,8 @@ html.tema-oscuro .alojamiento-etiquetas li { background: rgb(45 212 191 / 0.14);
 html.tema-oscuro .imprescindible { color: var(--fondo); }
 /* Enlaces de texto sin estilo propio: el azul por defecto del navegador casi no se lee de noche */
 html.tema-oscuro a:not([class]) { color: var(--primario); }
+
+/* Compatibilidad: los ámbar se aclaran para leerse de noche */
+html.tema-oscuro .compat-media,
+html.tema-oscuro .compat-categoria.parecido { --compat-color: #f6c26b; --estado-color: #f6c26b; }
+html.tema-oscuro .compat-baja { --compat-color: #fb923c; }
