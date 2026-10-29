@@ -1,0 +1,47 @@
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel
+
+# Mismos valores que el enum del modelo de datos (colección solicitudes_verificacion)
+TipoComprobante = Literal["certificado_alumno_regular", "comprobante_matricula", "credencial_estudiantil"]
+
+
+class SolicitudOut(BaseModel):
+    """Lo que ve el propio estudiante de su solicitud. No incluye la ruta del archivo en disco."""
+
+    id: str
+    codigo: int
+    institucion_id: str
+    institucion_nombre: str | None = None
+    tipo_comprobante: str
+    estado: str  # pendiente | en_revision | aprobada | rechazada
+    fecha_solicitud: datetime
+    fecha_revision: datetime | None = None
+    motivo_rechazo: str | None = None
+    archivo_nombre: str
+    archivo_formato: str
+
+    @classmethod
+    def desde_doc(cls, doc: dict, institucion_nombre: str | None = None) -> "SolicitudOut":
+        return cls(
+            id=str(doc["_id"]),
+            codigo=doc["codigo"],
+            institucion_id=str(doc["institucion_id"]),
+            institucion_nombre=institucion_nombre,
+            tipo_comprobante=doc["tipo_comprobante"],
+            estado=doc["estado"],
+            fecha_solicitud=doc["fecha_solicitud"],
+            fecha_revision=doc.get("fecha_revision"),
+            motivo_rechazo=doc.get("motivo_rechazo"),
+            archivo_nombre=doc["archivo"]["nombre_original"],
+            archivo_formato=doc["archivo"]["formato"],
+        )
+
+
+class VerificacionOut(BaseModel):
+    """CA-21.4: estado de la verificación del estudiante y su última solicitud, si hay."""
+
+    estado: str  # no_verificado | pendiente | verificado | rechazado | revocado
+    puede_solicitar: bool
+    solicitud: SolicitudOut | None = None

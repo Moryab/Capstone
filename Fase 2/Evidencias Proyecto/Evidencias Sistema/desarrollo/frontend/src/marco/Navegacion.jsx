@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import Avatar from '../componentes/Avatar.jsx'
 import Logo, { IconoLogo } from '../componentes/Logo.jsx'
 import {
-  IconoContraer, IconoInicio, IconoLista, IconoLupa, IconoMatch, IconoPersonas, IconoSalir, IconoTuerca,
-  IconoUsuario,
+  IconoContraer, IconoEscudo, IconoInicio, IconoLista, IconoLupa, IconoMatch, IconoPersonas, IconoSalir,
+  IconoTuerca, IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 
@@ -36,6 +36,9 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
         <span>{usuario.correo}</span>
       </div>
       <Link to="/perfil" className="i-menu-opcion"><IconoUsuario /> Ver mi perfil</Link>
+      <Link to="/verificacion" className="i-menu-opcion">
+        <IconoEscudo /> {usuario.verificacion_estado === 'verificado' ? 'Estudiante verificado' : 'Verificar mi condición de estudiante'}
+      </Link>
       <button type="button" className="i-menu-opcion peligro" onClick={cerrarSesion}>
         <IconoSalir /> Cerrar sesión
       </button>

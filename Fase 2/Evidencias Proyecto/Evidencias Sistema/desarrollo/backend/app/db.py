@@ -74,6 +74,14 @@ async def crear_indices() -> None:
         [("usuario_b_id", ASCENDING), ("vigente", ASCENDING)], name="usuario_b_id_1_vigente_1"
     )
 
+    # Solicitudes de verificación (HU-21). El índice por usuario y fecha no está en el modelo de
+    # datos: sirve para traer la última solicitud del estudiante
+    await db.solicitudes_verificacion.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.solicitudes_verificacion.create_index(
+        [("usuario_id", ASCENDING), ("fecha_solicitud", DESCENDING)],
+        name="usuario_id_1_fecha_solicitud_-1",
+    )
+
     # Propuestas de match (HU-17) y avisos, según el modelo de datos
     await db.matches.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
     await db.matches.create_index(

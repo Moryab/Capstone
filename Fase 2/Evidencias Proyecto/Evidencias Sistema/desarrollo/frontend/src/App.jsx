@@ -13,6 +13,7 @@ import MiPerfil from './paginas/MiPerfil.jsx'
 import PerfilUsuario from './paginas/PerfilUsuario.jsx'
 import Propuestas from './paginas/Propuestas.jsx'
 import Roomies from './paginas/Roomies.jsx'
+import PaginaVerificacion from './paginas/verificacion/PaginaVerificacion.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
 // La landing y el inicio se descargan solo cuando hacen falta (traen GSAP)
@@ -75,6 +76,8 @@ export default function App() {
           {/* EP-05: posibles roomies según la compatibilidad */}
           <Route path="/roomies" element={<Roomies />} />
           <Route path="/propuestas" element={<Propuestas />} />
+          {/* EP-02: verificación de la condición de estudiante */}
+          <Route path="/verificacion" element={<PaginaVerificacion />} />
         </Route>
         {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
         <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />

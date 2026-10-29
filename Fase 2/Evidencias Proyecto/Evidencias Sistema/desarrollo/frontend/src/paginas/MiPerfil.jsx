@@ -91,6 +91,12 @@ export default function MiPerfil() {
           <Link to="/perfil/editar">Completar ahora</Link>
         </p>
       )}
+      {['no_verificado', 'rechazado', 'revocado'].includes(usuario.verificacion_estado) && (
+        <p className="info">
+          Tu perfil aún no está verificado como estudiante.{' '}
+          <Link to="/verificacion">Verificar mi condición de estudiante</Link>
+        </p>
+      )}
       {mensaje.texto && (
         <p className={mensaje.tipo} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
       )}

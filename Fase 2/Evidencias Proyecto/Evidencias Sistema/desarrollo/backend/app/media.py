@@ -47,6 +47,30 @@ def guardar_foto_publicacion(publicacion_id: str, contenido: bytes, extension: s
     return _guardar("publicaciones", publicacion_id, contenido, extension)
 
 
+CARPETA_COMPROBANTES = Path(settings.privado_dir) / "comprobantes"
+
+
+def formato_comprobante(contenido: bytes) -> str | None:
+    """CA-21.2: devuelve «pdf», «jpg» o «png» según el contenido real del archivo; si no, None."""
+    if contenido.startswith(b"%PDF-"):
+        return "pdf"
+    extension = tipo_imagen(contenido)
+    return extension if extension in ("jpg", "png") else None
+
+
+def guardar_comprobante(usuario_id: str, contenido: bytes, formato: str) -> str:
+    """Guarda el comprobante en la carpeta privada y devuelve su nombre (no una URL pública)."""
+    CARPETA_COMPROBANTES.mkdir(parents=True, exist_ok=True)
+    nombre = f"{usuario_id}-{secrets.token_hex(8)}.{formato}"
+    (CARPETA_COMPROBANTES / nombre).write_bytes(contenido)
+    return nombre
+
+
+def ruta_comprobante(nombre: str) -> Path:
+    # Path(...).name evita que un nombre manipulado apunte fuera de la carpeta
+    return CARPETA_COMPROBANTES / Path(nombre).name
+
+
 def borrar_foto(url: str | None) -> None:
     """Borra del disco una foto guardada aquí. Ignora URLs ajenas o archivos que ya no están."""
     for carpeta, ruta in CARPETAS.items():

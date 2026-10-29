@@ -10,7 +10,9 @@ from app.config import settings
 from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
 from app.media import CARPETA_FOTOS, URL_MEDIA
-from app.routers import auth, catalogos, compatibilidades, cuestionario, matches, perfil, publicaciones, usuarios
+from app.routers import (
+    auth, catalogos, compatibilidades, cuestionario, matches, perfil, publicaciones, usuarios, verificacion,
+)
 
 
 @asynccontextmanager
@@ -95,6 +97,7 @@ app.include_router(cuestionario.router)
 app.include_router(compatibilidades.router)
 app.include_router(matches.router)
 app.include_router(publicaciones.router)
+app.include_router(verificacion.router)
 
 # Fotos subidas por los usuarios (perfil y alojamientos)
 CARPETA_FOTOS.mkdir(parents=True, exist_ok=True)
