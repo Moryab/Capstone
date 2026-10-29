@@ -4,11 +4,13 @@ import FormRegistro from '../componentes/FormRegistro.jsx'
 import Ilustracion from '../componentes/Ilustracion.jsx'
 import { useFondoCiudad } from '../fondo.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { useAplicarTema } from '../tema/contexto.js'
 
 // Login y registro en una sola pantalla con panel deslizante ("double slider").
 // La URL decide qué lado se ve: /login o /registro, así los enlaces y el botón atrás siguen funcionando
 export default function Acceso() {
   const { usuario } = useSesion()
+  useAplicarTema(true) // el login y el registro siempre en claro
   const { pathname, state } = useLocation()
   const navegar = useNavigate()
 

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { guardarLocal, leerLocal } from '../almacenamiento.js'
 import '../inicio/inicio.css'
 import { useSesion } from '../sesion/SesionContext.jsx'
-import { useTema } from '../tema/contexto.js'
+import { useAplicarTema, useTema } from '../tema/contexto.js'
 import Configuracion from './Configuracion.jsx'
 import Navegacion from './Navegacion.jsx'
 
@@ -16,6 +16,7 @@ const CLAVE_BARRA = 'rm_barra_contraida'
 export default function Marco({ children }) {
   const { usuario, cerrarSesion } = useSesion()
   const { tema, cambiarTema } = useTema()
+  useAplicarTema()
   const { pathname } = useLocation()
   const navegar = useNavigate()
   const [contraida, setContraidaEstado] = useState(() => leerLocal(CLAVE_BARRA, false))

@@ -72,7 +72,3 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/desarrollo/`:
 - **La API no responde**: revisar el error con `docker compose logs api` (en la carpeta `desarrollo`).
 - **Se cambió código del backend o `requirements.txt`**: volver a ejecutar `docker compose up -d --build`; sin `--build` sigue corriendo la versión anterior.
 - **Error de módulos en el frontend** (por ejemplo después de un `git pull`): ejecutar `npm install` en la carpeta `frontend`.
-
-
-
-holaaaa

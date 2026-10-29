@@ -5,6 +5,7 @@ import { IconoLogo } from '../componentes/Logo.jsx'
 import { lanzarConfeti } from '../inicio/confeti.js'
 import { gsap, prefiereSinMovimiento } from '../landing/animaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { useAplicarTema } from '../tema/contexto.js'
 import { aEstado, aPerfil, CATEGORIAS, CORTOS, pasosHechos, primerPendiente, TOTAL } from './datos.js'
 import Fondo from './Fondo.jsx'
 import Flujo from './Flujo.jsx'
@@ -65,6 +66,7 @@ function Bienvenida({ nombre, respondidas, alEmpezar }) {
  */
 export default function PaginaCuestionario() {
   const { usuario, recargarUsuario, cerrarSesion } = useSesion()
+  useAplicarTema(true) // recién registrado: siempre en claro; el tema se elige ya dentro de la app
   const navegar = useNavigate()
   // Se mira al entrar: al completarlo aquí no se debe redirigir antes de mostrar el resumen
   const [yaCompleto] = useState(usuario.cuestionario_completo)

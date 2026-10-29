@@ -2,6 +2,7 @@ import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
 import { useCallback, useEffect, useRef } from 'react'
 import { gsap, prefiereSinMovimiento, ScrollTrigger } from './animaciones.js'
+import { useAplicarTema } from '../tema/contexto.js'
 import { DesplazarContext } from './desplazar.js'
 import Alojamientos from './secciones/Alojamientos.jsx'
 import Compatibilidad from './secciones/Compatibilidad.jsx'
@@ -21,6 +22,7 @@ const ALTO_NAVBAR = 72
 // Página principal para quien aún no inicia sesión. Se carga aparte (lazy) para que GSAP y Lenis
 // no pesen en el resto de la app
 export default function Landing() {
+  useAplicarTema(true)
   const barraProgreso = useRef(null)
   const lenis = useRef(null)
 
