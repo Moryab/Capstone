@@ -3,10 +3,30 @@ import { Link } from 'react-router-dom'
 import Avatar from '../componentes/Avatar.jsx'
 import Logo, { IconoLogo } from '../componentes/Logo.jsx'
 import {
-  IconoContraer, IconoInicio, IconoLista, IconoLupa, IconoMatch, IconoPersonas, IconoSalir, IconoTuerca,
-  IconoUsuario,
+  IconoBandera, IconoCampana, IconoContraer, IconoEscudo, IconoGrafico, IconoInicio, IconoLista, IconoLupa,
+  IconoMatch, IconoPersonas, IconoSalir, IconoTuerca, IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
+
+// Opciones de la barra. `a` es la ruta; «Mis publicaciones» es un botón que baja a esa tarjeta del
+// inicio. `movil` es el texto corto de la barra inferior (sin él, la opción no va en el celular)
+const OPCIONES_ESTUDIANTE = [
+  { a: '/', texto: 'Inicio', movil: 'Inicio', Icono: IconoInicio },
+  { publicaciones: true, texto: 'Mis publicaciones', movil: 'Publicaciones', Icono: IconoLista },
+  { a: '/alojamientos', texto: 'Buscar alojamiento', movil: 'Buscar', Icono: IconoLupa },
+  // No caben 7 botones en el celular: «Encontrar roomie» queda en el inicio
+  { a: '/roomies', texto: 'Encontrar roomie', Icono: IconoPersonas },
+  { a: '/propuestas', texto: 'Propuestas de match', movil: 'Match', Icono: IconoMatch },
+]
+
+// Panel de administración (EP-02, EP-06, EP-07 y HU-20)
+const OPCIONES_ADMIN = [
+  { a: '/admin', texto: 'Estadísticas', movil: 'Resumen', Icono: IconoGrafico },
+  { a: '/admin/reportes', texto: 'Reportes', movil: 'Reportes', Icono: IconoBandera },
+  { a: '/admin/verificaciones', texto: 'Verificaciones', movil: 'Verificar', Icono: IconoEscudo },
+  { a: '/admin/usuarios', texto: 'Usuarios', movil: 'Usuarios', Icono: IconoPersonas },
+  { a: '/admin/publicaciones', texto: 'Publicaciones', movil: 'Publicaciones', Icono: IconoLista },
+]
 
 // Menú de la cuenta (ver perfil / cerrar sesión). Se cierra con Escape o al hacer clic afuera
 function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, className }) {
@@ -29,13 +49,16 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
   }, [abierto, setAbierto])
 
   if (!abierto) return null
+  const estudiante = usuario.rol !== 'administrador'
   return (
     <div ref={ref} id={idMenu} className={`i-menu ${className}`}>
       <div className="i-menu-cabecera">
         <strong>{mayusculaInicial(usuario.nombre)} {usuario.ap_paterno}</strong>
         <span>{usuario.correo}</span>
       </div>
-      <Link to="/perfil" className="i-menu-opcion"><IconoUsuario /> Ver mi perfil</Link>
+      {estudiante && <Link to="/perfil" className="i-menu-opcion"><IconoUsuario /> Ver mi perfil</Link>}
+      {/* EP-02 · HU-21 */}
+      {estudiante && <Link to="/verificacion" className="i-menu-opcion"><IconoEscudo /> Verificar que soy estudiante</Link>}
       <button type="button" className="i-menu-opcion peligro" onClick={cerrarSesion}>
         <IconoSalir /> Cerrar sesión
       </button>
@@ -45,14 +68,23 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
 
 /**
  * Navegación de las páginas con sesión: barra lateral contraíble en escritorio y barra inferior en móvil.
+ * Muestra las opciones del estudiante o las del panel de administración según el rol.
  * «Mis publicaciones» baja hasta esa tarjeta del inicio. El perfil se abre desde la cuenta
  * y publicar, desde la tarjeta grande del inicio.
  */
-export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, contraida, setContraida, abrirConfig, pathname }) {
+export default function Navegacion({
+  usuario, cerrarSesion, irAPublicaciones, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, pathname,
+}) {
   const actual = (ruta) => (pathname === ruta ? 'page' : undefined)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const idMenu = useId()
   const nombre = mayusculaInicial(usuario.nombre)
+  const admin = usuario.rol === 'administrador'
+  const opciones = admin ? OPCIONES_ADMIN : OPCIONES_ESTUDIANTE
+
+  const contador = noLeidas > 0 && (
+    <span className="i-contador" aria-label={`${noLeidas} sin leer`}>{noLeidas > 99 ? '99+' : noLeidas}</span>
+  )
 
   const botonCuenta = (clase, conTexto, controla) => (
     <button type="button" className={clase} data-abre-cuenta aria-haspopup="true"
@@ -61,11 +93,32 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
       {conTexto ? (
         <span className="i-cuenta-textos">
           <strong>{nombre}</strong>
-          <span>Mi cuenta</span>
+          <span>{admin ? 'Administración' : 'Mi cuenta'}</span>
         </span>
       ) : <span>Cuenta</span>}
     </button>
   )
+
+  const opcionLateral = ({ a, publicaciones, texto, Icono }) => (
+    <li key={texto}>
+      {publicaciones ? (
+        <button type="button" className="i-nav-item" onClick={irAPublicaciones} data-titulo={texto}>
+          <Icono /> <span className="i-nav-texto">{texto}</span>
+        </button>
+      ) : (
+        <Link to={a} className="i-nav-item" aria-current={actual(a)} data-titulo={texto}>
+          <Icono /> <span className="i-nav-texto">{texto}</span>
+        </Link>
+      )}
+    </li>
+  )
+
+  const opcionMovil = ({ a, publicaciones, movil, Icono }) => (publicaciones ? (
+    <button key={movil} type="button" className="i-movil-item" onClick={irAPublicaciones}><Icono /><span>{movil}</span></button>
+  ) : (
+    <Link key={movil} to={a} className="i-movil-item" aria-current={actual(a)}><Icono /><span>{movil}</span></Link>
+  ))
+  const enMovil = opciones.filter((o) => o.movil)
 
   return (
     <>
@@ -77,36 +130,13 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
         </div>
 
         <nav aria-label="Principal">
-          <ul className="i-nav">
-            <li>
-              <Link to="/" className="i-nav-item" aria-current={actual('/')} data-titulo="Inicio">
-                <IconoInicio /> <span className="i-nav-texto">Inicio</span>
-              </Link>
-            </li>
-            <li>
-              <button type="button" className="i-nav-item" onClick={irAPublicaciones} data-titulo="Mis publicaciones">
-                <IconoLista /> <span className="i-nav-texto">Mis publicaciones</span>
-              </button>
-            </li>
-            <li>
-              <Link to="/alojamientos" className="i-nav-item" aria-current={actual('/alojamientos')} data-titulo="Buscar alojamiento">
-                <IconoLupa /> <span className="i-nav-texto">Buscar alojamiento</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/roomies" className="i-nav-item" aria-current={actual('/roomies')} data-titulo="Encontrar roomie">
-                <IconoPersonas /> <span className="i-nav-texto">Encontrar roomie</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/propuestas" className="i-nav-item" aria-current={actual('/propuestas')} data-titulo="Propuestas de match">
-                <IconoMatch /> <span className="i-nav-texto">Propuestas de match</span>
-              </Link>
-            </li>
-          </ul>
+          <ul className="i-nav">{opciones.map(opcionLateral)}</ul>
         </nav>
 
         <div className="i-barra-pie">
+          <button type="button" className="i-nav-item" onClick={abrirAvisos} aria-haspopup="dialog" data-titulo="Avisos">
+            <IconoCampana /> <span className="i-nav-texto">Avisos</span> {contador}
+          </button>
           <button type="button" className="i-nav-item" onClick={abrirConfig} aria-haspopup="dialog" data-titulo="Configuración">
             <IconoTuerca /> <span className="i-nav-texto">Configuración</span>
           </button>
@@ -123,17 +153,18 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
         </div>
       </aside>
 
-      {/* Móvil: logo arriba y barra de navegación inferior */}
+      {/* Móvil: logo y campana arriba, y barra de navegación inferior */}
       <header className="i-barra-superior">
         <Logo />
+        <button type="button" className="i-movil-avisos" onClick={abrirAvisos} aria-haspopup="dialog" aria-label="Avisos">
+          <IconoCampana /> {contador}
+        </button>
       </header>
-      <nav className="i-nav-movil" aria-label="Principal (móvil)">
-        <Link to="/" className="i-movil-item" aria-current={actual('/')}><IconoInicio /><span>Inicio</span></Link>
-        <Link to="/alojamientos" className="i-movil-item" aria-current={actual('/alojamientos')}><IconoLupa /><span>Buscar</span></Link>
-        {/* No caben 7 botones: «Encontrar roomie» queda en el inicio y en la barra de escritorio */}
-        <Link to="/propuestas" className="i-movil-item" aria-current={actual('/propuestas')}><IconoMatch /><span>Match</span></Link>
-        <button type="button" className="i-movil-item" onClick={irAPublicaciones}><IconoLista /><span>Publicaciones</span></button>
-        <button type="button" className="i-movil-item" onClick={abrirConfig} aria-haspopup="dialog"><IconoTuerca /><span>Ajustes</span></button>
+      <nav className="i-nav-movil" aria-label="Principal (móvil)" style={{ gridTemplateColumns: `repeat(${enMovil.length + (admin ? 1 : 2)}, 1fr)` }}>
+        {enMovil.map(opcionMovil)}
+        {!admin && (
+          <button type="button" className="i-movil-item" onClick={abrirConfig} aria-haspopup="dialog"><IconoTuerca /><span>Ajustes</span></button>
+        )}
         <div className="i-cuenta movil">
           {botonCuenta('i-movil-item', false, `${idMenu}-movil`)}
         </div>

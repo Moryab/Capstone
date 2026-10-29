@@ -86,3 +86,13 @@ async def crear_indices() -> None:
     await db.notificaciones.create_index(
         [("usuario_id", ASCENDING), ("leido", ASCENDING)], name="usuario_id_1_leido_1"
     )
+
+    # Cada área agrega sus índices solo dentro de su bloque, así no se cruzan los cambios en git
+
+    # --- EP-08 · seguimiento post-match (HU-18 a HU-20) ---
+
+    # --- EP-06 · reportes y moderación (HU-24 a HU-27 y HU-30) ---
+
+    # --- EP-02 · verificación (HU-21 a HU-23) ---
+
+    # --- EP-07 · administración (HU-28 y HU-29) ---

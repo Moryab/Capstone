@@ -7,6 +7,8 @@ export default function RutaProtegida({ children, sinCuestionario = false }) {
   const { usuario, cargando } = useSesion()
   if (cargando) return <p className="cargando">Cargando…</p>
   if (!usuario) return <Navigate to="/login" replace />
+  // El administrador no usa las páginas de estudiante: tiene su propio panel
+  if (usuario.rol === 'administrador') return <Navigate to="/admin" replace />
   if (!sinCuestionario && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
   return children
 }

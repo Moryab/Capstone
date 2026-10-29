@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
+import BotonReportar from '../componentes/BotonReportar.jsx'
 import { SeccionCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import VistaPerfil from '../componentes/VistaPerfil.jsx'
 import { useFondoCiudad } from '../fondo.js'
@@ -46,7 +47,9 @@ export default function PerfilUsuario() {
     <div className="contenedor-perfil">
       {/* Desde «Posibles roomies» o un alojamiento se vuelve a esa misma página */}
       <Link to={state?.desde ?? '/'} className="volver">← Volver</Link>
-      <VistaPerfil perfil={resultado.perfil}>
+      {/* EP-06 · HU-24 y CA-16.5: el propio perfil nunca llega aquí (redirige a «Mi perfil») */}
+      <VistaPerfil perfil={resultado.perfil}
+        acciones={<BotonReportar tipo="perfil" id={id} nombre={resultado.perfil.nombre} />}>
         <SeccionCompatibilidad otroId={id} nombre={resultado.perfil.nombre} />
       </VistaPerfil>
     </div>

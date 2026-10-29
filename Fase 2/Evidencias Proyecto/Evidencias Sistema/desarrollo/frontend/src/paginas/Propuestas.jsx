@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
 import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
+import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { formatearFecha, formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
@@ -74,6 +75,7 @@ function TarjetaPropuesta({ p, alResponder }) {
         <div>
           <p className="propuesta-rol">{p.rol === 'buscador' ? 'Oferente' : 'Busca alojamiento'}</p>
           <Link to={`/usuarios/${otro.id}`} state={{ desde: '/propuestas' }}><strong>{nombreDe(otro)}</strong></Link>
+          {' '}<InsigniaVerificacion verificado={otro.verificado} />
           <p className="publicacion-meta">{[otro.carrera, otro.institucion_sigla].filter(Boolean).join(' · ')}</p>
         </div>
       </div>

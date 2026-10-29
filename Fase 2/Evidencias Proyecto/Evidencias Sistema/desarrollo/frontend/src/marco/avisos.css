@@ -1,0 +1,90 @@
+/* Campana de avisos: contador en la barra y lista del panel (marco/Avisos.jsx) */
+.i-contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 6px;
+  font: 700 0.72rem/1 'Work Sans', system-ui, sans-serif;
+  color: #fff;
+  background: var(--i-peligro);
+  border-radius: 999px;
+}
+/* Con la barra contraída o en móvil, el contador va sobre el ícono */
+.contraida .i-contador, .i-movil-avisos .i-contador {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 0.65rem;
+}
+.i-movil-avisos {
+  position: relative;
+  display: none;
+  margin-left: auto;
+  padding: 8px;
+  color: var(--i-suave);
+  background: none;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+@media (max-width: 899px) {
+  .i-movil-avisos { display: inline-flex; }
+}
+
+.avisos-todas {
+  justify-self: end;
+  padding: 4px 8px;
+  font: 600 0.85rem 'Work Sans', system-ui, sans-serif;
+  color: var(--i-acento);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.avisos-lista {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  background: var(--i-sup);
+  border: 1px solid var(--i-borde);
+  border-radius: 18px;
+}
+.avisos-lista li + li { border-top: 1px solid var(--i-borde); }
+.aviso {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px 14px 30px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.aviso:hover { background: var(--i-hover); }
+.aviso:focus-visible { outline: 3px solid var(--foco); outline-offset: -3px; }
+.aviso strong { font-family: 'Outfit', system-ui, sans-serif; color: var(--i-titulo); }
+.aviso span { font-size: 0.88rem; color: var(--i-suave); }
+.aviso time { font-size: 0.78rem; color: var(--i-suave); }
+.aviso.no-leido { background: var(--i-tinte); }
+.aviso.no-leido::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  background: var(--i-acento);
+  border-radius: 50%;
+}
+.avisos-vacio { display: grid; justify-items: center; gap: 8px; padding: 24px 8px; text-align: center; color: var(--i-suave); }
+.avisos-vacio span { color: var(--i-acento); }

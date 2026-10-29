@@ -17,5 +17,9 @@ class Settings(BaseSettings):
     media_dir: str = "/app/media"
     max_foto_mb: int = 5
 
+    # Cuenta de administrador que se crea al iniciar la API si no existe (EP-02, EP-06, EP-07, HU-20)
+    admin_correo: str | None = None
+    admin_password: str | None = None
+
 
 settings = Settings()

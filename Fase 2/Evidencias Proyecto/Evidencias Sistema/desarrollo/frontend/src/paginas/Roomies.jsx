@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
 import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
-import { IconoVerificado } from '../componentes/Iconos.jsx'
+import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { tituloCategoria } from '../cuestionario.js'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 
@@ -25,11 +25,7 @@ function TarjetaRoomie({ roomie, desde }) {
           <h2>
             {/* El enlace cubre toda la tarjeta; `desde` permite volver a esta misma página */}
             <Link to={`/usuarios/${usuario.id}`} state={{ desde }} className="roomie-enlace">{nombre}</Link>
-            {usuario.verificado && (
-              <span className="insignia-verificado" title="Estudiante con su condición acreditada">
-                <IconoVerificado /> Verificado
-              </span>
-            )}
+            <InsigniaVerificacion verificado={usuario.verificado} />
           </h2>
           <p className="publicacion-meta">{estudios || 'Carrera sin indicar'}</p>
         </div>
