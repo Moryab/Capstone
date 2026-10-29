@@ -11,7 +11,7 @@ from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto, tipo_imagen
-from app.routers.auth import datos_en_uso
+from app.routers.auth import campos_duplicados, datos_en_uso
 from app.routers.catalogos import ids_comunas
 from app.schemas.busqueda import Preferencias, PreferenciasIn, error_rango
 from app.schemas.perfil import EstudiosIn, OrigenIn, PerfilIn, PerfilOut, calcular_faltantes
@@ -44,12 +44,16 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
     if datos.sede not in [sede["nombre"] for sede in institucion.get("sedes", [])]:
         return datos_invalidos({"sede": "Selecciona una sede de tu institución"})
 
-    # CA-04.3: el correo nuevo no puede pertenecer a otra cuenta
-    otro = await db.usuarios.find_one(
-        {"correo": datos.correo, "_id": {"$ne": usuario["_id"]}}, {"_id": 1}
-    )
-    if otro:
-        return datos_en_uso(["correo"])
+    # CA-04.3: el correo y el teléfono nuevos no pueden pertenecer a otra cuenta
+    repetidos = [
+        campo
+        for campo, ruta in (("correo", "correo"), ("telefono", "perfil.telefono"))
+        if await db.usuarios.find_one(
+            {ruta: getattr(datos, campo), "_id": {"$ne": usuario["_id"]}}, {"_id": 1}
+        )
+    ]
+    if repetidos:
+        return datos_en_uso(repetidos)
 
     perfil = {
         "institucion_id": institucion_id,
@@ -81,8 +85,8 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
 
     try:
         await db.usuarios.update_one({"_id": usuario["_id"]}, {"$set": cambios})
-    except DuplicateKeyError:
-        return datos_en_uso(["correo"])
+    except DuplicateKeyError as e:
+        return datos_en_uso(campos_duplicados(e))
 
     actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
     return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}

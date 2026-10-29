@@ -8,7 +8,7 @@ from pymongo.errors import DuplicateKeyError
 from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
-from app.schemas.perfil import CAMPOS_OBLIGATORIOS
+from app.schemas.perfil import calcular_faltantes
 from app.schemas.usuarios import LoginIn, RegistroIn, TokenOut, UsuarioOut, fecha_a_datetime
 from app.security import cifrar_password, crear_token, verificar_password
 
@@ -16,14 +16,27 @@ router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
 CREDENCIALES_INVALIDAS = "Correo o contraseña incorrectos"  # CA-02.2: mensaje genérico
 
-EN_USO = {"correo": "El correo ya está en uso", "rut": "El RUT ya está registrado"}
+EN_USO = {
+    "correo": "El correo ya está en uso",
+    "rut": "El RUT ya está registrado",
+    "telefono": "El teléfono ya está registrado",
+}
+
+# Dónde está guardado cada dato único en el documento del usuario
+RUTA_EN_DOC = {"rut": "rut", "correo": "correo", "telefono": "perfil.telefono"}
 
 
 def datos_en_uso(campos: list[str]) -> JSONResponse:
     """CA-01.2: indica cuál de los datos únicos ya pertenece a otra cuenta."""
     errores = {campo: EN_USO[campo] for campo in campos}
-    detalle = next(iter(errores.values())) if len(errores) == 1 else "El RUT y el correo ya están en uso"
+    detalle = next(iter(errores.values())) if len(errores) == 1 else "Algunos datos ya están en uso"
     return JSONResponse(status_code=409, content={"detail": detalle, "errores": errores})
+
+
+def campos_duplicados(error: DuplicateKeyError) -> list[str]:
+    """Traduce el índice que reclamó (por ejemplo «perfil.telefono») al nombre del campo."""
+    claves = error.details.get("keyPattern", {"correo": 1})
+    return [campo for campo, ruta in RUTA_EN_DOC.items() if ruta in claves]
 
 
 @router.post("/registro", status_code=status.HTTP_201_CREATED)
@@ -31,8 +44,8 @@ async def registrar(datos: RegistroIn):
     """HU-01: registro de estudiante."""
     repetidos = [
         campo
-        for campo in ("rut", "correo")
-        if await db.usuarios.find_one({campo: getattr(datos, campo)}, {"_id": 1})
+        for campo, ruta in RUTA_EN_DOC.items()
+        if await db.usuarios.find_one({ruta: getattr(datos, campo)}, {"_id": 1})
     ]
     if repetidos:
         return datos_en_uso(repetidos)
@@ -55,14 +68,19 @@ async def registrar(datos: RegistroIn):
         "match_activo_id": None,
         "correo_verificado": False,
         "verificacion": {"estado": "no_verificado"},
-        "perfil": {"perfil_completo": False, "campos_faltantes": list(CAMPOS_OBLIGATORIOS)},
+        # El teléfono se pide al registrarse; el resto del perfil se completa después
+        "perfil": {
+            "telefono": datos.telefono,
+            "perfil_completo": False,
+            "campos_faltantes": calcular_faltantes({"telefono": datos.telefono}),
+        },
         "seguridad": {"intentos_fallidos": 0, "bloqueado_hasta": None, "token_version": 0},
     }
     try:
         resultado = await db.usuarios.insert_one(doc)
     except DuplicateKeyError as e:
         # Dos registros simultáneos con el mismo dato pasan la revisión de arriba
-        return datos_en_uso(list(e.details.get("keyPattern", {"correo": 1})))
+        return datos_en_uso(campos_duplicados(e))
 
     doc["_id"] = resultado.inserted_id
     return {"mensaje": "Registro exitoso", "usuario": UsuarioOut.desde_doc(doc)}

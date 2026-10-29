@@ -28,6 +28,14 @@ def normalizar_rut(rut: str) -> str:
     return f"{cuerpo}-{dv}"
 
 
+def normalizar_telefono(telefono: str) -> str:
+    """Acepta 9 1234 5678, 912345678 o +56 9 1234 5678 y lo deja como +56912345678."""
+    digitos = re.sub(r"[\s()-]", "", telefono).removeprefix("+").removeprefix("56")
+    if not re.fullmatch(r"\d{9}", digitos):
+        raise ValueError("Ingresa un teléfono de 9 dígitos, por ejemplo 9 1234 5678")
+    return f"+56{digitos}"
+
+
 def fecha_a_datetime(fecha: date) -> datetime:
     """Mongo no tiene tipo fecha sin hora; se guarda a medianoche UTC."""
     return datetime.combine(fecha, datetime.min.time(), timezone.utc)
@@ -70,6 +78,7 @@ class DatosPersonales(BaseModel):
 
 class RegistroIn(DatosPersonales):
     rut: str
+    telefono: str
     password: str
     confirmacion: str
 
@@ -77,6 +86,11 @@ class RegistroIn(DatosPersonales):
     @classmethod
     def validar_rut(cls, v):
         return normalizar_rut(v)
+
+    @field_validator("telefono")
+    @classmethod
+    def validar_telefono(cls, v):
+        return normalizar_telefono(v)
 
     @field_validator("password")
     @classmethod

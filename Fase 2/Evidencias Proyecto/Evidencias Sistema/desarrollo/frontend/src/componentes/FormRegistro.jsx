@@ -7,7 +7,7 @@ import Campo from './Campo.jsx'
 
 const VACIO = {
   rut: '', nombre: '', ap_paterno: '', ap_materno: '', fecha_nac: '', genero: '',
-  correo: '', password: '', confirmacion: '',
+  correo: '', telefono: '', password: '', confirmacion: '',
 }
 
 // HU-01: registro de estudiante
@@ -73,8 +73,13 @@ export default function FormRegistro() {
         <Campo etiqueta="Género" nombre="genero" value={datos.genero} onChange={cambiar}
           error={errores.genero} opciones={GENEROS} required />
       </div>
-      <Campo etiqueta="Correo" nombre="correo" id="reg-correo" type="email" value={datos.correo}
-        onChange={cambiar} error={errores.correo} autoComplete="email" required />
+      <div className="fila">
+        <Campo etiqueta="Correo" nombre="correo" id="reg-correo" type="email" value={datos.correo}
+          onChange={cambiar} error={errores.correo} autoComplete="email" required />
+        <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
+          onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
+          autoComplete="tel" required />
+      </div>
       <div className="fila">
         <Campo etiqueta="Contraseña" nombre="password" id="reg-password" type="password"
           value={datos.password} onChange={cambiar} error={errores.password}

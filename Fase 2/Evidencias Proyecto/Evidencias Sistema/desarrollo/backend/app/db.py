@@ -28,6 +28,13 @@ async def crear_indices() -> None:
     if "partialFilterExpression" in indices.get("rut_1", {}):
         await db.usuarios.drop_index("rut_1")
     await db.usuarios.create_index([("rut", ASCENDING)], unique=True, name="rut_1")
+    # El teléfono no se repite entre cuentas; es parcial porque las cuentas antiguas pueden no tenerlo
+    await db.usuarios.create_index(
+        [("perfil.telefono", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"perfil.telefono": {"$type": "string"}},
+        name="perfil.telefono_1",
+    )
 
     await db.comunas.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
     await db.comunas.create_index([("centro", GEOSPHERE)], name="centro_2dsphere")

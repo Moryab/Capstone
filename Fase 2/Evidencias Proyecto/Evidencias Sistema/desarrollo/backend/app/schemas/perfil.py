@@ -1,10 +1,9 @@
-import re
 from datetime import date, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.cuestionario import importancia_de, respuestas_de
-from app.schemas.usuarios import DatosPersonales
+from app.schemas.usuarios import DatosPersonales, normalizar_telefono
 
 REGIONES = [
     "Arica y Parinacota",
@@ -41,14 +40,6 @@ ANIO_MINIMO_INGRESO = 1980
 
 def calcular_faltantes(perfil: dict) -> list[str]:
     return [campo for campo in CAMPOS_OBLIGATORIOS if not perfil.get(campo)]
-
-
-def normalizar_telefono(telefono: str) -> str:
-    """Acepta 9 1234 5678, 912345678 o +56 9 1234 5678 y lo deja como +56912345678."""
-    digitos = re.sub(r"[\s()-]", "", telefono).removeprefix("+").removeprefix("56")
-    if not re.fullmatch(r"\d{9}", digitos):
-        raise ValueError("Ingresa un teléfono de 9 dígitos, por ejemplo 9 1234 5678")
-    return f"+56{digitos}"
 
 
 class PerfilIn(DatosPersonales):
