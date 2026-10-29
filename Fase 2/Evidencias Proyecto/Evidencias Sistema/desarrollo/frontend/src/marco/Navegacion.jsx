@@ -84,6 +84,11 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
               </Link>
             </li>
             <li>
+              <button type="button" className="i-nav-item" onClick={irAPublicaciones} data-titulo="Mis publicaciones">
+                <IconoLista /> <span className="i-nav-texto">Mis publicaciones</span>
+              </button>
+            </li>
+            <li>
               <Link to="/alojamientos" className="i-nav-item" aria-current={actual('/alojamientos')} data-titulo="Buscar alojamiento">
                 <IconoLupa /> <span className="i-nav-texto">Buscar alojamiento</span>
               </Link>
@@ -97,11 +102,6 @@ export default function Navegacion({ usuario, cerrarSesion, irAPublicaciones, co
               <Link to="/propuestas" className="i-nav-item" aria-current={actual('/propuestas')} data-titulo="Propuestas de match">
                 <IconoMatch /> <span className="i-nav-texto">Propuestas de match</span>
               </Link>
-            </li>
-            <li>
-              <button type="button" className="i-nav-item" onClick={irAPublicaciones} data-titulo="Mis publicaciones">
-                <IconoLista /> <span className="i-nav-texto">Mis publicaciones</span>
-              </button>
             </li>
           </ul>
         </nav>
