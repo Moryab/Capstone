@@ -76,15 +76,11 @@ export default function MiPerfil() {
     </>
   )
 
-  const acciones = (
-    <>
-      <Link to="/perfil/editar" className="boton">Editar perfil</Link>
-      {perfil.foto_url && (
-        <button type="button" className="boton secundario" onClick={quitarFoto} disabled={subiendo}>
-          Quitar foto
-        </button>
-      )}
-    </>
+  // Editar el perfil se hace desde la pestaña de arriba; aquí solo queda quitar la foto, si hay
+  const acciones = perfil.foto_url && (
+    <button type="button" className="boton secundario" onClick={quitarFoto} disabled={subiendo}>
+      Quitar foto
+    </button>
   )
 
   const aviso = (

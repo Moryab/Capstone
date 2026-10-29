@@ -8,57 +8,61 @@ import Cuestionario from './paginas/Cuestionario.jsx'
 import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
 import FormPublicacion from './paginas/FormPublicacion.jsx'
-import Inicio from './paginas/Inicio.jsx'
 import LayoutPerfil from './paginas/LayoutPerfil.jsx'
+import Marco from './marco/Marco.jsx'
 import MiPerfil from './paginas/MiPerfil.jsx'
 import PerfilUsuario from './paginas/PerfilUsuario.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
-// La landing se descarga solo cuando hace falta (trae GSAP y Lenis)
+// La landing y el inicio se descargan solo cuando hacen falta (traen GSAP)
 const Landing = lazy(() => import('./landing/Landing.jsx'))
+const Inicio = lazy(() => import('./inicio/Inicio.jsx'))
 
 // En «/»: quien no ha iniciado sesión ve la landing; quien sí, su página de inicio
 function Raiz() {
   const { usuario, cargando } = useSesion()
   if (cargando) return <p className="cargando">Cargando…</p>
-  if (usuario) return <Inicio />
   return (
-    <Suspense fallback={null}>
-      <Landing />
+    <Suspense fallback={usuario ? <p className="cargando">Cargando…</p> : null}>
+      {usuario ? <Marco><Inicio /></Marco> : <Landing />}
     </Suspense>
   )
 }
 
 export default function App() {
-  const { usuario, cargando } = useSesion()
   const { pathname } = useLocation()
-  // La landing trae su propia barra de navegación
-  const enLanding = pathname === '/' && !usuario && !cargando
+  // La cabecera con el logo solo va en el acceso; la landing y las páginas con sesión traen su
+  // propia navegación (las segundas, con el marco común: barra lateral y configuración)
+  const enAcceso = pathname === '/login' || pathname === '/registro'
 
   return (
     <>
-      {!enLanding && (
+      {enAcceso && (
         <header className="cabecera">
           <Logo />
         </header>
       )}
       <Routes>
         <Route path="/" element={<Raiz />} />
-        {/* Ruta padre: el marco con las pestañas no se desmonta al cambiar de pestaña */}
-        <Route path="/perfil" element={<RutaProtegida><LayoutPerfil /></RutaProtegida>}>
-          <Route index element={<MiPerfil />} />
-          <Route path="editar" element={<EditarPerfil />} />
-          <Route path="cuestionario" element={<Cuestionario />} />
+        {/* Páginas con sesión: comparten el marco (barra lateral y configuración), que no se
+            desmonta al pasar de una a otra */}
+        <Route element={<RutaProtegida><Marco /></RutaProtegida>}>
+          {/* Ruta padre: el marco con las pestañas no se desmonta al cambiar de pestaña */}
+          <Route path="/perfil" element={<LayoutPerfil />}>
+            <Route index element={<MiPerfil />} />
+            <Route path="editar" element={<EditarPerfil />} />
+            <Route path="cuestionario" element={<Cuestionario />} />
+          </Route>
+          <Route path="/usuarios/:id" element={<PerfilUsuario />} />
+          {/* EP-03: publicación de alojamientos */}
+          <Route path="/publicaciones/nueva" element={<FormPublicacion />} />
+          <Route path="/publicaciones/:id/editar" element={<FormPublicacion />} />
+          <Route path="/alojamientos/:id" element={<DetallePublicacion />} />
+          {/* EP-04: búsqueda y filtros */}
+          <Route path="/alojamientos" element={<Alojamientos />} />
         </Route>
-        <Route path="/usuarios/:id" element={<RutaProtegida><PerfilUsuario /></RutaProtegida>} />
-        {/* EP-03: publicación de alojamientos */}
         {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
         <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />
-        <Route path="/publicaciones/nueva" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
-        <Route path="/publicaciones/:id/editar" element={<RutaProtegida><FormPublicacion /></RutaProtegida>} />
-        <Route path="/alojamientos/:id" element={<RutaProtegida><DetallePublicacion /></RutaProtegida>} />
-        {/* EP-04: búsqueda y filtros */}
-        <Route path="/alojamientos" element={<RutaProtegida><Alojamientos /></RutaProtegida>} />
         {/* Ruta padre compartida: Acceso no se desmonta al cambiar entre /login y /registro,
             así el panel se desliza en vez de recargar la página */}
         <Route element={<Acceso />}>
