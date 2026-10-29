@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
+from app.compatibilidad import recalcular
 from app.db import db, siguiente_codigo
 from app.deps import usuario_actual
 from app.schemas.cuestionario import CuestionarioIn, CuestionarioOut, importancia_de, respuestas_de
@@ -62,7 +63,11 @@ async def guardar_cuestionario(datos: CuestionarioIn, usuario: dict = Depends(us
     if historial:
         await db.historial_cuestionario.insert_many(historial)
 
+    # CA-14.5 y CA-04.4: la compatibilidad se recalcula con las respuestas nuevas
+    calculadas = await recalcular({**usuario, "cuestionario": cuestionario})
+
     return {
         "mensaje": "Cuestionario guardado",
         "cuestionario": CuestionarioOut.desde_doc({"cuestionario": cuestionario}),
+        "compatibilidades_calculadas": calculadas,
     }
