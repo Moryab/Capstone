@@ -60,7 +60,9 @@ function EstadoVerificacion({ verificacion, verComprobante, abriendo }) {
   if (estado === 'revocado') {
     return (
       <p className="alerta">
-        Tu verificación fue revocada. Si sigues estudiando, envía un comprobante actualizado.
+        Un administrador revocó tu verificación.
+        {verificacion.motivo_revocacion && <> Motivo: <strong>{verificacion.motivo_revocacion}</strong>.</>}
+        {' '}Si sigues estudiando, envía un comprobante actualizado.
       </p>
     )
   }

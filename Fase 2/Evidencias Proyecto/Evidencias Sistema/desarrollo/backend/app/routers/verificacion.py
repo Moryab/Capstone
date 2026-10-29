@@ -14,7 +14,7 @@ from app.deps import solo_admin, usuario_actual
 from app.matching import notificar
 from app.media import formato_comprobante, guardar_comprobante, ruta_comprobante
 from app.schemas.verificacion import (
-    RechazoIn, SolicitanteOut, SolicitudAdminOut, SolicitudOut, SolicitudResumenOut, TipoComprobante,
+    RechazoIn, RevocacionIn, SolicitanteOut, SolicitudAdminOut, SolicitudOut, SolicitudResumenOut, TipoComprobante,
     VerificacionOut,
 )
 
@@ -42,7 +42,12 @@ async def verificacion_out(usuario: dict) -> VerificacionOut:
     if solicitud:
         institucion = await db.instituciones.find_one({"_id": solicitud["institucion_id"]}, {"nombre": 1})
         solicitud = SolicitudOut.desde_doc(solicitud, institucion and institucion["nombre"])
-    return VerificacionOut(estado=estado, puede_solicitar=estado in PUEDE_SOLICITAR, solicitud=solicitud)
+    return VerificacionOut(
+        estado=estado,
+        puede_solicitar=estado in PUEDE_SOLICITAR,
+        motivo_revocacion=usuario.get("verificacion", {}).get("motivo_revocacion") if estado == "revocado" else None,
+        solicitud=solicitud,
+    )
 
 
 @router.get("", response_model=VerificacionOut)
@@ -289,6 +294,37 @@ async def rechazar_solicitud(solicitud_id: str, datos: RechazoIn, admin: dict = 
         solicitud["usuario_id"], tipo_entidad="usuario",
     )
     return {"mensaje": "Solicitud rechazada. Se le avisó al estudiante con el motivo"}
+
+
+@router.post("/usuarios/{usuario_id}/revocar")
+async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict = Depends(solo_admin)):
+    """CA-23.4: un administrador deja sin efecto la verificación. La insignia sale de todas las
+    vistas porque todas la calculan desde verificacion.estado. El estudiante puede volver a
+    solicitarla con un comprobante actualizado."""
+    try:
+        oid = ObjectId(usuario_id)
+    except InvalidId:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    ahora = datetime.now(timezone.utc)
+    resultado = await db.usuarios.update_one(
+        {"_id": oid, "verificacion.estado": "verificado"},
+        {"$set": {
+            "verificacion.estado": "revocado",
+            "verificacion.fecha_revocacion": ahora,
+            "verificacion.admin_id": admin["_id"],
+            # Campo nuevo (no está en el modelo de datos): se le muestra al estudiante
+            "verificacion.motivo_revocacion": datos.motivo,
+            "fecha_actualizacion": ahora,
+        }},
+    )
+    if not resultado.matched_count:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este perfil no tiene una verificación vigente")
+    await notificar(
+        oid, "verificacion_estudiante", "Tu verificación de estudiante fue revocada",
+        f"Motivo: {datos.motivo.rstrip('.')}. Puedes volver a solicitarla con un comprobante actualizado.",
+        oid, tipo_entidad="usuario",
+    )
+    return {"mensaje": "Verificación revocada. La insignia ya no aparece en el perfil"}
 
 
 @router.get("/solicitudes/{solicitud_id}/comprobante")

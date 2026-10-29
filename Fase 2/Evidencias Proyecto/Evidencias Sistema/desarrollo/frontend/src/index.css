@@ -596,6 +596,22 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
   background: #ccfbf1;
   border-radius: 999px;
 }
+/* HU-23: marca de los perfiles que aún no acreditan su condición de estudiante */
+.insignia-sin-verificar {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-family: 'Work Sans', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px dashed var(--borde);
+  border-radius: 999px;
+}
+.insignia-verificado, .insignia-sin-verificar { vertical-align: middle; white-space: nowrap; }
+.detalle-oferente .insignia-verificado,
+.detalle-oferente .insignia-sin-verificar { align-self: flex-start; margin: 3px 0; }
 .perfil-titular { margin: 6px 0 12px; font-size: 1.05rem; font-weight: 500; color: var(--texto-suave); }
 
 .perfil-datos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -1482,3 +1498,4 @@ p.compat-oferente { font-size: 0.85rem; }
   .revision { grid-template-columns: 1fr; }
   .comprobante-vista { height: 420px; }
 }
+.revision-revocar, .revision-decision > .acciones { margin-top: 16px; }

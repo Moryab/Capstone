@@ -96,9 +96,24 @@ class RechazoIn(BaseModel):
         return v
 
 
+class RevocacionIn(BaseModel):
+    """CA-23.4: dejar sin efecto una verificación también exige un motivo para el estudiante."""
+
+    motivo: str = Field(max_length=300)
+
+    @field_validator("motivo")
+    @classmethod
+    def motivo_obligatorio(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Escribe el motivo de la revocación")
+        return v
+
+
 class VerificacionOut(BaseModel):
     """CA-21.4: estado de la verificación del estudiante y su última solicitud, si hay."""
 
     estado: str  # no_verificado | pendiente | verificado | rechazado | revocado
     puede_solicitar: bool
+    motivo_revocacion: str | None = None
     solicitud: SolicitudOut | None = None

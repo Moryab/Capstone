@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { CATEGORIAS, textoRespuesta } from '../cuestionario.js'
 import { textoGenero } from '../perfil.js'
 import Avatar from './Avatar.jsx'
+import InsigniaVerificacion from './InsigniaVerificacion.jsx'
 import {
-  IconoBirrete, IconoCalendario, IconoHogar, IconoPersona, IconoUbicacion, IconoVerificado,
+  IconoBirrete, IconoCalendario, IconoHogar, IconoPersona, IconoUbicacion,
 } from './Iconos.jsx'
 
 const mesYAnio = (fecha) =>
@@ -44,11 +45,7 @@ export default function VistaPerfil({ perfil, sobreAvatar, acciones, aviso, chil
         <div className="perfil-identidad">
           <h1>
             {perfil.nombre} {perfil.ap_paterno}
-            {perfil.verificado && (
-              <span className="insignia-verificado" title="Estudiante con su condición acreditada">
-                <IconoVerificado /> Verificado
-              </span>
-            )}
+            <InsigniaVerificacion verificado={perfil.verificado} />
           </h1>
           <p className="perfil-titular">
             {perfil.carrera || 'Carrera sin indicar'}

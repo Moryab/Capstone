@@ -56,6 +56,7 @@ export default function RevisarSolicitud() {
   const volver = state?.vista === 'procesadas' ? '/admin/verificaciones?vista=procesadas' : '/admin/verificaciones'
   const [solicitud, setSolicitud] = useState(null)
   const [rechazando, setRechazando] = useState(false)
+  const [revocando, setRevocando] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [errorMotivo, setErrorMotivo] = useState('')
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
@@ -75,31 +76,37 @@ export default function RevisarSolicitud() {
 
   if (!solicitud) return <p className="cargando">{mensaje.texto || 'Cargando…'}</p>
 
-  const resolver = async (accion, datos) => {
+  const resolver = async (ruta, datos) => {
     setEnviando(true)
     setMensaje({ tipo: '', texto: '' })
     try {
-      const respuesta = await api(`/verificacion/solicitudes/${id}/${accion}`, { metodo: 'POST', datos })
+      const respuesta = await api(ruta, { metodo: 'POST', datos })
       setMensaje({ tipo: 'exito', texto: `${respuesta.mensaje}.` })
       setRechazando(false)
+      setRevocando(false)
+      setMotivo('')
     } catch (err) {
       // CA-22.3: sin motivo no se rechaza. CA-22.4: 409 si otro administrador ya la procesó
       if (err.errores?.motivo) setErrorMotivo(err.errores.motivo)
-      setMensaje({ tipo: 'alerta', texto: err.errores ? 'Revisa el motivo del rechazo' : err.message })
+      setMensaje({ tipo: 'alerta', texto: err.errores ? 'Revisa el motivo' : err.message })
     } finally {
       setEnviando(false)
       await cargar()
     }
   }
 
-  const rechazar = (e) => {
+  // Rechazar (CA-22.3) y revocar (CA-23.4) piden un motivo, que el estudiante verá
+  const conMotivo = (ruta, faltante) => (e) => {
     e.preventDefault()
     if (!motivo.trim()) {
-      setErrorMotivo('Escribe el motivo del rechazo')
+      setErrorMotivo(faltante)
       return
     }
-    resolver('rechazar', { motivo: motivo.trim() })
+    resolver(ruta, { motivo: motivo.trim() })
   }
+  const rechazar = conMotivo(`/verificacion/solicitudes/${id}/rechazar`, 'Escribe el motivo del rechazo')
+  const revocar = conMotivo(`/verificacion/usuarios/${solicitud.solicitante.id}/revocar`,
+    'Escribe el motivo de la revocación')
 
   const { solicitante: estudiante } = solicitud
   const porRevisar = POR_REVISAR.includes(solicitud.estado)
@@ -182,7 +189,7 @@ export default function RevisarSolicitud() {
                 disabled={enviando}>
                 Rechazar
               </button>
-              <button type="button" className="boton" onClick={() => resolver('aprobar')} disabled={enviando}>
+              <button type="button" className="boton" onClick={() => resolver(`/verificacion/solicitudes/${id}/aprobar`)} disabled={enviando}>
                 {enviando ? 'Aprobando…' : 'Aprobar'}
               </button>
             </div>
@@ -198,7 +205,39 @@ export default function RevisarSolicitud() {
             </Dato>
             <Dato etiqueta="Revisada por">{solicitud.admin_revisor}</Dato>
             {solicitud.motivo_rechazo && <Dato etiqueta="Motivo">{solicitud.motivo_rechazo}</Dato>}
+            {solicitud.estado === 'aprobada' && (
+              <Dato etiqueta="Verificación hoy">
+                {estudiante.verificacion_estado === 'verificado' ? 'Vigente' : 'Ya no está vigente'}
+              </Dato>
+            )}
           </dl>
+
+          {/* CA-23.4: solo se revoca una verificación vigente */}
+          {solicitud.estado === 'aprobada' && estudiante.verificacion_estado === 'verificado' && (
+            revocando ? (
+              <form onSubmit={revocar} noValidate className="revision-revocar">
+                <Campo etiqueta="Motivo de la revocación" nombre="motivo" multilinea rows={3} value={motivo}
+                  onChange={(e) => { setMotivo(e.target.value); setErrorMotivo('') }}
+                  error={errorMotivo} maxLength={MAX_MOTIVO} required autoFocus
+                  ayuda={`La insignia dejará de aparecer en su perfil. ${motivo.length}/${MAX_MOTIVO} caracteres`} />
+                <div className="acciones">
+                  <button type="button" className="boton secundario" onClick={() => setRevocando(false)}
+                    disabled={enviando}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="boton peligro" disabled={enviando}>
+                    {enviando ? 'Revocando…' : 'Confirmar revocación'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="acciones">
+                <button type="button" className="boton peligro-suave" onClick={() => setRevocando(true)}>
+                  Revocar verificación
+                </button>
+              </div>
+            )
+          )}
         </section>
       )}
     </main>

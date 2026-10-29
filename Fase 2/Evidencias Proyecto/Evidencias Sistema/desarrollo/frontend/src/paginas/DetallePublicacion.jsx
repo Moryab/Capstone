@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
+import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { CompatibilidadOferente } from '../componentes/Compatibilidad.jsx'
 import {
   CARACTERISTICAS, ESTADOS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, REGLAS, SERVICIOS,
@@ -99,7 +100,8 @@ export default function DetallePublicacion() {
               <Avatar nombre={oferente.nombre} apellido={oferente.ap_paterno} foto={oferente.foto_url} tamano={44} />
               <span>
                 <strong>{oferente.nombre} {oferente.ap_paterno}</strong>
-                <small>{oferente.verificado ? 'Estudiante verificado' : 'Ver perfil del oferente'}</small>
+                <InsigniaVerificacion verificado={oferente.verificado} />
+                <small>Ver perfil del oferente</small>
               </span>
             </Link>
           )}

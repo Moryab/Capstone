@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
+import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { formatearFecha, formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
@@ -74,6 +75,7 @@ function TarjetaPropuesta({ p, alResponder }) {
         <div>
           <p className="propuesta-rol">{p.rol === 'buscador' ? 'Oferente' : 'Busca alojamiento'}</p>
           <Link to={`/usuarios/${otro.id}`} state={{ desde: '/propuestas' }}><strong>{nombreDe(otro)}</strong></Link>
+          {' '}<InsigniaVerificacion verificado={otro.verificado} />
           <p className="publicacion-meta">{[otro.carrera, otro.institucion_sigla].filter(Boolean).join(' · ')}</p>
         </div>
       </div>
