@@ -21,6 +21,15 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Logo de RoomMatch con el lema Tu hogar y tu roomie ideal" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Aplica el tema guardado antes de cargar la app, para que no se vea un destello claro -->
+    <script>
+      try {
+        var tema = JSON.parse(localStorage.getItem('rm_tema'))
+        if (tema === 'oscuro' || (!tema && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('tema-oscuro')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

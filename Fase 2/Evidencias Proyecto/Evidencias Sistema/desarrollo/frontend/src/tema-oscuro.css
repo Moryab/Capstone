@@ -1,0 +1,70 @@
+/* =====================================================================
+   Modo oscuro de toda la app (menos la landing, que tiene su propio diseño).
+   Se activa con la clase tema-oscuro en <html> (ver tema/TemaProvider.jsx).
+   Casi todo index.css usa variables, así que basta con cambiar sus valores;
+   abajo se corrigen los pocos colores fijos.
+   ===================================================================== */
+
+html.tema-oscuro {
+  --fondo: #071220;
+  --tarjeta: #0d1b2e;
+  --texto: #d5e2e8;
+  --texto-suave: #9db2bf;
+  --marca: #eef5f8;
+  --campo: #13253b;
+  --borde: #233a52;
+  /* El verde azulado se aclara para leerse sobre fondo oscuro; lo que va encima pasa a texto oscuro */
+  --primario: #2dd4bf;
+  --primario-hover: #5eead4;
+  --foco: #5eead4;
+  --error: #ff8a80;
+  --error-fondo: rgb(255 138 128 / 0.12);
+  --exito: #6ee7a0;
+  --exito-fondo: rgb(110 231 160 / 0.12);
+  --sobre-primario: #04201d;
+}
+/* La landing conserva su diseño claro */
+html.tema-oscuro:not(:has(body.pagina-landing)) { color-scheme: dark; }
+
+html.tema-oscuro body { background: var(--fondo); }
+/* Fondo con la ciudad: de noche, la misma ciudad apagada sobre azul profundo */
+html.tema-oscuro body.fondo-ciudad {
+  background:
+    linear-gradient(rgb(7 18 32 / 0.86), rgb(7 18 32 / 0.92)),
+    #071220 url('./assets/roommatch-bg.svg') center bottom / cover no-repeat;
+  background-attachment: fixed;
+}
+
+/* Texto sobre elementos rellenos con el color primario */
+html.tema-oscuro .boton:not(.secundario):not(.fantasma):not(.peligro-suave),
+html.tema-oscuro .pestana.activa,
+html.tema-oscuro .pestana.activa:hover,
+html.tema-oscuro .avatar-boton,
+html.tema-oscuro .foto-etiqueta,
+html.tema-oscuro .boton-tarjeta:hover { color: var(--sobre-primario); }
+html.tema-oscuro .boton.peligro { color: #2a0603; }
+html.tema-oscuro .boton.fantasma { color: #fff; }
+html.tema-oscuro .boton.secundario:hover { background: var(--campo); }
+
+/* Colores fijos de index.css */
+html.tema-oscuro .campo input:focus,
+html.tema-oscuro .campo select:focus,
+html.tema-oscuro .campo textarea:focus { background: var(--tarjeta); }
+html.tema-oscuro .perfil-seccion { background: #102034; }
+html.tema-oscuro .insignia-verificado,
+html.tema-oscuro .perfil-publicaciones .contador { background: rgb(45 212 191 / 0.14); }
+html.tema-oscuro .aviso-publicar.es-vacio {
+  background: linear-gradient(180deg, rgb(45 212 191 / 0.08) 0%, var(--tarjeta) 100%);
+  border-color: rgb(45 212 191 / 0.3);
+  border-left-color: var(--primario);
+}
+html.tema-oscuro .foto-acciones button { background: var(--tarjeta); }
+html.tema-oscuro .pestanas { background: rgb(13 27 46 / 0.85); }
+html.tema-oscuro .estado-completa,
+html.tema-oscuro .estado-pausada { color: #f6d58a; background: rgb(246 213 138 / 0.12); }
+html.tema-oscuro .logo-nombre { color: var(--marca); }
+html.tema-oscuro .logo-lema { color: var(--texto-suave); }
+
+/* Sombras más profundas: sobre fondo oscuro las suaves no se notan */
+html.tema-oscuro .tarjeta,
+html.tema-oscuro .perfil-vista { box-shadow: 0 30px 70px rgb(0 0 0 / 0.55); }
