@@ -1,3 +1,9 @@
+"""EP-02 · HU-21, HU-22 y HU-23: solicitud de verificación del estudiante, su revisión y la revocación.
+
+Archivo de esta área: solo lo edita quien tiene estas historias. Las rutas de administración usan
+Depends(solo_admin) (app/deps.py) y los avisos al usuario se envían con app.notificaciones.notificar.
+"""
+
 import hashlib
 from datetime import datetime, timezone
 from typing import Literal
@@ -11,8 +17,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.config import settings
 from app.db import db, siguiente_codigo
 from app.deps import solo_admin, usuario_actual
-from app.matching import notificar
 from app.media import formato_comprobante, guardar_comprobante, ruta_comprobante
+from app.notificaciones import notificar
 from app.schemas.verificacion import (
     RechazoIn, RevocacionIn, SolicitanteOut, SolicitudAdminOut, SolicitudOut, SolicitudResumenOut, TipoComprobante,
     VerificacionOut,
@@ -270,7 +276,7 @@ async def aprobar_solicitud(solicitud_id: str, admin: dict = Depends(solo_admin)
     await notificar(
         solicitud["usuario_id"], "verificacion_estudiante", "Tu condición de estudiante fue verificada",
         "Revisamos tu comprobante y tu perfil ya aparece como estudiante verificado.",
-        solicitud["usuario_id"], tipo_entidad="usuario",
+        ("usuario", solicitud["usuario_id"]),
     )
     return {"mensaje": "Solicitud aprobada. El estudiante quedó verificado"}
 
@@ -291,7 +297,7 @@ async def rechazar_solicitud(solicitud_id: str, datos: RechazoIn, admin: dict = 
     await notificar(
         solicitud["usuario_id"], "verificacion_estudiante", "Tu solicitud de verificación fue rechazada",
         f"Motivo: {datos.motivo.rstrip('.')}. Puedes enviar una nueva solicitud con otro comprobante.",
-        solicitud["usuario_id"], tipo_entidad="usuario",
+        ("usuario", solicitud["usuario_id"]),
     )
     return {"mensaje": "Solicitud rechazada. Se le avisó al estudiante con el motivo"}
 
@@ -322,7 +328,7 @@ async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict
     await notificar(
         oid, "verificacion_estudiante", "Tu verificación de estudiante fue revocada",
         f"Motivo: {datos.motivo.rstrip('.')}. Puedes volver a solicitarla con un comprobante actualizado.",
-        oid, tipo_entidad="usuario",
+        ("usuario", oid),
     )
     return {"mensaje": "Verificación revocada. La insignia ya no aparece en el perfil"}
 

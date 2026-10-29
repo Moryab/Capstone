@@ -6,7 +6,6 @@ import PublicacionesPerfil from '../componentes/PublicacionesPerfil.jsx'
 import VistaPerfil from '../componentes/VistaPerfil.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { describirFaltantes, FOTO_MAX_MB, FOTO_TIPOS } from '../perfil.js'
-import { esAdmin } from '../sesion/roles.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
 // Pestaña «Ver perfil»: el propio perfil tal como lo ven los demás, con la foto editable
@@ -92,7 +91,7 @@ export default function MiPerfil() {
           <Link to="/perfil/editar">Completar ahora</Link>
         </p>
       )}
-      {!esAdmin(usuario) && ['no_verificado', 'rechazado', 'revocado'].includes(usuario.verificacion_estado) && (
+      {['no_verificado', 'rechazado', 'revocado'].includes(usuario.verificacion_estado) && (
         <p className="info">
           Tu perfil aún no está verificado como estudiante.{' '}
           <Link to="/verificacion">Verificar mi condición de estudiante</Link>

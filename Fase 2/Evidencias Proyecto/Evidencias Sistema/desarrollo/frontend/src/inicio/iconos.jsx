@@ -156,6 +156,18 @@ export const IconoMatch = () => (
   </Icono>
 )
 
+export const IconoGrafico = () => (
+  <Icono>
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+  </Icono>
+)
+
+export const IconoBandera = () => (
+  <Icono>
+    <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
+  </Icono>
+)
+
 export const IconoLupa = () => (
   <Icono>
     <circle cx="11" cy="11" r="6.5" />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
-import { ESTADOS_SOLICITUD, fechaCorta, textoTipo } from './datos.js'
+import { ESTADOS_SOLICITUD, fechaCorta, textoTipo } from '../verificacion/datos.js'
 
 const VISTAS = [
   { valor: 'pendientes', texto: 'Pendientes' },
@@ -10,7 +10,7 @@ const VISTAS = [
 
 // HU-22: «Solicitudes de verificación» del administrador. Las pendientes, de la más antigua a la
 // más reciente (CA-22.1); las ya resueltas quedan en el historial (CA-22.4)
-export default function SolicitudesVerificacion() {
+export default function Verificaciones() {
   // La vista va en la dirección para que «volver» desde una solicitud regrese a la misma
   const [parametros, setParametros] = useSearchParams()
   const vista = parametros.get('vista') === 'procesadas' ? 'procesadas' : 'pendientes'

@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
-import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
+import BotonReportar from '../componentes/BotonReportar.jsx'
 import { CompatibilidadOferente } from '../componentes/Compatibilidad.jsx'
+import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import {
   CARACTERISTICAS, ESTADOS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, REGLAS, SERVICIOS,
   textoDe, TIPOS,
@@ -99,14 +100,15 @@ export default function DetallePublicacion() {
               state={{ desde: `/alojamientos/${pub.id}` }}>
               <Avatar nombre={oferente.nombre} apellido={oferente.ap_paterno} foto={oferente.foto_url} tamano={44} />
               <span>
-                <strong>{oferente.nombre} {oferente.ap_paterno}</strong>
-                <InsigniaVerificacion verificado={oferente.verificado} />
-                <small>Ver perfil del oferente</small>
+                <strong>{oferente.nombre} {oferente.ap_paterno} <InsigniaVerificacion verificado={oferente.verificado} /></strong>
+                <small>{pub.es_propia ? 'Tu perfil' : 'Ver perfil del oferente'}</small>
               </span>
             </Link>
           )}
           {/* CA-15.3: compatibilidad con quien publica; en la propia publicación no aplica */}
           {oferente && !pub.es_propia && <CompatibilidadOferente oferente={oferente} />}
+          {/* EP-06 · HU-25: nunca en la propia publicación (CA-25.5) */}
+          {!pub.es_propia && <BotonReportar tipo="publicacion" id={pub.id} nombre={pub.titulo} />}
 
           {pub.es_propia && (
             <Link to={`/publicaciones/${pub.id}/editar`} className="boton">Editar publicación</Link>

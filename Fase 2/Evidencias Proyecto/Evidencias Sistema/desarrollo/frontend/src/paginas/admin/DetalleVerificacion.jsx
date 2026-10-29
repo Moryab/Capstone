@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, apiArchivo } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import Campo from '../../componentes/Campo.jsx'
-import { ESTADOS_SOLICITUD, fechaHora, textoTipo } from './datos.js'
+import { ESTADOS_SOLICITUD, fechaHora, textoTipo } from '../verificacion/datos.js'
 
 const MAX_MOTIVO = 300
 const POR_REVISAR = ['pendiente', 'en_revision']
@@ -50,7 +50,7 @@ function Dato({ etiqueta, children }) {
 }
 
 // HU-22: el administrador revisa una solicitud y la aprueba o la rechaza con un motivo
-export default function RevisarSolicitud() {
+export default function DetalleVerificacion() {
   const { id } = useParams()
   const { state } = useLocation()
   const volver = state?.vista === 'procesadas' ? '/admin/verificaciones?vista=procesadas' : '/admin/verificaciones'
@@ -138,7 +138,7 @@ export default function RevisarSolicitud() {
             <Avatar nombre={estudiante.nombre} apellido={estudiante.ap_paterno} foto={estudiante.foto_url} tamano={48} />
             <div>
               <strong>{estudiante.nombre_completo}</strong>
-              <Link to={`/usuarios/${estudiante.id}`} className="admin-tabla-sub">Ver perfil público</Link>
+              <Link to={`/admin/usuarios/${estudiante.id}`} className="admin-tabla-sub">Ver ficha del usuario</Link>
             </div>
           </div>
           <dl className="verificacion-detalle">

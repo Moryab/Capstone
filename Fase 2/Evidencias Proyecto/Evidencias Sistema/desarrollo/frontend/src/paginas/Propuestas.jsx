@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
-import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
+import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { formatearFecha, formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
@@ -84,6 +84,16 @@ function TarjetaPropuesta({ p, alResponder }) {
 
       {p.estado === 'confirmado' && (
         <p className="exito">Match confirmado el {formatearFecha(p.fecha_confirmacion)}. ¡Su convivencia ya comenzó!</p>
+      )}
+      {/* HU-18: evaluación de la convivencia al mes */}
+      {p.evaluacion && (
+        p.evaluacion.evaluada ? (
+          <Link to={`/evaluacion/${p.id}`} className="propuesta-evaluacion">Ya evaluaste esta convivencia · Ver evaluación</Link>
+        ) : p.evaluacion.habilitada ? (
+          <Link to={`/evaluacion/${p.id}`} className="boton">Evaluar convivencia</Link>
+        ) : (
+          <p className="propuesta-estado"><span>Podrás evaluar la convivencia desde el {formatearFecha(p.evaluacion.fecha_habilitacion)}.</span></p>
+        )
       )}
 
       {abierta && (

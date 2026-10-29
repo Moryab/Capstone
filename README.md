@@ -27,15 +27,17 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/desarrollo/`:
 ### Requisitos
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [Node.js](https://nodejs.org/) 20 o superior
-- [Python](https://www.python.org/) 3, solo para crear el `.env` la primera vez (`preparar.py`)
+- [Python](https://www.python.org/) 3, para crear y completar el `.env` (`preparar.py`)
 
 ### Solo la primera vez
-1. Crear el archivo `.env` con el script `preparar.py`, en la carpeta `desarrollo`. Copia `.env.example` y genera claves aleatorias para la base de datos y las sesiones, así que no hay que reemplazar nada a mano. El `.env` no se sube a git porque contiene contraseñas.
+1. Crear el archivo `.env` con el script `preparar.py`, en la carpeta `desarrollo`. Copia `.env.example` y genera claves aleatorias para la base de datos, las sesiones y la cuenta de administrador, así que no hay que reemplazar nada a mano. Al terminar muestra el correo y la clave del administrador. El `.env` no se sube a git porque contiene contraseñas.
    ```Terminal
    cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\desarrollo"
    python preparar.py
    ```
-   Si el `.env` ya existe, el script no lo modifica: la clave de la base queda fijada al levantarla por primera vez. Para empezar de cero, borrar el `.env`, ejecutar `docker compose down -v` (borra los datos locales) y volver a correr el script.
+   Si el `.env` ya existe, el script no cambia sus claves (la de la base queda fijada al levantarla por primera vez); solo le agrega las variables nuevas que falten. Por eso conviene volver a ejecutarlo después de un `git pull` que cambie `.env.example`. Para empezar de cero, borrar el `.env`, ejecutar `docker compose down -v` (borra los datos locales) y volver a correr el script.
+
+   La cuenta de administrador se crea al levantar la API. Su correo y su clave quedan en el `.env` (`ADMIN_CORREO` y `ADMIN_PASSWORD`); al iniciar sesión con ella se entra al panel de administración.
 2. Instalar las dependencias del frontend:
    ```Terminal
    cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\desarrollo\frontend"

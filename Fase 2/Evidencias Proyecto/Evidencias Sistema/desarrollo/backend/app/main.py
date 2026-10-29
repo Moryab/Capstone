@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -11,15 +12,33 @@ from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
 from app.media import CARPETA_FOTOS, URL_MEDIA
 from app.routers import (
-    auth, catalogos, compatibilidades, cuestionario, matches, perfil, publicaciones, usuarios, verificacion,
+    admin,
+    auth,
+    catalogos,
+    compatibilidades,
+    cuestionario,
+    estadisticas,
+    evaluaciones,
+    matches,
+    moderacion,
+    notificaciones,
+    perfil,
+    publicaciones,
+    reportes,
+    usuarios,
+    verificacion,
 )
+from app.seguimiento import revisar_periodicamente
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await crear_indices()
     await cargar_datos_iniciales()
+    # EP-08 · HU-18: avisos y recordatorios para evaluar la convivencia
+    revision = asyncio.create_task(revisar_periodicamente())
     yield
+    revision.cancel()
     await client.close()
 
 
@@ -97,7 +116,15 @@ app.include_router(cuestionario.router)
 app.include_router(compatibilidades.router)
 app.include_router(matches.router)
 app.include_router(publicaciones.router)
-app.include_router(verificacion.router)
+app.include_router(notificaciones.router)
+
+# Un router por área de trabajo; cada uno lo completa quien tiene esas historias
+app.include_router(evaluaciones.router)    # EP-08 · HU-18 y HU-19
+app.include_router(estadisticas.router)    # EP-08 · HU-20
+app.include_router(reportes.router)        # EP-06 · HU-24, HU-25 y HU-26
+app.include_router(moderacion.router)      # EP-06 y EP-07 · HU-27 y HU-30
+app.include_router(verificacion.router)    # EP-02 · HU-21 y HU-22
+app.include_router(admin.router)           # EP-07 · HU-28 y HU-29
 
 # Fotos subidas por los usuarios (perfil y alojamientos)
 CARPETA_FOTOS.mkdir(parents=True, exist_ok=True)

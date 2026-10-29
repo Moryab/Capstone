@@ -15,6 +15,7 @@ from pymongo import ReturnDocument
 
 from app.compatibilidad import CANDIDATOS, NIVEL_ALTO, PARAMETROS_VERSION
 from app.db import db, siguiente_codigo
+from app.notificaciones import notificar
 from app.schemas.busqueda import Preferencias, filtro_preferencias
 
 ABIERTAS = ["sugerido", "pendiente"]  # sin respuesta de ninguno o de uno de los dos
@@ -31,30 +32,6 @@ def es_buscador(usuario: dict | None = None) -> dict:
         "match_activo_id": None,  # CA-17.4: una convivencia activa a la vez
         **({"_id": usuario["_id"]} if usuario else {}),
     }
-
-
-async def notificar(
-    usuario_id: ObjectId, tipo: str, titulo: str, mensaje: str, entidad_id: ObjectId,
-    tipo_entidad: str = "publicacion",
-) -> None:
-    """Deja el aviso en notificaciones (CA-17.2 y CA-17.3), según el modelo de datos.
-
-    La verificación de estudiante (HU-22) también la usa, con tipo_entidad «usuario».
-    """
-    ahora = datetime.now(timezone.utc)
-    await db.notificaciones.insert_one({
-        "codigo": await siguiente_codigo("notificaciones"),
-        "usuario_id": usuario_id,
-        "tipo": tipo,
-        "titulo": titulo,
-        "mensaje": mensaje,
-        "leido": False,
-        "fecha_lectura": None,
-        "estado_envio": "enviado",
-        "fecha_programada": None,
-        "fecha_notificacion": ahora,
-        "referencia": {"tipo_entidad": tipo_entidad, "entidad_id": entidad_id},
-    })
 
 
 async def expirar_vencidas() -> None:
@@ -163,9 +140,9 @@ async def _proponer_a(buscador: dict) -> int:
 
     for p in elegidas:
         await notificar(yo, "nuevo_match", "Tienes una nueva propuesta de match",
-                        f"RoomMatch te propone «{p['titulo']}». Revísala y dinos si te interesa.", p["_id"])
+                        f"RoomMatch te propone «{p['titulo']}». Revísala y dinos si te interesa.", ("publicacion", p["_id"]))
         await notificar(p["oferente_id"], "nuevo_match", "Tienes una nueva propuesta de match",
-                        f"RoomMatch encontró a alguien compatible para «{p['titulo']}».", p["_id"])
+                        f"RoomMatch encontró a alguien compatible para «{p['titulo']}».", ("publicacion", p["_id"]))
     return len(documentos)
 
 
@@ -214,7 +191,7 @@ async def responder(match: dict, usuario: dict, acepta: bool, motivo: str | None
     if not acepta:
         await notificar(otro, "respuesta_match", "Una propuesta de match no siguió adelante",
                         f"{nombre} rechazó la propuesta. RoomMatch seguirá buscando opciones para ti.",
-                        match["publicacion_id"])
+                        ("publicacion", match["publicacion_id"]))
         await generar_propuestas()  # el buscador quedó con un espacio libre
         return match
 
@@ -225,7 +202,7 @@ async def responder(match: dict, usuario: dict, acepta: bool, motivo: str | None
         ) or await db.matches.find_one({"_id": match["_id"]})
         if match[suya]["estado"] != "aceptado":
             await notificar(otro, "respuesta_match", "Aceptaron tu propuesta de match",
-                            f"{nombre} aceptó la propuesta. Falta tu respuesta.", match["publicacion_id"])
+                            f"{nombre} aceptó la propuesta. Falta tu respuesta.", ("publicacion", match["publicacion_id"]))
             return match
 
     return await _confirmar(match)
@@ -286,5 +263,5 @@ async def _confirmar(match: dict) -> dict:
     for usuario_id in (buscador_id, oferente_id):
         await notificar(usuario_id, "match_confirmado", "¡Match confirmado!",
                         f"Ambos aceptaron la propuesta para «{pub['titulo']}». Su convivencia comienza hoy.",
-                        pub["_id"])
+                        ("publicacion", pub["_id"]))
     return match

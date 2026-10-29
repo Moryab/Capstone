@@ -70,7 +70,7 @@ function EstadoVerificacion({ verificacion, verComprobante, abriendo }) {
 }
 
 // HU-21: el estudiante acredita su condición de estudiante con un comprobante
-export default function PaginaVerificacion() {
+export default function Verificacion() {
   const { recargarUsuario } = useSesion()
   const [verificacion, setVerificacion] = useState(null)
   const [instituciones, setInstituciones] = useState(null)

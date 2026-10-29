@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { CATEGORIAS, textoRespuesta } from '../cuestionario.js'
 import { textoGenero } from '../perfil.js'
 import Avatar from './Avatar.jsx'
-import InsigniaVerificacion from './InsigniaVerificacion.jsx'
 import {
   IconoBirrete, IconoCalendario, IconoHogar, IconoPersona, IconoUbicacion,
 } from './Iconos.jsx'
+import InsigniaVerificacion from './InsigniaVerificacion.jsx'
 
 const mesYAnio = (fecha) =>
   new Date(fecha).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })

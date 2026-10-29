@@ -74,14 +74,6 @@ async def crear_indices() -> None:
         [("usuario_b_id", ASCENDING), ("vigente", ASCENDING)], name="usuario_b_id_1_vigente_1"
     )
 
-    # Solicitudes de verificación (HU-21). El índice por usuario y fecha no está en el modelo de
-    # datos: sirve para traer la última solicitud del estudiante
-    await db.solicitudes_verificacion.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
-    await db.solicitudes_verificacion.create_index(
-        [("usuario_id", ASCENDING), ("fecha_solicitud", DESCENDING)],
-        name="usuario_id_1_fecha_solicitud_-1",
-    )
-
     # Propuestas de match (HU-17) y avisos, según el modelo de datos
     await db.matches.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
     await db.matches.create_index(
@@ -94,3 +86,20 @@ async def crear_indices() -> None:
     await db.notificaciones.create_index(
         [("usuario_id", ASCENDING), ("leido", ASCENDING)], name="usuario_id_1_leido_1"
     )
+
+    # Cada área agrega sus índices solo dentro de su bloque, así no se cruzan los cambios en git
+
+    # --- EP-08 · seguimiento post-match (HU-18 a HU-20) ---
+
+    # --- EP-06 · reportes y moderación (HU-24 a HU-27 y HU-30) ---
+
+    # --- EP-02 · verificación (HU-21 a HU-23) ---
+    # Solicitudes de verificación (HU-21). El índice por usuario y fecha no está en el modelo de
+    # datos: sirve para traer la última solicitud del estudiante
+    await db.solicitudes_verificacion.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.solicitudes_verificacion.create_index(
+        [("usuario_id", ASCENDING), ("fecha_solicitud", DESCENDING)],
+        name="usuario_id_1_fecha_solicitud_-1",
+    )
+
+    # --- EP-07 · administración (HU-28 y HU-29) ---

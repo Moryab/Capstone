@@ -1,0 +1,62 @@
+/* EP-08 · HU-18 y HU-19: evaluación de la convivencia */
+.pagina-evaluacion { width: min(720px, calc(100% - 32px)); margin: 8px auto 32px; }
+.evaluacion-cabecera { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.evaluacion-cabecera h1 { margin: 2px 0 4px; font-size: 1.5rem; line-height: 1.25; }
+.evaluacion-cabecera .publicacion-meta, .evaluacion-cabecera .subtitulo { margin: 0; }
+.pagina-evaluacion > .exito { margin: 0 0 16px; }
+
+.evaluacion-form, .evaluacion-espera, .evaluacion-enviada {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  background: var(--tarjeta);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px -12px rgb(11 31 58 / 0.25);
+}
+.evaluacion-espera h2, .evaluacion-enviada h2 { margin: 0; font-size: 1.2rem; }
+.evaluacion-espera p { margin: 0; color: var(--texto-suave); }
+.evaluacion-form fieldset { margin: 0; padding: 0; border: 0; }
+.evaluacion-form legend { margin-bottom: 10px; font-weight: 700; }
+.evaluacion-form .campo { margin: 0; }
+.evaluacion-form .campo-ayuda, .evaluacion-form .campo-error { margin: 6px 0 0; }
+.evaluacion-form > .campo-ayuda { margin: 0; }
+.evaluacion-form .boton { justify-self: start; margin: 0; }
+
+.evaluacion-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.evaluacion-notas { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.evaluacion-opcion, .evaluacion-nota {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  font-weight: 600;
+  background: var(--campo);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.evaluacion-nota { position: relative; flex-direction: column; gap: 2px; padding: 12px 6px; text-align: center; }
+.evaluacion-nota strong { font-family: 'Outfit', system-ui, sans-serif; font-size: 1.4rem; }
+.evaluacion-nota span { font-size: 0.78rem; color: var(--texto-suave); }
+.evaluacion-nota input { position: absolute; opacity: 0; pointer-events: none; }
+.evaluacion-opcion input { width: 18px; height: 18px; accent-color: var(--primario); }
+.evaluacion-opcion.elegida, .evaluacion-nota.elegida { border-color: var(--primario); }
+.evaluacion-nota.elegida strong { color: var(--primario); }
+.evaluacion-nota:has(input:focus-visible), .evaluacion-opcion:has(input:focus-visible) {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.evaluacion-enviada dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
+.evaluacion-enviada dt { color: var(--texto-suave); }
+.evaluacion-enviada dd { margin: 0; font-weight: 600; }
+.evaluacion-enviada .boton { justify-self: start; margin: 0; }
+.evaluacion-razones { display: grid; gap: 12px; padding: 16px; background: var(--campo); border-radius: 12px; }
+.evaluacion-razones p { margin: 0; }
+
+@media (max-width: 520px) {
+  .evaluacion-notas { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .evaluacion-nota span { font-size: 0.68rem; }
+  .evaluacion-enviada dl { grid-template-columns: 1fr; gap: 2px; }
+  .evaluacion-enviada dd { margin-bottom: 8px; }
+}
