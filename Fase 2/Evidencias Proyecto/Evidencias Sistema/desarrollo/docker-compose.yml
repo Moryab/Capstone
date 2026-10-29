@@ -5,6 +5,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      TZ: America/Santiago   # hora de Chile en los registros; Mongo igual guarda las fechas en UTC
     volumes:
       - mongo_data:/data/db
     # Sin "ports": Mongo solo es accesible dentro de la red de Docker
@@ -13,6 +14,10 @@ services:
     build: ./backend
     restart: unless-stopped
     env_file: .env
+    environment:
+      # Hora de Chile para los registros y para date.today() (edad, año de ingreso).
+      # Las fechas se siguen guardando en UTC y el navegador las muestra en la hora local
+      TZ: America/Santiago
     depends_on:
       - mongo
     ports:
