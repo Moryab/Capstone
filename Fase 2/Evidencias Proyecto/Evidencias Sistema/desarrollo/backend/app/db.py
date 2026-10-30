@@ -92,6 +92,17 @@ async def crear_indices() -> None:
     # --- EP-08 · seguimiento post-match (HU-18 a HU-20) ---
 
     # --- EP-06 · reportes y moderación (HU-24 a HU-27 y HU-30) ---
+    await db.reportes.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.reportes.create_index(
+        [("estado", ASCENDING), ("fecha_reporte", DESCENDING)], name="estado_1_fecha_reporte_-1"
+    )
+    # CA-24.4: un reporte abierto por usuario y elemento (no está en el modelo de datos)
+    await db.reportes.create_index(
+        [("tipo_elemento", ASCENDING), ("elemento_reportado_id", ASCENDING), ("reportante_id", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"estado": {"$in": ["pendiente", "en_revision"]}},
+        name="reporte_abierto_unico",
+    )
 
     # --- EP-02 · verificación (HU-21 a HU-23) ---
     # Solicitudes de verificación (HU-21). El índice por usuario y fecha no está en el modelo de
