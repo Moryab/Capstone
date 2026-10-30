@@ -96,7 +96,7 @@ async def crear_indices() -> None:
     await db.reportes.create_index(
         [("estado", ASCENDING), ("fecha_reporte", DESCENDING)], name="estado_1_fecha_reporte_-1"
     )
-    # CA-24.4: un reporte abierto por usuario y elemento (no está en el modelo de datos)
+    # CA-24.4 y CA-25.4: un reporte abierto por usuario y elemento (no está en el modelo de datos)
     await db.reportes.create_index(
         [("tipo_elemento", ASCENDING), ("elemento_reportado_id", ASCENDING), ("reportante_id", ASCENDING)],
         unique=True,

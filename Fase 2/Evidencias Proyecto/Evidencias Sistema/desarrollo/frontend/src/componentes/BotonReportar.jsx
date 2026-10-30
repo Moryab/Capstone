@@ -1,20 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
-import { MAX_DESCRIPCION, MOTIVOS_PERFIL } from '../reportes.js'
+import { MAX_DESCRIPCION, MOTIVOS_PERFIL, MOTIVOS_PUBLICACION } from '../reportes.js'
 import Campo from './Campo.jsx'
 import './reportar.css'
 
 const VACIO = { motivo: '', descripcion: '' }
 
+// Lo que cambia entre reportar un perfil (HU-24) y una publicación (HU-25)
+const SEGUN_TIPO = {
+  perfil: {
+    boton: 'Reportar perfil',
+    ruta: 'perfiles',
+    motivos: MOTIVOS_PERFIL,
+    titulo: (nombre) => `Reportar perfil de ${nombre}`,
+    aviso: (nombre) => `${nombre} no sabrá quién envió este reporte.`,
+    privacidad: 'Tu identidad no se le mostrará a la persona reportada.',
+  },
+  publicacion: {
+    boton: 'Reportar publicación',
+    ruta: 'publicaciones',
+    motivos: MOTIVOS_PUBLICACION,
+    titulo: (nombre) => `Reportar «${nombre}»`,
+    aviso: () => 'Quien la publicó no sabrá quién envió este reporte.',
+    privacidad: 'Tu identidad no se le mostrará a quien publicó el alojamiento.',
+  },
+}
+
 /**
  * EP-06 · HU-24 y HU-25 (y CA-16.5): botón «Reportar perfil» o «Reportar publicación».
  * Ya está puesto en el perfil de otro estudiante (tipo="perfil") y en el detalle de un
  * alojamiento ajeno (tipo="publicacion"); nunca aparece en lo propio (CA-24.5 y CA-25.5).
- * El reporte de publicaciones (HU-25) aún no está implementado: con ese tipo no muestra nada.
  *
  * Props: tipo ('perfil' | 'publicacion'), id (del usuario o la publicación) y nombre (para el texto).
  */
 export default function BotonReportar({ tipo, id, nombre }) {
+  const textos = SEGUN_TIPO[tipo]
   const dialogo = useRef(null)
   const [abierto, setAbierto] = useState(false)
   const [datos, setDatos] = useState(VACIO)
@@ -25,12 +45,9 @@ export default function BotonReportar({ tipo, id, nombre }) {
 
   useEffect(() => {
     const d = dialogo.current
-    if (!d) return
     if (abierto && !d.open) d.showModal()
     if (!abierto && d.open) d.close()
   }, [abierto])
-
-  if (tipo !== 'perfil') return null
 
   const cerrar = () => {
     setAbierto(false)
@@ -47,7 +64,7 @@ export default function BotonReportar({ tipo, id, nombre }) {
 
   const enviar = async (e) => {
     e.preventDefault()
-    // CA-24.3: se indica qué falta sin enviar; el backend vuelve a validar
+    // CA-24.3 y CA-25.3: se indica qué falta sin enviar; el backend vuelve a validar
     const faltan = {
       ...(!datos.motivo && { motivo: 'Elige un motivo' }),
       ...(datos.motivo === 'otro' && !datos.descripcion.trim() && { descripcion: 'Cuéntanos qué ocurrió' }),
@@ -60,10 +77,10 @@ export default function BotonReportar({ tipo, id, nombre }) {
     setEnviando(true)
     setMensaje('')
     try {
-      const respuesta = await api(`/reportes/perfiles/${id}`, { metodo: 'POST', datos })
-      setConfirmacion(`${respuesta.mensaje}.`) // CA-24.2
+      const respuesta = await api(`/reportes/${textos.ruta}/${id}`, { metodo: 'POST', datos })
+      setConfirmacion(`${respuesta.mensaje}.`) // CA-24.2 y CA-25.2
     } catch (err) {
-      // 422 datos inválidos; 409 si ya hay un reporte abierto sobre este perfil (CA-24.4)
+      // 422 datos inválidos; 409 si ya hay un reporte abierto sobre lo mismo (CA-24.4 y CA-25.4)
       setErrores(err.errores ?? {})
       setMensaje(err.errores ? 'Revisa los campos marcados' : err.message)
     } finally {
@@ -74,27 +91,27 @@ export default function BotonReportar({ tipo, id, nombre }) {
   return (
     <>
       <button type="button" className="boton peligro-suave" onClick={() => setAbierto(true)}>
-        Reportar perfil
+        {textos.boton}
       </button>
 
       {/* onCancel: Escape cierra el diálogo y limpia el formulario */}
       <dialog ref={dialogo} className="confirmar reportar" aria-labelledby="reportar-titulo"
         onCancel={(e) => { e.preventDefault(); cerrar() }}>
-        <h2 id="reportar-titulo">Reportar perfil de {nombre}</h2>
+        <h2 id="reportar-titulo">{textos.titulo(nombre)}</h2>
 
         {confirmacion ? (
           <>
             <p className="exito" role="status">{confirmacion}</p>
-            <p>Tu identidad no se le mostrará a la persona reportada.</p>
+            <p>{textos.privacidad}</p>
             <div className="acciones">
               <button type="button" className="boton" onClick={cerrar}>Cerrar</button>
             </div>
           </>
         ) : (
           <form onSubmit={enviar} noValidate>
-            <p>{nombre} no sabrá quién envió este reporte.</p>
+            <p>{textos.aviso(nombre)}</p>
             <Campo etiqueta="Motivo" nombre="motivo" id="reporte-motivo" value={datos.motivo} onChange={cambiar}
-              error={errores.motivo} opciones={MOTIVOS_PERFIL} required />
+              error={errores.motivo} opciones={textos.motivos} required />
             <Campo etiqueta={datos.motivo === 'otro' ? 'Descripción' : 'Descripción (opcional)'}
               nombre="descripcion" id="reporte-descripcion" multilinea rows={4} value={datos.descripcion}
               onChange={cambiar} error={errores.descripcion} maxLength={MAX_DESCRIPCION}

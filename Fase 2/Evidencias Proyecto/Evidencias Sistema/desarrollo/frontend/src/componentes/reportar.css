@@ -1,4 +1,4 @@
-/* Formulario de reporte (HU-24). Reutiliza el diálogo .confirmar */
+/* Formulario de reporte (HU-24 y HU-25). Reutiliza el diálogo .confirmar */
 .confirmar.reportar { width: min(480px, calc(100% - 32px)); color: var(--texto); background: var(--tarjeta); }
 .confirmar.reportar .campo { text-align: left; }
 .confirmar.reportar p.alerta,
