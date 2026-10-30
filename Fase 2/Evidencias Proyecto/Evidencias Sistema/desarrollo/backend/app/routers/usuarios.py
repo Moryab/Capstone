@@ -30,4 +30,15 @@ async def ver_perfil_publico(usuario_id: str, actual: dict = Depends(usuario_act
         if institucion_id
         else None
     )
-    return PerfilPublicoOut.desde_doc(doc, institucion, es_propio=doc["_id"] == actual["_id"])
+    es_propio = doc["_id"] == actual["_id"]
+    # El teléfono solo se comparte cuando ambos aceptaron el match (CA-17.2)
+    con_match = await db.matches.find_one({
+        "estado": "confirmado",
+        "$or": [
+            {"usuario_a_id": actual["_id"], "usuario_b_id": doc["_id"]},
+            {"usuario_a_id": doc["_id"], "usuario_b_id": actual["_id"]},
+        ],
+    }, {"_id": 1})
+    return PerfilPublicoOut.desde_doc(
+        doc, institucion, es_propio=es_propio, con_contacto=es_propio or con_match is not None
+    )

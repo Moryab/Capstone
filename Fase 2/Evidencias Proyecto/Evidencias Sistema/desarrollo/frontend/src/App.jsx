@@ -12,6 +12,7 @@ import LayoutPerfil from './paginas/LayoutPerfil.jsx'
 import Marco from './marco/Marco.jsx'
 import MiPerfil from './paginas/MiPerfil.jsx'
 import PerfilUsuario from './paginas/PerfilUsuario.jsx'
+import VistaPublica from './paginas/VistaPublica.jsx'
 import Propuestas from './paginas/Propuestas.jsx'
 import Roomies from './paginas/Roomies.jsx'
 // Páginas de cada área de trabajo: cada una la completa quien tiene esas historias
@@ -81,6 +82,8 @@ export default function App() {
             <Route path="cuestionario" element={<Suspense fallback={null}><PestanaHabitos /></Suspense>} />
           </Route>
           <Route path="/usuarios/:id" element={<PerfilUsuario />} />
+          {/* Vista previa del propio perfil como lo ven los demás */}
+          <Route path="/perfil-publico" element={<VistaPublica />} />
           {/* EP-03: publicación de alojamientos */}
           <Route path="/publicaciones/nueva" element={<FormPublicacion />} />
           <Route path="/publicaciones/:id/editar" element={<FormPublicacion />} />

@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import { IconoCamara } from '../componentes/Iconos.jsx'
+import ProgresoPerfil from '../componentes/perfil/ProgresoPerfil.jsx'
 import PublicacionesPerfil from '../componentes/PublicacionesPerfil.jsx'
 import VistaPerfil from '../componentes/VistaPerfil.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
-import { describirFaltantes, FOTO_MAX_MB, FOTO_TIPOS } from '../perfil.js'
+import { FOTO_MAX_MB, FOTO_TIPOS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
 // Pestaña «Ver perfil»: el propio perfil tal como lo ven los demás, con la foto editable
@@ -76,21 +77,23 @@ export default function MiPerfil() {
     </>
   )
 
-  // Editar el perfil se hace desde la pestaña de arriba; aquí solo queda quitar la foto, si hay
-  const acciones = perfil.foto_url && (
-    <button type="button" className="boton secundario" onClick={quitarFoto} disabled={subiendo}>
-      Quitar foto
-    </button>
+  // Editar el perfil se hace desde la pestaña de arriba; aquí: ver la vista pública y quitar la foto
+  const acciones = (
+    <>
+      {/* Vista previa sin controles de edición, como la ve otro estudiante */}
+      <Link to="/perfil-publico" className="boton secundario">Ver como me ven</Link>
+      {perfil.foto_url && (
+        <button type="button" className="boton secundario" onClick={quitarFoto} disabled={subiendo}>
+          Quitar foto
+        </button>
+      )}
+    </>
   )
 
   const aviso = (
     <div className="perfil-avisos">
-      {!perfil.perfil_completo && usuario.campos_faltantes.length > 0 && (
-        <p className="alerta">
-          Tu perfil está incompleto. Falta: {describirFaltantes(usuario.campos_faltantes)}.{' '}
-          <Link to="/perfil/editar">Completar ahora</Link>
-        </p>
-      )}
+      {/* CA-03.5: lo que falta, como pasos a un clic en vez de una alerta */}
+      <ProgresoPerfil perfil={perfil} camposFaltantes={usuario.campos_faltantes} />
       {mensaje.texto && (
         <p className={mensaje.tipo} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
       )}
