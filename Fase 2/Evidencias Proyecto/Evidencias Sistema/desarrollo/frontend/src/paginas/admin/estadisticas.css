@@ -1,0 +1,92 @@
+/* EP-08 · HU-20: estadísticas de match. Colores validados para daltonismo y contraste */
+.pagina-estadisticas {
+  --est-exitoso: #0d9488;
+  --est-no-exitoso: #c2410c;
+  --est-pista: var(--campo);
+  width: min(1180px, calc(100% - 32px));
+  margin: 8px auto 32px;
+}
+html.tema-oscuro .pagina-estadisticas { --est-no-exitoso: #ea580c; }
+
+.est-filtro { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 20px; }
+.est-filtro .campo { margin: 0; }
+.est-filtro .boton { margin: 0; padding: 10px 20px; }
+.est-filtro .campo-error { margin: 4px 0 0; }
+
+.est-grilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; transition: opacity 0.2s; }
+.est-grilla.actualizando { opacity: 0.5; }
+.est-tarjeta {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 20px;
+  background: var(--tarjeta);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px -12px rgb(11 31 58 / 0.25);
+}
+.est-ancha { grid-column: 1 / -1; }
+.est-tarjeta h2 { margin: 0; font-size: 1rem; color: var(--texto-suave); }
+.est-cifra { margin: 0; font-family: 'Outfit', system-ui, sans-serif; font-size: 2.4rem; font-weight: 700; line-height: 1.1; color: var(--texto); }
+.est-detalle { margin: 0; font-size: 0.88rem; color: var(--texto-suave); }
+.est-detalle strong { color: var(--texto); }
+
+/* Barra frente a la meta: el valor en color y la meta como una marca vertical */
+.est-meta { position: relative; height: 10px; margin: 4px 0; background: var(--est-pista); border-radius: 999px; }
+.est-meta-valor { display: block; height: 100%; background: var(--est-exitoso); border-radius: 999px; }
+.est-meta-marca { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--texto); border-radius: 1px; }
+
+.est-leyenda { display: flex; gap: 16px; margin: 0; padding: 0; font-size: 0.85rem; color: var(--texto-suave); list-style: none; }
+.est-leyenda li { display: flex; align-items: center; gap: 6px; }
+.est-muestra { width: 12px; height: 12px; border-radius: 3px; }
+.est-muestra.exitoso, .est-barra.exitoso { background: var(--est-exitoso); }
+.est-muestra.no-exitoso, .est-barra.no-exitoso { background: var(--est-no-exitoso); }
+
+.est-columnas {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  min-height: 220px;
+  padding: 12px 4px 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--borde);
+}
+.est-mes { display: grid; grid-template-rows: 1fr auto; flex: 1 0 56px; max-width: 120px; gap: 6px; }
+.est-barras { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 180px; }
+.est-barra { position: relative; width: 22px; min-height: 2px; border-radius: 4px 4px 0 0; }
+.est-mes-nombre { padding-bottom: 6px; font-size: 0.78rem; text-align: center; color: var(--texto-suave); }
+/* Detalle al pasar el mouse; con teclado, la misma información está en la tabla */
+.est-barra:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 2;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  color: var(--tarjeta);
+  background: var(--texto);
+  border-radius: 8px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.est-tabla summary { font-size: 0.88rem; font-weight: 600; color: var(--primario); cursor: pointer; }
+.est-tabla table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 0.88rem; }
+.est-tabla th, .est-tabla td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--borde); }
+.est-tabla td { font-variant-numeric: tabular-nums; }
+
+.est-ranking { display: grid; gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.est-ranking li { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: 10px; font-size: 0.9rem; }
+.est-ranking-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.est-ranking-pista { height: 10px; background: var(--est-pista); border-radius: 999px; }
+.est-ranking-pista span { display: block; height: 100%; background: var(--est-exitoso); border-radius: 999px; }
+.est-ranking-valor { font-variant-numeric: tabular-nums; font-weight: 600; }
+.est-ranking-valor small { font-weight: 400; color: var(--texto-suave); }
+
+@media (max-width: 900px) {
+  .est-grilla { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .est-grilla { transition: none; }
+}

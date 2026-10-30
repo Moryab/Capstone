@@ -45,6 +45,12 @@ PESOS = {"flexible": 1.0, "importante": 2.0, "imprescindible": 4.0}
 NIVEL_ALTO = 75
 NIVEL_MEDIO = 50
 
+# EP-08 · HU-19 (CA-19.4): cada razón de una convivencia que no funcionó sube el peso personal de
+# esa categoría para el estudiante, según su gravedad, hasta un máximo
+INCREMENTO_POR_RAZON = 0.25
+FACTOR_GRAVEDAD = {"leve": 0.5, "moderada": 1.0, "grave": 2.0}
+AJUSTE_PERSONAL_MAX = 2.0
+
 
 def puntaje_categoria(categoria: str, a: str, b: str) -> float:
     if a == b:
@@ -66,10 +72,22 @@ def nivel_de(porcentaje: float) -> str:
     return "baja"
 
 
-def calcular(cuestionario_a: dict, cuestionario_b: dict) -> dict:
+def ajustes_de(usuario: dict) -> dict[str, float]:
+    """Peso personal por categoría que el estudiante acumuló con sus razones (HU-19). Sin datos, 1."""
+    aprendizaje = (usuario.get("ajuste_recomendacion") or {}).get("aprendizaje", [])
+    return {a["categoria"]: a["peso_personal"] for a in aprendizaje}
+
+
+def calcular(
+    cuestionario_a: dict,
+    cuestionario_b: dict,
+    ajustes_a: dict[str, float] | None = None,
+    ajustes_b: dict[str, float] | None = None,
+) -> dict:
     """Compatibilidad entre dos cuestionarios completos (CA-14.1 a CA-14.3).
 
-    Es simétrica: calcular(a, b) y calcular(b, a) dan el mismo porcentaje.
+    Es simétrica: calcular(a, b) y calcular(b, a) dan el mismo porcentaje. Con los ajustes
+    personales (HU-19) se usa el mayor de los dos, igual que con la importancia.
     Hay conflicto cuando alguien marcó una categoría como imprescindible y no coinciden en nada
     (puntaje 0); en ese caso el par queda descartado como posibles roomies.
     """
@@ -82,7 +100,8 @@ def calcular(cuestionario_a: dict, cuestionario_b: dict) -> dict:
         imp_a, imp_b = importancia_a[categoria], importancia_b[categoria]
         puntaje = puntaje_categoria(categoria, a, b)
         peso_base = max(PESOS[imp_a], PESOS[imp_b])
-        ajuste_personal = 1.0  # EP-08 lo ajustará según la experiencia de cada estudiante
+        # CA-19.4: más peso a lo que a alguno de los dos ya le causó problemas en una convivencia
+        ajuste_personal = max((ajustes_a or {}).get(categoria, 1.0), (ajustes_b or {}).get(categoria, 1.0))
         detalle.append({
             "categoria": categoria,
             "respuesta_a": a,
@@ -135,7 +154,9 @@ async def recalcular(usuario: dict) -> int:
     )
 
     otros = [
-        otro async for otro in db.usuarios.find({**CANDIDATOS, "_id": {"$ne": yo}}, {"cuestionario": 1})
+        otro async for otro in db.usuarios.find(
+            {**CANDIDATOS, "_id": {"$ne": yo}}, {"cuestionario": 1, "ajuste_recomendacion": 1}
+        )
     ]
     if not otros:
         return 0
@@ -148,7 +169,7 @@ async def recalcular(usuario: dict) -> int:
             "codigo": primero + i,
             "usuario_a_id": a["_id"],
             "usuario_b_id": b["_id"],
-            **calcular(a["cuestionario"], b["cuestionario"]),
+            **calcular(a["cuestionario"], b["cuestionario"], ajustes_de(a), ajustes_de(b)),
             "vigente": True,
             "fecha_calculo": ahora,
         })

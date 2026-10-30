@@ -15,7 +15,9 @@ from pymongo import ReturnDocument
 from app.db import db
 from app.deps import usuario_actual
 from app.routers.compatibilidades import el_otro, resumenes
-from app.seguimiento import MOMENTO, avisar_evaluaciones, evaluacion_de
+from app.routers.perfil import datos_invalidos
+from app.schemas.seguimiento import RazonesIn
+from app.seguimiento import MOMENTO, aprender_de_razones, avisar_evaluaciones, evaluacion_de
 
 router = APIRouter(prefix="/api/evaluaciones", tags=["Seguimiento post-match"])
 
@@ -59,7 +61,8 @@ def evaluacion_out(e: dict | None) -> dict | None:
         "calificacion": e["calificacion"],
         "comentario": e["comentario"],
         "fecha": e["fecha_eval"],
-        "con_razones": bool(e.get("razones")),
+        "razones": e.get("razones", []),
+        "razon_otra_detalle": e.get("razon_otra_detalle"),
     }
 
 
@@ -91,7 +94,12 @@ async def ver_evaluacion(match_id: str, usuario: dict = Depends(usuario_actual))
             "titulo": (pub or {}).get("titulo", "Alojamiento no disponible"),
             "comuna": (pub or {}).get("ubicacion", {}).get("comuna_nombre"),
         },
+        "estado": match["estado"],
         "fecha_inicio": match["fecha_inicio_convivencia"],
+        "fecha_fin": match.get("fecha_fin_convivencia"),
+        "motivo_fin": match.get("motivo_fin"),
+        # Si ya explicó qué no funcionó (al mes o al terminar), no se le vuelve a preguntar
+        "razones_indicadas": any(e["evaluador_id"] == yo and e.get("razones") for e in match.get("evaluacion", [])),
         **estado_evaluacion(match, yo),
         "mi_evaluacion": evaluacion_out(mia),
         # CA-18.5: si no funciona, se piden las razones (HU-19)
@@ -147,4 +155,46 @@ async def evaluar(match_id: str, datos: EvaluacionIn, usuario: dict = Depends(us
         "mensaje": "¡Gracias por tu evaluación!",
         "evaluacion": evaluacion_out(evaluacion),
         "pedir_razones": not datos.funciona,
+    }
+
+
+@router.post("/{match_id}/razones")
+async def indicar_razones(match_id: str, datos: RazonesIn, usuario: dict = Depends(usuario_actual)):
+    """HU-19: razones de la incompatibilidad cuando la convivencia no funcionó.
+
+    CA-19.2: al menos una razón, y «otra» con su detalle. CA-19.5: solo si evaluó que no funciona.
+    """
+    match = await convivencia_de(match_id, usuario)
+    yo = usuario["_id"]
+    mia = evaluacion_de(match, yo)
+    if not mia:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Primero evalúa la convivencia")
+    if mia["funciona"]:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Tu convivencia está funcionando: no hace falta indicar razones")
+
+    if errores := datos.errores():
+        return datos_invalidos(errores)
+    razones = datos.sin_repetir()
+    con_otra = any(r["razon"] == "otra" for r in razones)
+
+    # Solo si aún no las indicó: las razones se registran una vez por convivencia
+    hecho = await db.matches.update_one(
+        {"_id": match["_id"], "evaluacion": {"$elemMatch": {
+            "evaluador_id": yo, "momento": MOMENTO, "funciona": False, "razones": {"$size": 0},
+        }}},
+        {"$set": {
+            "evaluacion.$[e].razones": razones,
+            "evaluacion.$[e].razon_otra_detalle": datos.razon_otra_detalle if con_otra else None,
+        }},
+        array_filters=[{"e.evaluador_id": yo, "e.momento": MOMENTO}],
+    )
+    if not hecho.modified_count:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya indicaste las razones de esta convivencia")
+
+    # CA-19.4: el aprendizaje cambia sus próximas compatibilidades y propuestas
+    await aprender_de_razones(usuario, razones)
+
+    return {
+        "mensaje": "Gracias. Usaremos estas razones para mejorar tus próximas recomendaciones",  # CA-19.3
+        "razones": razones,
     }

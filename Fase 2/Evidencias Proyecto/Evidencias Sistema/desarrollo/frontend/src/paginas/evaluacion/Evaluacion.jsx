@@ -41,7 +41,12 @@ function Enviada({ evaluacion, matchId, pedirRazones }) {
           <Link to={`/evaluacion/${matchId}/razones`} className="boton">Indicar las razones</Link>
         </div>
       ) : (
-        <Link to="/propuestas" className="boton secundario">Volver a mis propuestas</Link>
+        <div className="evaluacion-acciones">
+          {!evaluacion.funciona && (
+            <Link to={`/evaluacion/${matchId}/razones`} className="propuesta-evaluacion">Ver las razones que indicaste</Link>
+          )}
+          <Link to="/propuestas" className="boton secundario">Volver a mis propuestas</Link>
+        </div>
       )}
     </section>
   )
