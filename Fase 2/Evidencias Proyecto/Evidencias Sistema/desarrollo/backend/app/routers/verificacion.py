@@ -302,15 +302,9 @@ async def rechazar_solicitud(solicitud_id: str, datos: RechazoIn, admin: dict = 
     return {"mensaje": "Solicitud rechazada. Se le avisó al estudiante con el motivo"}
 
 
-@router.post("/usuarios/{usuario_id}/revocar")
-async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict = Depends(solo_admin)):
-    """CA-23.4: un administrador deja sin efecto la verificación. La insignia sale de todas las
-    vistas porque todas la calculan desde verificacion.estado. El estudiante puede volver a
-    solicitarla con un comprobante actualizado."""
-    try:
-        oid = ObjectId(usuario_id)
-    except InvalidId:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+async def quitar_verificacion(oid: ObjectId, admin: dict, motivo: str) -> None:
+    """CA-23.4: la insignia sale de todas las vistas porque todas la calculan desde
+    verificacion.estado. La usan esta historia y las acciones sobre un reporte (HU-27)."""
     ahora = datetime.now(timezone.utc)
     resultado = await db.usuarios.update_one(
         {"_id": oid, "verificacion.estado": "verificado"},
@@ -319,7 +313,7 @@ async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict
             "verificacion.fecha_revocacion": ahora,
             "verificacion.admin_id": admin["_id"],
             # Campo nuevo (no está en el modelo de datos): se le muestra al estudiante
-            "verificacion.motivo_revocacion": datos.motivo,
+            "verificacion.motivo_revocacion": motivo,
             "fecha_actualizacion": ahora,
         }},
     )
@@ -327,9 +321,20 @@ async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict
         raise HTTPException(status.HTTP_409_CONFLICT, "Este perfil no tiene una verificación vigente")
     await notificar(
         oid, "verificacion_estudiante", "Tu verificación de estudiante fue revocada",
-        f"Motivo: {datos.motivo.rstrip('.')}. Puedes volver a solicitarla con un comprobante actualizado.",
+        f"Motivo: {motivo.rstrip('.')}. Puedes volver a solicitarla con un comprobante actualizado.",
         ("usuario", oid),
     )
+
+
+@router.post("/usuarios/{usuario_id}/revocar")
+async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict = Depends(solo_admin)):
+    """CA-23.4: un administrador deja sin efecto la verificación. El estudiante puede volver a
+    solicitarla con un comprobante actualizado."""
+    try:
+        oid = ObjectId(usuario_id)
+    except InvalidId:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    await quitar_verificacion(oid, admin, datos.motivo)
     return {"mensaje": "Verificación revocada. La insignia ya no aparece en el perfil"}
 
 

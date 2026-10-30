@@ -15,7 +15,7 @@ from app.db import db, siguiente_codigo
 from app.deps import solo_admin, usuario_actual
 from app.routers.verificacion import nombre_completo
 from app.schemas.reportes import (
-    ESTADOS_REPORTE, ElementoReportadoOut, EstadoReporte, OtroReporteOut, PersonaReporteOut, ReporteDetalleOut,
+    ESTADOS_REPORTE, AccionReporteOut, ElementoReportadoOut, EstadoReporte, OtroReporteOut, PersonaReporteOut, ReporteDetalleOut,
     ReporteFilaOut, ReporteIn, ReportePerfilIn, ReportePublicacionIn, TipoElemento,
 )
 
@@ -203,6 +203,20 @@ async def elemento_reportado(reporte: dict) -> ElementoReportadoOut | None:
     )
 
 
+async def accion_del_reporte(reporte: dict) -> AccionReporteOut | None:
+    """La acción con que se resolvió el reporte (HU-27)."""
+    accion_id = reporte.get("accion_moderacion_id")
+    accion = accion_id and await db.acciones_moderacion.find_one({"_id": accion_id})
+    if not accion:
+        return None
+    return AccionReporteOut(
+        accion=accion["accion"],
+        justificacion=accion["justificacion"],
+        fecha_accion=accion["fecha_accion"],
+        admin=await persona(accion["admin_id"]),
+    )
+
+
 @router.get("/{reporte_id}", response_model=ReporteDetalleOut)
 async def ver_reporte(reporte_id: str, _admin: dict = Depends(solo_admin)):
     """CA-26.2: quién reportó, lo reportado y los otros reportes del mismo elemento."""
@@ -231,6 +245,8 @@ async def ver_reporte(reporte_id: str, _admin: dict = Depends(solo_admin)):
         admin_revisor=await persona(reporte.get("admin_revisor_id")),
         elemento=await elemento_reportado(reporte),
         otros_reportes=otros,
+        resolucion=reporte.get("resolucion"),
+        accion=await accion_del_reporte(reporte),
     )
 
 

@@ -103,6 +103,12 @@ async def crear_indices() -> None:
         partialFilterExpression={"estado": {"$in": ["pendiente", "en_revision"]}},
         name="reporte_abierto_unico",
     )
+    await db.acciones_moderacion.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    # Para el historial de acciones de un perfil o una publicación (no está en el modelo de datos)
+    await db.acciones_moderacion.create_index(
+        [("objetivo_tipo", ASCENDING), ("objetivo_id", ASCENDING), ("fecha_accion", DESCENDING)],
+        name="objetivo_tipo_1_objetivo_id_1_fecha_accion_-1",
+    )
 
     # --- EP-02 · verificación (HU-21 a HU-23) ---
     # Solicitudes de verificación (HU-21). El índice por usuario y fecha no está en el modelo de

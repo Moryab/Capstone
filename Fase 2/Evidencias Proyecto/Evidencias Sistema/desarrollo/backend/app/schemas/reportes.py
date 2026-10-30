@@ -81,6 +81,15 @@ class OtroReporteOut(BaseModel):
     fecha_reporte: datetime
 
 
+class AccionReporteOut(BaseModel):
+    """CA-27.4: qué administrador la aplicó, cuándo, cuál fue y por qué."""
+
+    accion: str
+    justificacion: str
+    fecha_accion: datetime
+    admin: PersonaReporteOut | None = None
+
+
 class ReporteDetalleOut(BaseModel):
     """CA-26.2. Quién reportó solo se le entrega al administrador (CA-24.2 y CA-25.2)."""
 
@@ -96,3 +105,5 @@ class ReporteDetalleOut(BaseModel):
     admin_revisor: PersonaReporteOut | None = None
     elemento: ElementoReportadoOut | None = None
     otros_reportes: list[OtroReporteOut]
+    resolucion: str | None = None
+    accion: AccionReporteOut | None = None

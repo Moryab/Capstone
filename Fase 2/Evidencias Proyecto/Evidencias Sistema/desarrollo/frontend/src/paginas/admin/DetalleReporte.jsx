@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import Campo from '../../componentes/Campo.jsx'
+import Confirmar from '../../componentes/Confirmar.jsx'
 import { formatearPesos } from '../../publicaciones.js'
-import { textoEstadoReporte, textoMotivo, textoTipoReporte } from '../../reportes.js'
+import {
+  ACCIONES_PERFIL, ACCIONES_PUBLICACION, MAX_JUSTIFICACION, textoAccion, textoEstadoReporte, textoMotivo,
+  textoTipoReporte,
+} from '../../reportes.js'
 import { fechaCorta, fechaHora } from '../verificacion/datos.js'
 import './reportes.css'
 
@@ -45,7 +50,105 @@ function ElementoReportado({ tipo, elemento }) {
   )
 }
 
-// HU-26: detalle de un reporte y «Tomar para revisión». Las acciones sobre lo reportado son de la HU-27
+// HU-27: elige la acción y la justifica. Se confirma aparte porque algunas no se pueden deshacer
+function FormularioAccion({ reporte, alTerminar }) {
+  const opciones = reporte.tipo_elemento === 'usuario' ? ACCIONES_PERFIL : ACCIONES_PUBLICACION
+  const [datos, setDatos] = useState({ accion: '', justificacion: '' })
+  const [errores, setErrores] = useState({})
+  const [mensaje, setMensaje] = useState('')
+  const [confirmando, setConfirmando] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+
+  const cambiar = (e) => {
+    setDatos({ ...datos, [e.target.name]: e.target.value })
+    setErrores({ ...errores, [e.target.name]: undefined })
+  }
+
+  const revisar = (e) => {
+    e.preventDefault()
+    const faltan = { // CA-27.3: el backend vuelve a validar
+      ...(!datos.accion && { accion: 'Elige una acción' }),
+      ...(!datos.justificacion.trim() && { justificacion: 'Escribe la justificación' }),
+    }
+    setErrores(faltan)
+    setMensaje('')
+    if (!Object.keys(faltan).length) setConfirmando(true)
+  }
+
+  const aplicar = async () => {
+    setEnviando(true)
+    try {
+      const respuesta = await api(`/moderacion/reportes/${reporte.id}/accion`, { metodo: 'POST', datos })
+      await alTerminar(`${respuesta.mensaje}.`)
+    } catch (err) {
+      setErrores(err.errores ?? {})
+      setMensaje(err.errores ? 'Revisa los campos marcados' : err.message)
+      setConfirmando(false)
+      setEnviando(false)
+    }
+  }
+
+  const elegida = opciones.find((o) => o.valor === datos.accion)?.texto
+  return (
+    <form onSubmit={revisar} noValidate className="reporte-accion">
+      <h2>Acción sobre el reporte</h2>
+      <Campo etiqueta="Acción" nombre="accion" value={datos.accion} onChange={cambiar} error={errores.accion}
+        opciones={opciones} required />
+      <Campo etiqueta="Justificación" nombre="justificacion" multilinea rows={3} value={datos.justificacion}
+        onChange={cambiar} error={errores.justificacion} maxLength={MAX_JUSTIFICACION} required
+        ayuda={`La persona afectada verá este motivo. ${datos.justificacion.length}/${MAX_JUSTIFICACION} caracteres`} />
+      {mensaje && <p className="alerta" role="alert">{mensaje}</p>}
+      <div className="acciones">
+        <button type="submit" className="boton peligro">Aplicar acción</button>
+      </div>
+      <Confirmar abierto={confirmando} titulo={`¿${elegida}?`} ocupado={enviando}
+        mensaje="La acción quedará registrada con tu nombre y el reporte pasará a «resuelto»."
+        textoConfirmar="Sí, aplicar" textoOcupado="Aplicando…" onConfirmar={aplicar}
+        onCancelar={() => setConfirmando(false)} />
+    </form>
+  )
+}
+
+// CA-27.5: la reactivación también exige una justificación y queda registrada
+function ReactivarCuenta({ usuarioId, alTerminar }) {
+  const [justificacion, setJustificacion] = useState('')
+  const [error, setError] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
+  const reactivar = async (e) => {
+    e.preventDefault()
+    if (!justificacion.trim()) {
+      setError('Escribe la justificación')
+      return
+    }
+    setEnviando(true)
+    try {
+      const respuesta = await api(`/moderacion/usuarios/${usuarioId}/reactivar`, {
+        metodo: 'POST', datos: { justificacion },
+      })
+      await alTerminar(`${respuesta.mensaje}.`)
+    } catch (err) {
+      setError(err.errores?.justificacion ?? err.message)
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <form onSubmit={reactivar} noValidate className="reporte-accion">
+      <h2>Reactivar la cuenta</h2>
+      <Campo etiqueta="Justificación" nombre="justificacion" id="reactivar-justificacion" multilinea rows={2}
+        value={justificacion} onChange={(e) => { setJustificacion(e.target.value); setError('') }}
+        error={error} maxLength={MAX_JUSTIFICACION} required />
+      <div className="acciones">
+        <button type="submit" className="boton" disabled={enviando}>
+          {enviando ? 'Reactivando…' : 'Reactivar cuenta'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// HU-26 y HU-27: detalle de un reporte, «Tomar para revisión» y las acciones sobre lo reportado
 export default function DetalleReporte() {
   const { id } = useParams()
   const { state } = useLocation()
@@ -92,6 +195,11 @@ export default function DetalleReporte() {
       setTomando(false)
       await cargar()
     }
+  }
+
+  const alTerminar = async (texto) => {
+    await cargar()
+    setMensaje({ id, tipo: 'exito', texto })
   }
 
   return (
@@ -157,6 +265,24 @@ export default function DetalleReporte() {
             {tomando ? 'Tomando…' : 'Tomar para revisión'}
           </button>
         </div>
+      )}
+
+      {reporte.estado === 'en_revision' && <FormularioAccion reporte={reporte} alTerminar={alTerminar} />}
+
+      {reporte.accion && (
+        <section aria-labelledby="titulo-resultado" className="reporte-accion">
+          <h2 id="titulo-resultado">Resultado</h2>
+          <dl className="verificacion-detalle">
+            <Dato etiqueta="Acción">{textoAccion(reporte.accion.accion)}</Dato>
+            <Dato etiqueta="Justificación">{reporte.accion.justificacion}</Dato>
+            <Dato etiqueta="Aplicada por">{reporte.accion.admin?.nombre}</Dato>
+            <Dato etiqueta="Fecha">{fechaHora.format(new Date(reporte.accion.fecha_accion))}</Dato>
+          </dl>
+        </section>
+      )}
+
+      {reporte.resolucion === 'cuenta_suspendida' && reporte.elemento?.estado === 'suspendida' && (
+        <ReactivarCuenta usuarioId={reporte.elemento.id} alTerminar={alTerminar} />
       )}
     </main>
   )

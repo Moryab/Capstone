@@ -20,6 +20,7 @@
 .reporte-otros a { font-weight: 600; color: var(--primario); }
 .reporte-otros time { font-size: 0.85rem; color: var(--texto-suave); }
 .reporte-descripcion { margin: 0; white-space: pre-line; }
+.reporte-accion { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--borde); }
 @media (max-width: 760px) {
   .reporte-detalle { grid-template-columns: 1fr; }
 }
