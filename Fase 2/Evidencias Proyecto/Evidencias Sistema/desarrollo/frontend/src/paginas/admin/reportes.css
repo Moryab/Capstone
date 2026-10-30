@@ -10,6 +10,23 @@
   border: 1px solid var(--borde);
   border-radius: 8px;
 }
+.admin-buscador { flex: 1 1 280px; }
+.admin-buscador > span { display: flex; gap: 8px; }
+.admin-buscador input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--texto);
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.admin-buscador .boton { margin: 0; padding: 8px 18px; }
+.ficha-nombre { margin: 0 0 4px; text-align: left; font-size: 1.4rem; }
+.etiqueta-estado.verificado, .etiqueta-estado.activa { color: var(--exito); background: var(--exito-fondo); }
+.etiqueta-estado.suspendida, .etiqueta-estado.inhabilitada, .etiqueta-estado.revocado, .etiqueta-estado.rechazado,
+.etiqueta-estado.eliminada { color: var(--error); background: var(--error-fondo); }
 .etiqueta-estado.en_revision { color: var(--primario); }
 .etiqueta-estado.resuelto { color: var(--exito); background: var(--exito-fondo); }
 .reporte-detalle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-bottom: 20px; }
