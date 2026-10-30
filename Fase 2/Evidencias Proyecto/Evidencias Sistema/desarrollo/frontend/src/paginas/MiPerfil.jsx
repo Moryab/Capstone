@@ -2,25 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import { IconoCamara } from '../componentes/Iconos.jsx'
-import ProgresoPerfil from '../componentes/perfil/ProgresoPerfil.jsx'
-import PublicacionesPerfil from '../componentes/PublicacionesPerfil.jsx'
-import VistaPerfil from '../componentes/VistaPerfil.jsx'
+import Completitud from '../perfil/Completitud.jsx'
+import DatosClave from '../perfil/DatosClave.jsx'
+import { TarjetaContacto } from '../perfil/EstadoMatch.jsx'
+import Habitos from '../perfil/Habitos.jsx'
+import { IconoOjo } from '../perfil/iconos.jsx'
+import PaginaPerfil from '../perfil/PaginaPerfil.jsx'
+import Publicaciones from '../perfil/Publicaciones.jsx'
+import SobreMi from '../perfil/SobreMi.jsx'
+import { marcarTransicionPerfil } from '../perfil/transicion.js'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { FOTO_MAX_MB, FOTO_TIPOS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
-// Pestaña «Ver perfil»: el propio perfil tal como lo ven los demás, con la foto editable
+// Pestaña «Ver perfil»: el propio perfil, con la foto editable, «Sobre mí» en línea y el avance
 export default function MiPerfil() {
   const { usuario, recargarUsuario } = useSesion()
   const [perfil, setPerfil] = useState(null)
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [subiendo, setSubiendo] = useState(false)
+  const [importancia, setImportancia] = useState(null)
   const selectorFoto = useRef(null)
 
   useEffect(() => {
     api(`/usuarios/${usuario.id}/perfil`)
       .then(setPerfil)
       .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
+    // La importancia de cada hábito (no solo los imprescindibles) se ve en las fichas
+    api('/cuestionario').then((c) => setImportancia(c.importancia)).catch(() => {})
   }, [usuario.id])
 
   const guardarFoto = async (pedir, textoExito) => {
@@ -80,8 +89,8 @@ export default function MiPerfil() {
   // Editar el perfil se hace desde la pestaña de arriba; aquí: ver la vista pública y quitar la foto
   const acciones = (
     <>
-      {/* Vista previa sin controles de edición, como la ve otro estudiante */}
-      <Link to="/perfil-publico" className="boton secundario">Ver como me ven</Link>
+      {/* Vista previa como la ve otro estudiante, con transición animada (View Transitions) */}
+      <Link to="/perfil-publico" viewTransition onClick={marcarTransicionPerfil} className="boton secundario"><IconoOjo /> Ver como me ven</Link>
       {perfil.foto_url && (
         <button type="button" className="boton secundario" onClick={quitarFoto} disabled={subiendo}>
           Quitar foto
@@ -90,19 +99,26 @@ export default function MiPerfil() {
     </>
   )
 
-  const aviso = (
-    <div className="perfil-avisos">
-      {/* CA-03.5: lo que falta, como pasos a un clic en vez de una alerta */}
-      <ProgresoPerfil perfil={perfil} camposFaltantes={usuario.campos_faltantes} />
-      {mensaje.texto && (
-        <p className={mensaje.tipo} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
-      )}
-    </div>
+  const aviso = mensaje.texto && (
+    <p className={`p2-aviso ${mensaje.tipo}`} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
   )
 
   return (
-    <VistaPerfil perfil={perfil} sobreAvatar={controlesFoto} acciones={acciones} aviso={aviso}>
-      <PublicacionesPerfil />
-    </VistaPerfil>
+    <PaginaPerfil perfil={perfil} modo="propio" sobreAvatar={controlesFoto} acciones={acciones} aviso={aviso}
+      principal={(
+        <>
+          <SobreMi perfil={perfil} alGuardar={(descripcion) => { setPerfil((p) => ({ ...p, descripcion })); recargarUsuario() }} />
+          <Habitos perfil={perfil} importancia={importancia} />
+          <Publicaciones />
+        </>
+      )}
+      lateral={(
+        <>
+          {/* CA-03.5: lo que falta, con el siguiente paso sugerido */}
+          <Completitud perfil={perfil} camposFaltantes={usuario.campos_faltantes} alSubirFoto={() => selectorFoto.current.click()} />
+          <TarjetaContacto perfil={perfil} />
+          <DatosClave perfil={perfil} />
+        </>
+      )} />
   )
 }

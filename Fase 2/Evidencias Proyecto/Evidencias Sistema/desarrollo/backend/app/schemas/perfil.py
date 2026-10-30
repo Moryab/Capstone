@@ -100,6 +100,14 @@ class EstudiosIn(BaseModel):
     anio_valido = field_validator("anio_ingreso")(PerfilIn.anio_valido.__func__)
 
 
+class DescripcionIn(BaseModel):
+    """«Sobre mí» editado en línea desde el perfil (CA-03.1). Vacía se guarda como sin descripción."""
+
+    descripcion: str | None = Field(default=None, max_length=300)
+
+    descripcion_opcional = field_validator("descripcion")(PerfilIn.descripcion_opcional.__func__)
+
+
 class OrigenIn(BaseModel):
     """Segundo paso: de dónde viene y su dirección allá. La dirección no se muestra
     en el perfil público; solo la ciudad y la región."""
