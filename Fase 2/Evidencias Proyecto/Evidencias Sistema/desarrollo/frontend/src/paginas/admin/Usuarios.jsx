@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import { fechaCorta } from '../verificacion/datos.js'
 import { ESTADOS_CUENTA, ESTADOS_VERIFICACION, textoCuenta, textoVerificacion } from './datos.js'
+import Paginacion from './Paginacion.jsx'
 import './reportes.css'
 
 // HU-28: «Usuarios» del administrador. El buscador, los filtros y la página van en la dirección
@@ -130,19 +131,7 @@ export default function Usuarios() {
         </>
       )}
 
-      {datos?.paginas > 1 && (
-        <nav className="paginacion" aria-label="Páginas de usuarios">
-          <button type="button" className="boton secundario" disabled={datos.pagina <= 1}
-            onClick={() => irAPagina(datos.pagina - 1)}>
-            Anterior
-          </button>
-          <span>Página {datos.pagina} de {datos.paginas}</span>
-          <button type="button" className="boton secundario" disabled={datos.pagina >= datos.paginas}
-            onClick={() => irAPagina(datos.pagina + 1)}>
-            Siguiente
-          </button>
-        </nav>
-      )}
+      {datos && <Paginacion datos={datos} irAPagina={irAPagina} etiqueta="Páginas de usuarios" />}
     </main>
   )
 }

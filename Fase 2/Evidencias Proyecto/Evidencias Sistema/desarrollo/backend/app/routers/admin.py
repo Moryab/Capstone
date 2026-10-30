@@ -5,17 +5,19 @@ Depends(solo_admin) (app/deps.py) y los avisos al usuario se envían con app.not
 """
 
 import re
+from typing import Literal
 
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 
 from app.db import db
 from app.deps import solo_admin
 from app.routers.verificacion import nombre_completo
 from app.schemas.admin import (
-    EstadoCuenta, EstadoVerificacion, PublicacionUsuarioOut, ReporteRecibidoOut, SolicitudUsuarioOut,
-    SuspensionOut, UsuarioDetalleOut, UsuarioFilaOut, UsuarioPerfilOut,
+    EstadoCuenta, EstadoPublicacion, EstadoVerificacion, PublicacionFilaOut, PublicacionUsuarioOut,
+    ReporteRecibidoOut, SolicitudUsuarioOut, SuspensionOut, UsuarioDetalleOut, UsuarioFilaOut, UsuarioPerfilOut,
 )
 
 router = APIRouter(prefix="/api/admin", tags=["Administración"])
@@ -150,3 +152,69 @@ async def ver_usuario(usuario_id: str, _admin: dict = Depends(solo_admin)):
             async for s in db.solicitudes_verificacion.find({"usuario_id": oid}).sort("fecha_solicitud", -1)
         ],
     )
+
+
+@router.get("/publicaciones")
+async def listar_publicaciones(
+    buscar: str = Query(default="", max_length=100),
+    estado: EstadoPublicacion | None = None,
+    comuna: str | None = None,
+    orden: Literal["recientes", "reportes"] = "recientes",
+    pagina: int = Query(default=1, ge=1),
+    _admin: dict = Depends(solo_admin),
+):
+    """HU-29: todas las publicaciones, también las eliminadas (CA-29.4). Los filtros, la búsqueda
+    por título u oferente y el orden se combinan (CA-29.2)."""
+    consulta: dict = {}
+    if estado:
+        consulta["estado"] = estado
+    if comuna:
+        try:
+            consulta["ubicacion.comuna_id"] = ObjectId(comuna)
+        except InvalidId:
+            return JSONResponse(status_code=422, content={
+                "detail": "Datos inválidos", "errores": {"comuna": "Selecciona una comuna de la lista"},
+            })
+    if palabras := filtro_busqueda(buscar, ("nombre", "ap_paterno", "ap_materno", "correo")):
+        oferentes = [u["_id"] async for u in db.usuarios.find({"$and": palabras}, {"_id": 1})]
+        consulta["$or"] = [
+            {"$and": filtro_busqueda(buscar, ("titulo",))},
+            {"oferente_id": {"$in": oferentes}},
+        ]
+
+    primero = "cantidad_reportes" if orden == "reportes" else "fecha_publicacion"
+    total = await db.publicaciones.count_documents(consulta)
+    filas = await (
+        db.publicaciones.find(consulta, {
+            "titulo": 1, "oferente_id": 1, "costo_mensual": 1, "ubicacion.comuna_nombre": 1, "estado": 1,
+            "fecha_publicacion": 1, "cantidad_reportes": 1,
+        })
+        .sort([(primero, -1), ("fecha_publicacion", -1), ("_id", -1)])
+        .skip((pagina - 1) * TAMANO_PAGINA)
+        .limit(TAMANO_PAGINA)
+    ).to_list()
+
+    nombres = {
+        u["_id"]: nombre_completo(u)
+        async for u in db.usuarios.find(
+            {"_id": {"$in": [p["oferente_id"] for p in filas]}}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1}
+        )
+    }
+    return {
+        "total": total,
+        "pagina": pagina,
+        "paginas": max(1, -(-total // TAMANO_PAGINA)),
+        "resultados": [
+            PublicacionFilaOut(
+                id=str(p["_id"]),
+                titulo=p["titulo"],
+                oferente=nombres.get(p["oferente_id"]),
+                costo_mensual=p["costo_mensual"],
+                comuna=p["ubicacion"].get("comuna_nombre"),
+                estado=p["estado"],
+                fecha_publicacion=p["fecha_publicacion"],
+                cantidad_reportes=p.get("cantidad_reportes", 0),
+            )
+            for p in filas
+        ],
+    }

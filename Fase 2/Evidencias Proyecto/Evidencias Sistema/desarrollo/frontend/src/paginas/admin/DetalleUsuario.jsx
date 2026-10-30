@@ -3,10 +3,10 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { textoGenero } from '../../perfil.js'
-import { ESTADOS, formatearPesos } from '../../publicaciones.js'
+import { formatearPesos } from '../../publicaciones.js'
 import { textoEstadoReporte, textoMotivo, textoTipoReporte } from '../../reportes.js'
 import { ESTADOS_SOLICITUD, fechaCorta, fechaHora, textoTipo } from '../verificacion/datos.js'
-import { textoCuenta, textoVerificacion } from './datos.js'
+import { textoCuenta, textoPublicacion, textoVerificacion } from './datos.js'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
 
@@ -127,7 +127,7 @@ export default function DetalleUsuario() {
         {publicaciones.map((p) => (
           <li key={p.id}>
             <Link to={`/admin/publicaciones/${p.id}`}>{p.titulo}</Link>
-            <span className={`etiqueta-estado ${p.estado}`}>{ESTADOS[p.estado] ?? p.estado}</span>
+            <span className={`etiqueta-estado ${p.estado}`}>{textoPublicacion(p.estado)}</span>
             <span>{p.comuna} · {formatearPesos(p.costo_mensual)}</span>
             <span>{p.cantidad_reportes} {p.cantidad_reportes === 1 ? 'reporte' : 'reportes'}</span>
             <time dateTime={p.fecha_publicacion}>{fechaCorta.format(new Date(p.fecha_publicacion))}</time>

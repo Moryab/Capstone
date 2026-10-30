@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import FichaPublicacion from '../../componentes/FichaPublicacion.jsx'
 import InsigniaVerificacion from '../../componentes/InsigniaVerificacion.jsx'
-import { ESTADOS } from '../../publicaciones.js'
 import {
   MAX_JUSTIFICACION, MOTIVOS_INCUMPLIMIENTO, textoAccion, textoEstadoReporte, textoIncumplimiento, textoMotivo,
 } from '../../reportes.js'
 import { fechaCorta, fechaHora } from '../verificacion/datos.js'
+import { textoPublicacion } from './datos.js'
 import './reportes.css'
 
 const ACCIONES = [
@@ -127,6 +127,8 @@ function RestaurarPublicacion({ publicacionId, alTerminar }) {
 // HU-29 y HU-30: la publicación como la ve un estudiante, su moderación y su historial
 export default function DetallePublicacionAdmin() {
   const { id } = useParams()
+  const { state } = useLocation()
+  const volver = state?.volver ?? '/admin/publicaciones'
   // Se guarda junto con el id: al pasar a otra publicación, lo anterior deja de mostrarse
   const [cargado, setCargado] = useState({ id: null, datos: null, error: '' })
   const [aviso, setAviso] = useState({ id: null, texto: '' })
@@ -149,7 +151,7 @@ export default function DetallePublicacionAdmin() {
     return (
       <main className="tarjeta">
         <h1>{error}</h1>
-        <Link to="/admin/publicaciones" className="boton">Volver a las publicaciones</Link>
+        <Link to={volver} className="boton">Volver a las publicaciones</Link>
       </main>
     )
   }
@@ -167,12 +169,12 @@ export default function DetallePublicacionAdmin() {
 
   return (
     <main className="admin-publicacion">
-      <Link to="/admin/publicaciones" className="volver">← Volver a las publicaciones</Link>
+      <Link to={volver} className="volver">← Volver a las publicaciones</Link>
 
       {aviso.id === id && aviso.texto && <p className="exito" role="status">{aviso.texto}</p>}
       {pub.estado !== 'activa' && (
         <p className="alerta">
-          Estado: {ESTADOS[pub.estado] ?? pub.estado}
+          Estado: {textoPublicacion(pub.estado)}
           {eliminada && datos.eliminada_por && ` por el ${datos.eliminada_por}`}.
           {' '}Los estudiantes no ven esta publicación.
         </p>

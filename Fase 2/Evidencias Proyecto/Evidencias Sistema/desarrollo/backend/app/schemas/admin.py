@@ -6,6 +6,7 @@ from pydantic import BaseModel
 # Mismos valores que los enum del modelo de datos
 EstadoVerificacion = Literal["no_verificado", "pendiente", "verificado", "rechazado", "revocado"]
 EstadoCuenta = Literal["pendiente", "activa", "suspendida", "inhabilitada"]
+EstadoPublicacion = Literal["activa", "pausada", "completa", "suspendida", "eliminada"]
 
 
 class UsuarioFilaOut(BaseModel):
@@ -17,6 +18,19 @@ class UsuarioFilaOut(BaseModel):
     verificacion_estado: str
     estado_cuenta: str
     fecha_registro: datetime
+
+
+class PublicacionFilaOut(BaseModel):
+    """Fila del listado «Publicaciones» (CA-29.1)."""
+
+    id: str
+    titulo: str
+    oferente: str | None = None  # None si la cuenta ya no existe
+    costo_mensual: int
+    comuna: str | None = None
+    estado: str
+    fecha_publicacion: datetime
+    cantidad_reportes: int
 
 
 class SuspensionOut(BaseModel):
