@@ -596,6 +596,22 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
   background: #ccfbf1;
   border-radius: 999px;
 }
+/* HU-23: marca de los perfiles que aún no acreditan su condición de estudiante */
+.insignia-sin-verificar {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-family: 'Work Sans', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px dashed var(--borde);
+  border-radius: 999px;
+}
+.insignia-verificado, .insignia-sin-verificar { vertical-align: middle; white-space: nowrap; }
+.detalle-oferente .insignia-verificado,
+.detalle-oferente .insignia-sin-verificar { align-self: flex-start; margin: 3px 0; }
 .perfil-titular { margin: 6px 0 12px; font-size: 1.05rem; font-weight: 500; color: var(--texto-suave); }
 
 .perfil-datos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -1400,6 +1416,92 @@ p.compat-oferente { font-size: 0.85rem; }
 @media (prefers-reduced-motion: reduce) {
   .interruptor, .interruptor > span { transition: none; }
 }
+
+/* ---------- Verificación de estudiante (HU-21) ---------- */
+.info { padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; color: var(--texto); background: var(--campo); }
+.pagina-form .info { margin: 0 0 16px; }
+.verificacion-estado { margin-bottom: 20px; }
+.verificacion-estado > p { margin: 0 0 12px; }
+.verificacion-detalle {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 14px 18px;
+  font-size: 0.92rem;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+.verificacion-detalle dt { font-weight: 700; color: var(--texto-suave); }
+.verificacion-detalle dd { margin: 0; overflow-wrap: anywhere; }
+.verificacion-detalle .enlace-boton { padding: 0; font-size: inherit; text-align: left; }
+.campo input[type='file'] { padding: 8px; cursor: pointer; }
+.campo input[type='file']::file-selector-button {
+  margin-right: 12px;
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--primario);
+  background: var(--tarjeta);
+  border: 1px solid var(--primario);
+  border-radius: 999px;
+  cursor: pointer;
+}
+@media (max-width: 480px) {
+  .verificacion-detalle { grid-template-columns: 1fr; }
+  .verificacion-detalle dd { margin-bottom: 6px; }
+}
+
+/* ---------- Solicitudes de verificación del administrador (HU-22) ---------- */
+.pagina-admin { width: min(1040px, calc(100% - 32px)); text-align: left; }
+.pagina-admin h1, .pagina-admin > .subtitulo { text-align: center; }
+.pagina-admin > .alerta, .pagina-admin > .exito, .pagina-admin > .info { margin: 0 0 16px; }
+.pagina-admin h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.pestanas.dos { grid-template-columns: repeat(2, 1fr); width: min(340px, 100%); margin: 0 auto 20px; }
+.pestanas.dos .pestanas-indicador { width: calc((100% - 8px) / 2); }
+.pestanas.dos .pestana { font: inherit; font-size: 0.9rem; font-weight: 600; background: none; border: 0; cursor: pointer; }
+.admin-vacio { margin: 24px 0; text-align: center; color: var(--texto-suave); }
+.admin-tabla-contenedor { overflow-x: auto; border: 1px solid var(--borde); border-radius: 12px; }
+.admin-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-tabla th, .admin-tabla td { padding: 12px 14px; text-align: left; vertical-align: middle; }
+.admin-tabla th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); background: var(--campo); }
+.admin-tabla tbody tr + tr td { border-top: 1px solid var(--borde); }
+.admin-tabla td:last-child { text-align: right; white-space: nowrap; }
+.admin-tabla-sub { display: block; font-size: 0.82rem; color: var(--texto-suave); }
+.admin-volver { display: inline-block; margin-bottom: 12px; font-weight: 600; color: var(--primario); text-decoration: none; }
+.admin-volver:hover { text-decoration: underline; }
+.etiqueta-estado {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+  background: var(--campo);
+  border-radius: 999px;
+}
+.etiqueta-estado.aprobada { color: var(--exito); background: var(--exito-fondo); }
+.etiqueta-estado.rechazada { color: var(--error); background: var(--error-fondo); }
+.revision { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; margin-bottom: 20px; }
+.revision-sub { margin: 0 0 12px; font-size: 0.9rem; color: var(--texto-suave); }
+.comprobante-vista {
+  display: block;
+  width: 100%;
+  height: 560px;
+  object-fit: contain;
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+}
+.comprobante-abrir { display: inline-block; margin-top: 8px; font-size: 0.88rem; font-weight: 600; color: var(--primario); }
+.revision-persona { display: flex; align-items: center; gap: 12px; margin: 8px 0 14px; }
+.revision-persona a { text-decoration: none; color: var(--primario); }
+.revision-perfil .info { margin: 12px 0 0; }
+.revision-decision { padding-top: 16px; border-top: 1px solid var(--borde); }
+@media (max-width: 760px) {
+  .revision { grid-template-columns: 1fr; }
+  .comprobante-vista { height: 420px; }
+}
+.revision-revocar, .revision-decision > .acciones { margin-top: 16px; }
 
 /* ===== Vista previa del propio perfil («Ver como me ven»): igual al perfil de otro estudiante ===== */
 .vista-publica-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }

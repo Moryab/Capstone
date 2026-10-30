@@ -40,12 +40,29 @@ export async function api(ruta, { metodo = 'GET', datos } = {}) {
 
   const cuerpo = await respuesta.json().catch(() => ({}))
   if (respuesta.ok) return cuerpo
+  throw errorDeRespuesta(respuesta, cuerpo, token)
+}
 
+// Archivos privados (como el comprobante de estudiante, CA-21.5): no tienen URL pública porque
+// necesitan el token, así que se descargan como Blob para mostrarlos con URL.createObjectURL
+export async function apiArchivo(ruta) {
+  const token = obtenerToken()
+  let respuesta
+  try {
+    respuesta = await fetch(`/api${ruta}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    throw new ErrorApi(0, 'No se pudo conectar con el servidor. Intenta nuevamente')
+  }
+  if (respuesta.ok) return respuesta.blob()
+  throw errorDeRespuesta(respuesta, await respuesta.json().catch(() => ({})), token)
+}
+
+function errorDeRespuesta(respuesta, cuerpo, token) {
   // Un 401 con token es sesión expirada; sin token es, por ejemplo, credenciales incorrectas
   if (respuesta.status === 401 && token) {
     borrarToken()
     alExpirarSesion()
   }
   const mensaje = typeof cuerpo.detail === 'string' ? cuerpo.detail : 'Ocurrió un error inesperado'
-  throw new ErrorApi(respuesta.status, mensaje, cuerpo.errores)
+  return new ErrorApi(respuesta.status, mensaje, cuerpo.errores)
 }

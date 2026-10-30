@@ -24,7 +24,9 @@ services:
       - "8000:8000"   # en el servidor esto lo reemplazará Nginx
     volumes:
       - media_data:/app/media   # fotos de perfil: no se pierden al reconstruir la API
+      - privado_data:/app/privado   # comprobantes de estudiante: no se publican como archivos estáticos
 
 volumes:
   mongo_data:
   media_data:
+  privado_data:

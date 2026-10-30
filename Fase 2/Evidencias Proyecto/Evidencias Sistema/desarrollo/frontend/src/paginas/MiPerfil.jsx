@@ -99,8 +99,18 @@ export default function MiPerfil() {
     </>
   )
 
-  const aviso = mensaje.texto && (
-    <p className={`p2-aviso ${mensaje.tipo}`} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
+  const aviso = (
+    <>
+      {['no_verificado', 'rechazado', 'revocado'].includes(usuario.verificacion_estado) && (
+        <p className="p2-aviso info">
+          Tu perfil aún no está verificado como estudiante.{' '}
+          <Link to="/verificacion">Verificar mi condición de estudiante</Link>
+        </p>
+      )}
+      {mensaje.texto && (
+        <p className={`p2-aviso ${mensaje.tipo}`} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
+      )}
+    </>
   )
 
   return (

@@ -92,7 +92,31 @@ async def crear_indices() -> None:
     # --- EP-08 · seguimiento post-match (HU-18 a HU-20) ---
 
     # --- EP-06 · reportes y moderación (HU-24 a HU-27 y HU-30) ---
+    await db.reportes.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.reportes.create_index(
+        [("estado", ASCENDING), ("fecha_reporte", DESCENDING)], name="estado_1_fecha_reporte_-1"
+    )
+    # CA-24.4 y CA-25.4: un reporte abierto por usuario y elemento (no está en el modelo de datos)
+    await db.reportes.create_index(
+        [("tipo_elemento", ASCENDING), ("elemento_reportado_id", ASCENDING), ("reportante_id", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"estado": {"$in": ["pendiente", "en_revision"]}},
+        name="reporte_abierto_unico",
+    )
+    await db.acciones_moderacion.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    # Para el historial de acciones de un perfil o una publicación (no está en el modelo de datos)
+    await db.acciones_moderacion.create_index(
+        [("objetivo_tipo", ASCENDING), ("objetivo_id", ASCENDING), ("fecha_accion", DESCENDING)],
+        name="objetivo_tipo_1_objetivo_id_1_fecha_accion_-1",
+    )
 
     # --- EP-02 · verificación (HU-21 a HU-23) ---
+    # Solicitudes de verificación (HU-21). El índice por usuario y fecha no está en el modelo de
+    # datos: sirve para traer la última solicitud del estudiante
+    await db.solicitudes_verificacion.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.solicitudes_verificacion.create_index(
+        [("usuario_id", ASCENDING), ("fecha_solicitud", DESCENDING)],
+        name="usuario_id_1_fecha_solicitud_-1",
+    )
 
     # --- EP-07 · administración (HU-28 y HU-29) ---
