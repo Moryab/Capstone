@@ -1,51 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
-import VistaPerfil from '../componentes/VistaPerfil.jsx'
-import { CATEGORIAS, textoRespuesta } from '../cuestionario.js'
 import { useFondoCiudad } from '../fondo.js'
+import Compatibilidad from '../perfil/Compatibilidad.jsx'
+import DatosClave from '../perfil/DatosClave.jsx'
+import { IconoOjo } from '../perfil/iconos.jsx'
+import { TarjetaContacto, TarjetaEstadoMatch } from '../perfil/EstadoMatch.jsx'
+import Habitos from '../perfil/Habitos.jsx'
+import PaginaPerfil from '../perfil/PaginaPerfil.jsx'
+import { PublicacionesDe } from '../perfil/Publicaciones.jsx'
+import SobreMi from '../perfil/SobreMi.jsx'
+import { marcarTransicionPerfil } from '../perfil/transicion.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
-
-const Ojo = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
-  </svg>
-)
-
-// La misma sección «Tu compatibilidad con…» que ve otro estudiante en tu perfil. El porcentaje y
-// el parecido dependen de las respuestas de quien te visita, así que aquí solo se muestran las tuyas
-function CompatibilidadVistaPrevia({ perfil }) {
-  return (
-    <section className="perfil-seccion compat-seccion" aria-labelledby="titulo-compat">
-      <h2 id="titulo-compat">Tu compatibilidad con {perfil.nombre}</h2>
-      <p className="vista-publica-nota">
-        Aquí cada estudiante ve su porcentaje de compatibilidad contigo y en qué coinciden.
-      </p>
-      {perfil.habitos && (
-        <ul className="compat-detalle">
-          {CATEGORIAS.map(({ clave, titulo }) => (
-            <li key={clave} className="compat-categoria vista-previa">
-              <div className="compat-categoria-cabecera">
-                <strong>{titulo}</strong>
-                <span className="compat-estado">Depende</span>
-              </div>
-              <p>
-                <span>Tú: respuesta de quien te visita</span>
-                <span>{perfil.nombre}: {textoRespuesta(clave, perfil.habitos[clave])}</span>
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
-}
+import { CargandoPerfil } from './LayoutPerfil.jsx'
 
 /**
- * Vista previa del propio perfil igual a como lo ve otro estudiante en /usuarios/:id (HU-16):
- * mismos datos públicos y misma disposición, sin los controles de edición, sin los avisos
- * privados y con los textos en tercera persona.
+ * «Ver como me ven»: el propio perfil igual a como lo ve otro estudiante en /usuarios/:id (HU-16),
+ * sin controles de edición ni avisos privados y sin el teléfono (que solo ven los matches).
  */
 export default function VistaPublica() {
   const { usuario } = useSesion()
@@ -62,18 +33,29 @@ export default function VistaPublica() {
 
   return (
     <div className="contenedor-perfil">
-      <div className="vista-publica-barra">
-        <Link to="/perfil" className="volver">← Volver a mi perfil</Link>
-        <span className="vista-publica-etiqueta"><Ojo /> Vista previa: así te ven otros estudiantes</span>
+      <div className="p2-vista-previa-barra">
+        <Link to="/perfil" viewTransition onClick={marcarTransicionPerfil} className="volver">← Volver a mi perfil</Link>
+        <span className="p2-vista-previa-etiqueta"><IconoOjo /> Vista previa: así te ven otros estudiantes</span>
       </div>
-
       {error && <p className="alerta" role="alert">{error}</p>}
-      {!perfil && !error && <p className="cargando" role="status">Cargando…</p>}
-
+      {!perfil && !error && <CargandoPerfil />}
       {perfil && (
-        <VistaPerfil perfil={perfil}>
-          <CompatibilidadVistaPrevia perfil={perfil} />
-        </VistaPerfil>
+        <PaginaPerfil perfil={perfil} modo="otro"
+          principal={(
+            <>
+              <SobreMi perfil={perfil} />
+              <Compatibilidad vistaPrevia nombre={perfil.nombre} />
+              <Habitos perfil={perfil} />
+              <PublicacionesDe usuarioId={usuario.id} nombre={perfil.nombre} />
+            </>
+          )}
+          lateral={(
+            <>
+              <TarjetaEstadoMatch match={{ estado: 'ninguna', propuesta: null }} nombre={perfil.nombre} />
+              <TarjetaContacto perfil={perfil} />
+              <DatosClave perfil={perfil} />
+            </>
+          )} />
       )}
     </div>
   )

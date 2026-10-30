@@ -14,7 +14,7 @@ from app.media import borrar_foto, guardar_foto, tipo_imagen
 from app.routers.auth import campos_duplicados, datos_en_uso
 from app.routers.catalogos import ids_comunas
 from app.schemas.busqueda import Preferencias, PreferenciasIn, error_rango
-from app.schemas.perfil import EstudiosIn, OrigenIn, PerfilIn, PerfilOut, calcular_faltantes
+from app.schemas.perfil import DescripcionIn, EstudiosIn, OrigenIn, PerfilIn, PerfilOut, calcular_faltantes
 from app.schemas.usuarios import fecha_a_datetime
 
 router = APIRouter(prefix="/api/perfil", tags=["Perfil"])
@@ -127,6 +127,12 @@ async def guardar_estudios(datos: EstudiosIn, usuario: dict = Depends(usuario_ac
         "carrera": datos.carrera,
         "anio_ingreso": datos.anio_ingreso,
     })
+
+
+@router.put("/descripcion")
+async def guardar_descripcion(datos: DescripcionIn, usuario: dict = Depends(usuario_actual)):
+    """«Sobre mí» editado en línea desde el perfil, sin pasar por el formulario completo."""
+    return await guardar_parte(usuario, {"descripcion": datos.descripcion})
 
 
 @router.put("/origen")
