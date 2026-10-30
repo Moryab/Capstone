@@ -100,6 +100,14 @@ class EstudiosIn(BaseModel):
     anio_valido = field_validator("anio_ingreso")(PerfilIn.anio_valido.__func__)
 
 
+class DescripcionIn(BaseModel):
+    """«Sobre mí» editado en línea desde el perfil (CA-03.1). Vacía se guarda como sin descripción."""
+
+    descripcion: str | None = Field(default=None, max_length=300)
+
+    descripcion_opcional = field_validator("descripcion")(PerfilIn.descripcion_opcional.__func__)
+
+
 class OrigenIn(BaseModel):
     """Segundo paso: de dónde viene y su dirección allá. La dirección no se muestra
     en el perfil público; solo la ciudad y la región."""
@@ -174,8 +182,9 @@ def calcular_edad(fecha_nac: datetime | None) -> int | None:
 class PerfilPublicoOut(BaseModel):
     """HU-16: lo que otros estudiantes ven de un perfil (CA-16.1).
 
-    CA-16.3: no incluye correo, teléfono, RUT, dirección, fecha de nacimiento exacta ni
-    documentos de verificación; solo la edad.
+    CA-16.3: no incluye correo, RUT, dirección, fecha de nacimiento exacta ni documentos de
+    verificación; solo la edad. El teléfono, que es el medio de contacto, solo se entrega a quien
+    tiene un match confirmado con la persona (y a ella misma); al resto le llega vacío.
     """
 
     id: str
@@ -199,9 +208,14 @@ class PerfilPublicoOut(BaseModel):
     imprescindibles: list[str] = []
     miembro_desde: datetime
     es_propio: bool
+    # Contacto: solo con match confirmado entre ambos (o en el propio perfil)
+    contacto_visible: bool = False
+    telefono: str | None = None
 
     @classmethod
-    def desde_doc(cls, doc: dict, institucion: dict | None, es_propio: bool) -> "PerfilPublicoOut":
+    def desde_doc(
+        cls, doc: dict, institucion: dict | None, es_propio: bool, con_contacto: bool = False
+    ) -> "PerfilPublicoOut":
         perfil = doc.get("perfil", {})
         cuestionario = doc.get("cuestionario") or {}
         completo = cuestionario.get("completo", False)
@@ -228,4 +242,6 @@ class PerfilPublicoOut(BaseModel):
             else [],
             miembro_desde=doc["fecha_registro"],
             es_propio=es_propio,
+            contacto_visible=con_contacto,
+            telefono=perfil.get("telefono") if con_contacto else None,
         )

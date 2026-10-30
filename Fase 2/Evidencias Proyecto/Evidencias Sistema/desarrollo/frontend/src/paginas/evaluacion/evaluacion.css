@@ -60,3 +60,47 @@
   .evaluacion-enviada dl { grid-template-columns: 1fr; gap: 2px; }
   .evaluacion-enviada dd { margin-bottom: 8px; }
 }
+
+/* HU-19: razones de la incompatibilidad */
+.razones-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.razon {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 12px 14px;
+  background: var(--campo);
+  border: 2px solid transparent;
+  border-radius: 12px;
+}
+.razon.elegida { border-color: var(--primario); }
+.razon-nombre { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+.razon-nombre input { width: 18px; height: 18px; accent-color: var(--primario); }
+.razon-gravedad { display: flex; gap: 4px; }
+.razon-gravedad label {
+  position: relative;
+  flex: 1;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--texto-suave);
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.razon-gravedad label.elegida { color: var(--sobre-primario, #fff); background: var(--primario); border-color: var(--primario); }
+.razon-gravedad input { position: absolute; opacity: 0; pointer-events: none; }
+.razon-gravedad label:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
+.razones-resumen { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.razones-resumen li { padding: 6px 12px; background: var(--campo); border-radius: 999px; }
+.razones-resumen span { font-size: 0.8rem; color: var(--texto-suave); }
+.evaluacion-enviada > p { margin: 0; color: var(--texto-suave); }
+.evaluacion-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.evaluacion-acciones .boton { margin: 0; }
+
+/* Terminar la convivencia */
+.terminar-motivos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.terminar-motivos .evaluacion-opcion span { display: grid; gap: 2px; }
+.terminar-motivos .evaluacion-opcion small { font-weight: 400; color: var(--texto-suave); }
+.evaluacion-form > .casilla { font-weight: 600; }

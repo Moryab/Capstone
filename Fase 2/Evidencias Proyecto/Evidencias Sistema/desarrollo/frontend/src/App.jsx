@@ -8,10 +8,8 @@ import Alojamientos from './paginas/Alojamientos.jsx'
 import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
 import FormPublicacion from './paginas/FormPublicacion.jsx'
-import LayoutPerfil from './paginas/LayoutPerfil.jsx'
+import LayoutPerfil, { CargandoPerfil } from './paginas/LayoutPerfil.jsx'
 import Marco from './marco/Marco.jsx'
-import MiPerfil from './paginas/MiPerfil.jsx'
-import PerfilUsuario from './paginas/PerfilUsuario.jsx'
 import Propuestas from './paginas/Propuestas.jsx'
 import Roomies from './paginas/Roomies.jsx'
 // Páginas de cada área de trabajo: cada una la completa quien tiene esas historias
@@ -26,12 +24,18 @@ import Usuarios from './paginas/admin/Usuarios.jsx'
 import Verificaciones from './paginas/admin/Verificaciones.jsx'
 import Evaluacion from './paginas/evaluacion/Evaluacion.jsx'
 import Razones from './paginas/evaluacion/Razones.jsx'
+import Terminar from './paginas/evaluacion/Terminar.jsx'
 import Verificacion from './paginas/verificacion/Verificacion.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
 // La landing y el inicio se descargan solo cuando hacen falta (traen GSAP)
 const Landing = lazy(() => import('./landing/Landing.jsx'))
 const Inicio = lazy(() => import('./inicio/Inicio.jsx'))
+// Las páginas de perfil usan GSAP: se descargan aparte para no pesar en el resto de la app
+const MiPerfil = lazy(() => import('./paginas/MiPerfil.jsx'))
+const PerfilUsuario = lazy(() => import('./paginas/PerfilUsuario.jsx'))
+const VistaPublica = lazy(() => import('./paginas/VistaPublica.jsx'))
+const conCarga = (pagina) => <Suspense fallback={<div className="contenedor-perfil"><CargandoPerfil /></div>}>{pagina}</Suspense>
 // El cuestionario de convivencia también usa GSAP
 const PaginaCuestionario = lazy(() => import('./cuestionario/PaginaCuestionario.jsx'))
 const PestanaHabitos = lazy(() => import('./cuestionario/PestanaHabitos.jsx'))
@@ -76,11 +80,13 @@ export default function App() {
         <Route element={<RutaProtegida><Marco /></RutaProtegida>}>
           {/* Ruta padre: el marco con las pestañas no se desmonta al cambiar de pestaña */}
           <Route path="/perfil" element={<LayoutPerfil />}>
-            <Route index element={<MiPerfil />} />
+            <Route index element={<Suspense fallback={<CargandoPerfil />}><MiPerfil /></Suspense>} />
             <Route path="editar" element={<EditarPerfil />} />
             <Route path="cuestionario" element={<Suspense fallback={null}><PestanaHabitos /></Suspense>} />
           </Route>
-          <Route path="/usuarios/:id" element={<PerfilUsuario />} />
+          <Route path="/usuarios/:id" element={conCarga(<PerfilUsuario />)} />
+          {/* Vista previa del propio perfil como lo ven los demás */}
+          <Route path="/perfil-publico" element={conCarga(<VistaPublica />)} />
           {/* EP-03: publicación de alojamientos */}
           <Route path="/publicaciones/nueva" element={<FormPublicacion />} />
           <Route path="/publicaciones/:id/editar" element={<FormPublicacion />} />
@@ -93,6 +99,7 @@ export default function App() {
           {/* EP-08: seguimiento post-match (HU-18 y HU-19) */}
           <Route path="/evaluacion/:matchId" element={<Evaluacion />} />
           <Route path="/evaluacion/:matchId/razones" element={<Razones />} />
+          <Route path="/evaluacion/:matchId/terminar" element={<Terminar />} />
           {/* EP-02: verificación de estudiante (HU-21) */}
           <Route path="/verificacion" element={<Verificacion />} />
         </Route>

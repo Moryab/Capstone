@@ -58,10 +58,21 @@ async def _proponer_a(buscador: dict) -> int:
     if faltan <= 0:
         return 0
 
-    # Cada alojamiento se le propone una sola vez; con un mismo oferente, una propuesta abierta a la vez
-    anteriores = [m async for m in db.matches.find({"usuario_a_id": yo}, {"publicacion_id": 1, "usuario_b_id": 1, "estado": 1})]
-    ya_propuestas = [m["publicacion_id"] for m in anteriores]
-    oferentes_abiertos = {m["usuario_b_id"] for m in anteriores if m["estado"] in ABIERTAS}
+    # No se repite un alojamiento abierto, rechazado o donde ya convivió; los que solo vencieron
+    # (por ejemplo, porque confirmó otro) pueden volver a proponerse si termina esa convivencia
+    anteriores = [
+        m async for m in db.matches.find(
+            {"usuario_a_id": yo}, {"publicacion_id": 1, "usuario_b_id": 1, "estado": 1, "motivo_fin": 1}
+        )
+    ]
+    ya_propuestas = [m["publicacion_id"] for m in anteriores if m["estado"] != "expirado"]
+    # Con un mismo oferente, una propuesta abierta a la vez; y con quien la convivencia terminó por
+    # incompatibilidad, nunca más
+    oferentes_abiertos = {
+        m["usuario_b_id"]
+        for m in anteriores
+        if m["estado"] in ABIERTAS or (m["estado"] == "finalizado" and m.get("motivo_fin") == "incompatibilidad")
+    }
 
     # Compatibilidad alta (75 % o más) y sin conflicto en algo imprescindible
     compatibles = {}

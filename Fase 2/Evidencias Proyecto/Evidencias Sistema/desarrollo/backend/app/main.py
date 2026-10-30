@@ -63,6 +63,8 @@ MENSAJES_FORMATO = {
     "monto_estimado": "Ingresa el monto en pesos, solo números",
     "costo_min": "Ingresa el monto en pesos, solo números",
     "costo_max": "Ingresa el monto en pesos, solo números",
+    "desde": "Ingresa una fecha válida",
+    "hasta": "Ingresa una fecha válida",
 }
 
 # Límites incumplidos: van antes que MENSAJES_FORMATO porque el valor sí tenía el tipo correcto.

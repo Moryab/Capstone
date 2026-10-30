@@ -18,7 +18,7 @@ export default function TarjetaPerfil({ perfil }) {
           tamano={72} className="i-perfil-avatar" />
         <div className="i-tarjeta-encabezado">
           <h2 id="i-titulo-perfil" className="i-etiqueta-titulo">Así te ven los demás</h2>
-          <Ayuda texto="Vista previa de tu perfil público. Tu correo, teléfono, RUT y dirección no se muestran." />
+          <Ayuda texto="Tu perfil tal como lo ven otros estudiantes. Tu correo, teléfono, RUT y dirección no se muestran." />
         </div>
 
         {perfil === null ? (
@@ -38,8 +38,8 @@ export default function TarjetaPerfil({ perfil }) {
           </>
         )}
 
-        <Link to="/perfil" className="l-boton l-boton-claro i-perfil-boton">
-          Ver perfil completo <IconoFlecha />
+        <Link to="/perfil-publico" className="l-boton l-boton-claro i-perfil-boton">
+          Ver como me ven <IconoFlecha />
         </Link>
       </div>
     </Tarjeta>

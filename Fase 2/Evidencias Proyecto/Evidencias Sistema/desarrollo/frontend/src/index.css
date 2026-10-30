@@ -410,7 +410,7 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
 /* ---------- Perfil: contenedor y pestañas ---------- */
 
 /* Mismo ancho en ambas pestañas y alineado arriba (no centrado), para que nada salte al cambiar */
-.contenedor-perfil { width: min(980px, calc(100% - 32px)); margin: 8px auto 0; }
+.contenedor-perfil { width: min(1200px, calc(100% - 32px)); margin: 8px auto 0; }
 .pestana-contenido > .tarjeta { width: 100%; margin: 0; }
 
 .perfil-barra {
@@ -1394,6 +1394,7 @@ p.compat-oferente { font-size: 0.85rem; }
 .propuesta .exito, .propuesta .alerta { margin: 0; }
 .propuesta > .boton { justify-self: start; margin: 0; }
 .propuesta-evaluacion { font-size: 0.9rem; font-weight: 600; color: var(--primario); }
+.propuesta-terminar { justify-self: start; font-size: 0.85rem; color: var(--error); }
 .propuesta-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
 .propuesta-acciones .boton { flex: 1; margin: 0; padding: 10px 16px; }
 .propuesta-rechazo { display: grid; gap: 10px; }
@@ -1501,3 +1502,36 @@ p.compat-oferente { font-size: 0.85rem; }
   .comprobante-vista { height: 420px; }
 }
 .revision-revocar, .revision-decision > .acciones { margin-top: 16px; }
+
+/* ===== Vista previa del propio perfil («Ver como me ven»): igual al perfil de otro estudiante ===== */
+.vista-publica-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
+.vista-publica-barra .volver { margin-bottom: 0; }
+.vista-publica-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primario);
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+.vista-publica-nota { margin: 0 0 12px; font-size: 0.9rem; color: var(--texto-suave); }
+.compat-categoria.vista-previa { --estado-color: var(--texto-suave); }
+.compat-categoria.vista-previa .compat-estado { font-weight: 600; }
+
+
+/* Esqueleto mientras carga el perfil (LayoutPerfil): la forma de la portada, la foto y las columnas */
+.perfil-cargando.pv-esqueleto { display: block; overflow: hidden; padding: 0; background: transparent; }
+.pv-esqueleto > span, .pv-esq-cuerpo span { display: block; background: var(--campo); animation: pv-latir 1.4s ease-in-out infinite; }
+.pv-esq-portada { height: clamp(200px, 26vw, 300px); border-radius: 24px; }
+.pv-esq-avatar { width: 168px; height: 168px; margin: -92px 0 0 40px; border: 6px solid var(--tarjeta); border-radius: 50%; }
+.pv-esq-linea { width: 34%; height: 16px; margin: 14px 40px 0; border-radius: 8px; }
+.pv-esq-linea.ancha { width: 48%; height: 28px; margin-top: 18px; }
+.pv-esq-cuerpo { display: grid; grid-template-columns: 1fr 360px; gap: 24px; padding: 28px 0; }
+.pv-esq-cuerpo span { height: 260px; border-radius: 20px; }
+@keyframes pv-latir { 50% { opacity: 0.55; } }
+@media (max-width: 980px) { .pv-esq-cuerpo { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .pv-esqueleto > span, .pv-esq-cuerpo span { animation: none; } }
