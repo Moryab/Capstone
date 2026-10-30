@@ -1,0 +1,25 @@
+/* Reportes del administrador (HU-26) */
+.admin-filtros { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.admin-filtros label { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 600; color: var(--texto-suave); }
+.admin-filtros select {
+  min-width: 170px;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--texto);
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+}
+.etiqueta-estado.en_revision { color: var(--primario); }
+.etiqueta-estado.resuelto { color: var(--exito); background: var(--exito-fondo); }
+.reporte-detalle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-bottom: 20px; }
+.reporte-detalle h2 { margin-bottom: 10px; }
+.reporte-enlace { display: inline-block; margin-top: 10px; font-size: 0.9rem; font-weight: 600; color: var(--primario); }
+.reporte-otros { margin: 0 0 20px; padding: 0; list-style: none; }
+.reporte-otros li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-top: 1px solid var(--borde); }
+.reporte-otros a { font-weight: 600; color: var(--primario); }
+.reporte-otros time { font-size: 0.85rem; color: var(--texto-suave); }
+.reporte-descripcion { margin: 0; white-space: pre-line; }
+@media (max-width: 760px) {
+  .reporte-detalle { grid-template-columns: 1fr; }
+}

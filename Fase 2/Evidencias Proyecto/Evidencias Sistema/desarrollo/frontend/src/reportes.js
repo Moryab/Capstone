@@ -17,3 +17,21 @@ export const MOTIVOS_PUBLICACION = [
 ]
 
 export const MAX_DESCRIPCION = 500
+
+export const TIPOS_REPORTE = [
+  { valor: 'usuario', texto: 'Perfil' },
+  { valor: 'publicacion', texto: 'Publicación' },
+]
+
+// Mismos valores que el tipo `EstadoReporte` del backend
+export const ESTADOS_REPORTE = [
+  { valor: 'pendiente', texto: 'Pendiente' },
+  { valor: 'en_revision', texto: 'En revisión' },
+  { valor: 'resuelto', texto: 'Resuelto' },
+  { valor: 'descartado', texto: 'Descartado' },
+]
+
+const textoDe = (lista, valor) => lista.find((o) => o.valor === valor)?.texto ?? valor
+export const textoTipoReporte = (valor) => textoDe(TIPOS_REPORTE, valor)
+export const textoEstadoReporte = (valor) => textoDe(ESTADOS_REPORTE, valor)
+export const textoMotivo = (valor) => textoDe([...MOTIVOS_PERFIL, ...MOTIVOS_PUBLICACION], valor)
