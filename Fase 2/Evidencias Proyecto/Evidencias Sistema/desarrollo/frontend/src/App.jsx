@@ -24,6 +24,7 @@ import Usuarios from './paginas/admin/Usuarios.jsx'
 import Verificaciones from './paginas/admin/Verificaciones.jsx'
 import Evaluacion from './paginas/evaluacion/Evaluacion.jsx'
 import Razones from './paginas/evaluacion/Razones.jsx'
+import Terminar from './paginas/evaluacion/Terminar.jsx'
 import Verificacion from './paginas/verificacion/Verificacion.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
@@ -98,6 +99,7 @@ export default function App() {
           {/* EP-08: seguimiento post-match (HU-18 y HU-19) */}
           <Route path="/evaluacion/:matchId" element={<Evaluacion />} />
           <Route path="/evaluacion/:matchId/razones" element={<Razones />} />
+          <Route path="/evaluacion/:matchId/terminar" element={<Terminar />} />
           {/* EP-02: verificación de estudiante (HU-21) */}
           <Route path="/verificacion" element={<Verificacion />} />
         </Route>

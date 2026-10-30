@@ -11,7 +11,9 @@ from app.deps import usuario_actual
 from app.matching import ABIERTAS, VIGENCIA, MatchNoDisponible, generar_propuestas, responder
 from app.routers.compatibilidades import el_otro, resumenes
 from app.routers.evaluaciones import estado_evaluacion
-from app.seguimiento import avisar_evaluaciones
+from app.routers.perfil import datos_invalidos
+from app.schemas.seguimiento import TerminoIn
+from app.seguimiento import NoSePuedeTerminar, avisar_evaluaciones, terminar_convivencia
 
 router = APIRouter(prefix="/api/matches", tags=["Match"])
 
@@ -67,6 +69,8 @@ async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
             "fecha_confirmacion": m["fecha_confirmacion"],
             # HU-18: evaluación de la convivencia al mes
             "evaluacion": estado_evaluacion(m, yo) if m["estado"] == "confirmado" else None,
+            "fecha_fin": m.get("fecha_fin_convivencia"),
+            "motivo_fin": m.get("motivo_fin"),
         }
 
     return [una(m) for m in matches]
@@ -83,10 +87,10 @@ async def mis_propuestas(usuario: dict = Depends(usuario_actual)):
     mias = {"$or": [{"usuario_a_id": yo}, {"usuario_b_id": yo}]}
     abiertas = [m async for m in db.matches.find({**mias, "estado": {"$in": ABIERTAS}}).sort("fecha_sugerencia", -1)]
     confirmados = [m async for m in db.matches.find({**mias, "estado": "confirmado"}).sort("fecha_confirmacion", -1)]
-    cerradas = [
-        m async for m in db.matches.find({**mias, "estado": {"$in": ["rechazado", "expirado"]}})
-        .sort("fecha_respuesta", -1).limit(HISTORIAL)
-    ]
+    cerradas = [m async for m in db.matches.find({**mias, "estado": {"$in": ["rechazado", "expirado", "finalizado"]}})]
+    # Lo más reciente primero: el término de la convivencia o la respuesta a la propuesta
+    cerradas.sort(key=lambda m: m.get("fecha_fin_convivencia") or m["fecha_respuesta"] or m["fecha_sugerencia"], reverse=True)
+    cerradas = cerradas[:HISTORIAL]
     return {
         "buscando": bool(usuario.get("buscando_alojamiento")),
         "con_convivencia": bool(usuario.get("match_activo_id")),
@@ -151,3 +155,33 @@ async def aceptar(match_id: str, usuario: dict = Depends(usuario_actual)):
 async def rechazar(match_id: str, datos: RechazoIn, usuario: dict = Depends(usuario_actual)):
     """CA-17.3: la propuesta queda rechazada y no se crea convivencia."""
     return await contestar(match_id, usuario, acepta=False, motivo=datos.motivo)
+
+
+@router.post("/{match_id}/terminar")
+async def terminar(match_id: str, datos: TerminoIn, usuario: dict = Depends(usuario_actual)):
+    """Terminar una convivencia confirmada. Si fue por incompatibilidad, con sus razones (HU-19)."""
+    match = await propuesta_de(match_id, usuario)
+    if match["estado"] != "confirmado":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta convivencia no está activa")
+
+    yo = usuario["_id"]
+    ya_explico = any(e["evaluador_id"] == yo and e.get("razones") for e in match.get("evaluacion", []))
+    razones = []
+    if datos.motivo == "incompatibilidad" and not ya_explico:
+        if errores := datos.errores():
+            return datos_invalidos(errores)
+        razones = datos.sin_repetir()
+    con_otra = any(r["razon"] == "otra" for r in razones)
+
+    try:
+        match = await terminar_convivencia(
+            match, usuario, datos.motivo, razones, datos.razon_otra_detalle if con_otra else None,
+            datos.comentario, datos.seguir_buscando,
+        )
+    except NoSePuedeTerminar as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(e))
+    return {
+        "mensaje": "La convivencia terminó. Usaremos lo que nos contaste para tus próximas recomendaciones"
+        if razones else "La convivencia terminó",
+        "propuesta": (await vista([match], yo))[0],
+    }

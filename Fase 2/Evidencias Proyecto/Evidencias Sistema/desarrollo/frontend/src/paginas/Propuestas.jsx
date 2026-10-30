@@ -6,6 +6,7 @@ import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { formatearFecha, formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
+import { MOTIVOS_FIN } from './evaluacion/Terminar.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 
 // CA-17.3: el motivo es opcional; ayuda a mejorar las próximas propuestas (EP-08)
@@ -17,7 +18,7 @@ const MOTIVOS_RECHAZO = [
   { valor: 'otro', texto: 'Otro motivo' },
 ]
 
-const ESTADOS_CERRADOS = { rechazado: 'Rechazada', expirado: 'Venció o se cerró' }
+const ESTADOS_CERRADOS = { rechazado: 'Rechazada', expirado: 'Venció o se cerró', finalizado: 'Convivencia terminada' }
 
 const nombreDe = (persona) => `${mayusculaInicial(persona.nombre)} ${persona.ap_paterno ?? ''}`.trim()
 
@@ -94,6 +95,10 @@ function TarjetaPropuesta({ p, alResponder }) {
         ) : (
           <p className="propuesta-estado"><span>Podrás evaluar la convivencia desde el {formatearFecha(p.evaluacion.fecha_habilitacion)}.</span></p>
         )
+      )}
+      {/* Cualquiera de los dos puede terminarla; el buscador queda libre para un nuevo match */}
+      {p.estado === 'confirmado' && (
+        <Link to={`/evaluacion/${p.id}/terminar`} className="propuesta-terminar">Terminar convivencia</Link>
       )}
 
       {abierta && (
@@ -263,7 +268,11 @@ export default function Propuestas() {
             {datos.historial.map((p) => (
               <li key={p.id}>
                 <strong>{p.publicacion.titulo}</strong> con {nombreDe(p.otro)}
-                <span> · {ESTADOS_CERRADOS[p.estado] ?? p.estado}</span>
+                <span>
+                  {' · '}{ESTADOS_CERRADOS[p.estado] ?? p.estado}
+                  {p.fecha_fin && ` el ${formatearFecha(p.fecha_fin)}`}
+                  {p.motivo_fin && ` (${textoDe(MOTIVOS_FIN, p.motivo_fin).toLowerCase()})`}
+                </span>
               </li>
             ))}
           </ul>
