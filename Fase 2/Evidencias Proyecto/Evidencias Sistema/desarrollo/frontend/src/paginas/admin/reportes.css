@@ -20,6 +20,11 @@
 .reporte-otros a { font-weight: 600; color: var(--primario); }
 .reporte-otros time { font-size: 0.85rem; color: var(--texto-suave); }
 .reporte-descripcion { margin: 0; white-space: pre-line; }
+.admin-publicacion { width: min(1000px, calc(100% - 32px)); margin: 8px auto 32px; }
+.admin-publicacion > .alerta, .admin-publicacion > .exito, .admin-publicacion > .info { margin: 0 0 16px; }
+.admin-moderacion { width: 100%; margin: 20px 0 0; text-align: left; }
+.admin-moderacion h2 { margin: 0 0 10px; font-size: 1.1rem; }
+.admin-moderacion .reporte-accion:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .reporte-accion { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--borde); }
 @media (max-width: 760px) {
   .reporte-detalle { grid-template-columns: 1fr; }

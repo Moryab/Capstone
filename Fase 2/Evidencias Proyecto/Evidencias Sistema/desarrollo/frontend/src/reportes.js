@@ -51,6 +51,17 @@ const ACCIONES_REGISTRADAS = [
   { valor: 'revocar_verificacion', texto: 'Verificación quitada' },
   { valor: 'suspender_publicacion', texto: 'Publicación ocultada' },
   { valor: 'eliminar_publicacion', texto: 'Publicación eliminada' },
+  { valor: 'reactivar_usuario', texto: 'Cuenta reactivada' },
+  { valor: 'reactivar_publicacion', texto: 'Publicación restaurada' },
+]
+
+// HU-30: mismos valores que el tipo `MotivoIncumplimiento` del backend (CA-30.3)
+export const MOTIVOS_INCUMPLIMIENTO = [
+  { valor: 'informacion_falsa', texto: 'Información falsa' },
+  { valor: 'contenido_inapropiado', texto: 'Contenido inapropiado' },
+  { valor: 'precio_distinto', texto: 'Precio distinto al real' },
+  { valor: 'publicacion_duplicada', texto: 'Publicación duplicada' },
+  { valor: 'otro', texto: 'Otro' },
 ]
 
 export const MAX_JUSTIFICACION = 500
@@ -58,5 +69,6 @@ export const MAX_JUSTIFICACION = 500
 const textoDe = (lista, valor) => lista.find((o) => o.valor === valor)?.texto ?? valor
 export const textoTipoReporte = (valor) => textoDe(TIPOS_REPORTE, valor)
 export const textoEstadoReporte = (valor) => textoDe(ESTADOS_REPORTE, valor)
+export const textoIncumplimiento = (valor) => textoDe(MOTIVOS_INCUMPLIMIENTO, valor)
 export const textoAccion = (valor) => textoDe(ACCIONES_REGISTRADAS, valor)
 export const textoMotivo = (valor) => textoDe([...MOTIVOS_PERFIL, ...MOTIVOS_PUBLICACION], valor)
