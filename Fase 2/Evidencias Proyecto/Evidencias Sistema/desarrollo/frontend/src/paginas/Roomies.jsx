@@ -6,6 +6,7 @@ import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { tituloCategoria } from '../cuestionario.js'
 import { mayusculaInicial } from '../inicio/utilidades.js'
+import { useSesion } from '../sesion/SesionContext.jsx'
 
 // Cuántas coincidencias se nombran en la tarjeta; el resto se resume como «y N más»
 const COINCIDENCIAS_VISIBLES = 3
@@ -42,6 +43,7 @@ function TarjetaRoomie({ roomie, desde }) {
 
 // HU-15: «Posibles roomies», los estudiantes del más al menos compatible (CA-15.1)
 export default function Roomies() {
+  const { usuario } = useSesion()
   const [params, setParams] = useSearchParams()
   const { pathname, search } = useLocation()
   const pagina = Math.max(1, Number(params.get('pagina')) || 1)
@@ -64,6 +66,8 @@ export default function Roomies() {
 
   const { datos, error } = resultado
   const cargando = resultado.pagina !== pagina
+  // Solo se muestran estudiantes con el rol opuesto (la API filtra; la compatibilidad no cambia)
+  const oferente = usuario.modo === 'oferente'
 
   return (
     <main className="pagina-roomies">
@@ -71,7 +75,9 @@ export default function Roomies() {
         <div>
           <h1>Posibles roomies</h1>
           <p className="subtitulo">
-            Estudiantes ordenados según qué tan compatibles son sus hábitos de convivencia con los tuyos.
+            {oferente
+              ? 'Estudiantes que buscan alojamiento, ordenados según tu compatibilidad.'
+              : 'Estudiantes que ofrecen alojamiento, ordenados según tu compatibilidad.'}
           </p>
         </div>
       </div>
@@ -92,8 +98,10 @@ export default function Roomies() {
         <div className="alojamientos-vacio">
           <h3>Todavía no encontramos posibles roomies para ti</h3>
           <p>
-            Aparecerán aquí cuando otros estudiantes respondan el cuestionario de hábitos.
-            Mientras tanto, puedes revisar tus respuestas.
+            {oferente
+              ? 'Aparecerán aquí cuando estudiantes compatibles contigo activen la búsqueda de alojamiento.'
+              : 'Aparecerán aquí cuando estudiantes compatibles contigo publiquen un alojamiento con cupos.'}
+            {' '}Mientras tanto, puedes revisar tus respuestas.
           </p>
           <Link to="/perfil/cuestionario" className="boton secundario">Ver mis hábitos</Link>
         </div>

@@ -16,6 +16,7 @@ from pymongo import ReturnDocument
 from app.compatibilidad import CANDIDATOS, NIVEL_ALTO, PARAMETROS_VERSION
 from app.db import db, siguiente_codigo
 from app.notificaciones import notificar
+from app.routers.catalogos import comunas_cerca_de
 from app.schemas.busqueda import Preferencias, filtro_preferencias
 
 ABIERTAS = ["sugerido", "pendiente"]  # sin respuesta de ninguno o de uno de los dos
@@ -28,6 +29,7 @@ def es_buscador(usuario: dict | None = None) -> dict:
     """Condición de Mongo para quienes pueden recibir propuestas como buscadores (o solo ese usuario)."""
     return {
         **CANDIDATOS,
+        "modo": "buscador",  # un match siempre es buscador ↔ oferente (modos.py)
         "buscando_alojamiento": True,
         "match_activo_id": None,  # CA-17.4: una convivencia activa a la vez
         **({"_id": usuario["_id"]} if usuario else {}),
@@ -87,7 +89,11 @@ async def _proponer_a(buscador: dict) -> int:
             compatibles[otro] = c
     if not compatibles:
         return 0
-    activos = {u["_id"] async for u in db.usuarios.find({**CANDIDATOS, "_id": {"$in": list(compatibles)}}, {"_id": 1})}
+    # Solo oferentes: nunca se proponen matches entre dos buscadores
+    activos = {
+        u["_id"]
+        async for u in db.usuarios.find({**CANDIDATOS, "modo": "oferente", "_id": {"$in": list(compatibles)}}, {"_id": 1})
+    }
 
     consulta = {
         "estado": "activa",
@@ -100,8 +106,14 @@ async def _proponer_a(buscador: dict) -> int:
     # Con preferencias guardadas (CA-12.2), solo alojamientos que las cumplan
     if guardadas := buscador.get("preferencias_busqueda"):
         consulta.update(filtro_preferencias(Preferencias.model_validate(guardadas)))
-        if guardadas.get("comunas_ids"):
-            consulta["ubicacion.comuna_id"] = {"$in": guardadas["comunas_ids"]}
+        # Ubicación: las comunas elegidas y, si pidió «Cerca de tu sede», solo las cercanas a ella
+        zona = set(guardadas["comunas_ids"]) if guardadas.get("comunas_ids") else None
+        if guardadas.get("cerca_institucion"):
+            cercanas = await comunas_cerca_de(buscador)
+            if cercanas is not None:
+                zona = set(cercanas) if zona is None else zona & set(cercanas)
+        if zona is not None:
+            consulta["ubicacion.comuna_id"] = {"$in": list(zona)}
 
     publicaciones = [p async for p in db.publicaciones.find(consulta, {"oferente_id": 1, "titulo": 1, "fecha_publicacion": 1})]
     # Primero los oferentes más compatibles; entre iguales, el alojamiento más reciente

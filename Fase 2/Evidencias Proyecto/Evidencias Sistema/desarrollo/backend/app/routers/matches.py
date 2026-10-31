@@ -92,6 +92,7 @@ async def mis_propuestas(usuario: dict = Depends(usuario_actual)):
     cerradas.sort(key=lambda m: m.get("fecha_fin_convivencia") or m["fecha_respuesta"] or m["fecha_sugerencia"], reverse=True)
     cerradas = cerradas[:HISTORIAL]
     return {
+        "modo": usuario.get("modo"),
         "buscando": bool(usuario.get("buscando_alojamiento")),
         "con_convivencia": bool(usuario.get("match_activo_id")),
         "propuestas": await vista(abiertas, yo),
@@ -103,6 +104,11 @@ async def mis_propuestas(usuario: dict = Depends(usuario_actual)):
 @router.put("/busqueda")
 async def cambiar_busqueda(datos: BusquedaIn, usuario: dict = Depends(usuario_actual)):
     """«Estoy buscando alojamiento»: solo quien lo activa recibe propuestas como buscador."""
+    if datos.buscando and usuario.get("modo") != "buscador":
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "Para activar la búsqueda cambia tu rol a «Busco dónde vivir». Mientras ofreces un espacio no puedes buscar",
+        )
     if datos.buscando and usuario.get("match_activo_id"):
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya tienes una convivencia activa")  # CA-17.4
     await db.usuarios.update_one({"_id": usuario["_id"]}, {"$set": {"buscando_alojamiento": datos.buscando}})

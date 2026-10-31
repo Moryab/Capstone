@@ -82,7 +82,8 @@ export default function PerfilUsuario() {
         lateral={(
           <>
             {/* Al confirmarse el match se recarga el perfil para mostrar el teléfono */}
-            <TarjetaEstadoMatch match={match} nombre={perfil.nombre} alCambiar={cargar} />
+            <TarjetaEstadoMatch match={match} nombre={perfil.nombre} alCambiar={cargar}
+          miModo={usuario.modo} suModo={perfil.modo} />
             <TarjetaContacto perfil={perfil} />
             <DatosClave perfil={perfil} />
           </>

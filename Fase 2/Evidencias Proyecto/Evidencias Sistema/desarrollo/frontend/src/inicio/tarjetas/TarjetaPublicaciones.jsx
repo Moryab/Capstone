@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { contar, prefiereSinMovimiento } from '../../landing/animaciones.js'
 import { ESTADOS, formatearPesos } from '../../publicaciones.js'
+import { EnlaceCambioRol } from '../../rol/CambioRol.jsx'
 import { Ayuda, Esqueleto, Tarjeta } from '../comunes.jsx'
 import { IconoFlecha, IconoMas } from '../iconos.jsx'
 
@@ -96,6 +97,7 @@ export default function TarjetaPublicaciones({ publicaciones, error }) {
           )}
         </>
       )}
+      <EnlaceCambioRol />
     </Tarjeta>
   )
 }

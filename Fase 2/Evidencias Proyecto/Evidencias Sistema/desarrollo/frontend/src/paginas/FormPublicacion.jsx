@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api.js'
+import { NOMBRES_ROL, SIN_CAMBIO_CON_CONVIVENCIA, useCambioRol } from '../rol/CambioRol.jsx'
+import { useSesion } from '../sesion/SesionContext.jsx'
 import Campo from '../componentes/Campo.jsx'
 import FotosPublicacion from '../componentes/FotosPublicacion.jsx'
 import {
@@ -30,6 +32,10 @@ export default function FormPublicacion() {
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [prohibido, setProhibido] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const { usuario, recargarUsuario } = useSesion()
+  const { abrir: abrirCambioRol } = useCambioRol()
+  const { state } = useLocation()
+  const desdeBienvenida = Boolean(state?.desdeBienvenida)
 
   useEffect(() => {
     api('/catalogos/publicacion')
@@ -46,6 +52,26 @@ export default function FormPublicacion() {
       .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
   }, [id, editando])
 
+  // Publicar es del oferente (la API lo exige): a quien busca dónde vivir se le ofrece cambiar de rol
+  if (!editando && usuario.modo !== 'oferente') {
+    return (
+      <main className="tarjeta pagina-form">
+        <h1>Para publicar, cambia tu rol</h1>
+        <p className="subtitulo">
+          Hoy tu rol es «{NOMBRES_ROL[usuario.modo] ?? 'sin elegir'}». En RoomMatch cada estudiante busca
+          dónde vivir u ofrece un espacio, no las dos cosas a la vez.
+        </p>
+        {usuario.con_convivencia ? (
+          <p className="alerta">{SIN_CAMBIO_CON_CONVIVENCIA}.</p>
+        ) : (
+          <button type="button" className="boton" onClick={() => abrirCambioRol('oferente')}>
+            Cambiar a «{NOMBRES_ROL.oferente}»
+          </button>
+        )}
+        <Link to="/" className="boton secundario">Volver al inicio</Link>
+      </main>
+    )
+  }
   if (prohibido) {
     return (
       <main className="tarjeta">
@@ -100,6 +126,11 @@ export default function FormPublicacion() {
       }
       avisar('exito', `Tu alojamiento «${publicacion.titulo}» ya está publicado.`)
     } catch (err) {
+      if (!editando && err.estado === 409) {
+        // El rol cambió (por ejemplo, en otra pestaña): con la sesión al día se ofrece cambiarlo
+        await recargarUsuario()
+        return
+      }
       // CA-05.3: no se publica, se indica qué falta y lo escrito se conserva
       setErrores(err.errores ?? {})
       setMensaje({ tipo: 'alerta', texto: err.errores ? 'Revisa los campos marcados' : err.message })
@@ -116,6 +147,12 @@ export default function FormPublicacion() {
       <p className="subtitulo">
         Mientras más clara sea la información, más fácil será encontrar a tu próximo roomie.
       </p>
+      {/* Recién elegido el rol en «¿Qué te trae a RoomMatch?»: se puede dejar para más tarde */}
+      {desdeBienvenida && (
+        <p className="form-despues">
+          ¿No tienes los datos a mano? <Link to="/" replace>Publicar después</Link>
+        </p>
+      )}
 
       <form onSubmit={enviar} noValidate>
         <fieldset>

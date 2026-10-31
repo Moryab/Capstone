@@ -143,6 +143,10 @@ class UsuarioOut(BaseModel):
     campos_faltantes: list[str]
     cuestionario_completo: bool  # HU-13
     buscando_alojamiento: bool  # HU-17
+    # Rol: «buscador», «oferente» o None mientras no elige (modos.py)
+    modo: Literal["buscador", "oferente"] | None = None
+    # Con convivencia como buscador no puede cambiar de rol (como oferente lo revisa la API)
+    con_convivencia: bool = False
     foto_url: str | None = None
     fecha_registro: datetime
 
@@ -166,6 +170,8 @@ class UsuarioOut(BaseModel):
             campos_faltantes=doc.get("perfil", {}).get("campos_faltantes", []),
             cuestionario_completo=(doc.get("cuestionario") or {}).get("completo", False),
             buscando_alojamiento=doc.get("buscando_alojamiento", False),
+            modo=doc.get("modo"),
+            con_convivencia=bool(doc.get("match_activo_id")),
             foto_url=doc.get("perfil", {}).get("foto_url"),
             fecha_registro=doc["fecha_registro"],
         )

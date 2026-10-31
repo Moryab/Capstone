@@ -21,6 +21,9 @@ class Preferencias(BaseModel):
     gastos_incluidos: bool = False
     amoblado: bool = False
     estacionamiento: bool = False
+    # CA-11.3: comunas cercanas a la sede del perfil. Es ubicación, así que no entra en
+    # filtro_preferencias: cada uso la combina con las comunas elegidas
+    cerca_institucion: bool = False
 
 
 class PreferenciasIn(Preferencias):
@@ -34,7 +37,6 @@ class FiltrosBusqueda(Preferencias):
 
     pagina: int = Field(default=1, ge=1)
     comunas: list[str] = []
-    cerca_institucion: bool = False  # CA-11.3
 
 
 def filtro_preferencias(p: Preferencias) -> dict:

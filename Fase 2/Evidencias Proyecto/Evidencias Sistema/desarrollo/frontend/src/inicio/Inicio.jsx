@@ -5,6 +5,7 @@ import '../landing/landing.css'
 import { gsap, prefiereSinMovimiento, useAnimacion } from '../landing/animaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import Hero from './Hero.jsx'
+import TarjetaBuscando from './tarjetas/TarjetaBuscando.jsx'
 import TarjetaPasos from './tarjetas/TarjetaPasos.jsx'
 import TarjetaPerfil from './tarjetas/TarjetaPerfil.jsx'
 import TarjetaPronto from './tarjetas/TarjetaPronto.jsx'
@@ -84,10 +85,17 @@ export default function Inicio() {
     <main ref={ref} className="i-contenido">
       <Hero usuario={usuario} momento={momento} />
 
-      <div className="i-bento">
-        <TarjetaPublicar />
+      {/* Una tarjeta principal según el rol: el buscador activa su búsqueda; el oferente publica
+          o, si ya publicó, ve el resumen de sus publicaciones */}
+      <div className={`i-bento modo-${usuario.modo}`}>
+        {usuario.modo === 'oferente' ? (
+          publicaciones?.length === 0 && !errorPubs
+            ? <TarjetaPublicar />
+            : <TarjetaPublicaciones publicaciones={publicaciones} error={errorPubs} />
+        ) : (
+          <TarjetaBuscando />
+        )}
         <TarjetaPasos />
-        <TarjetaPublicaciones publicaciones={publicaciones} error={errorPubs} />
         <TarjetaPerfil perfil={perfil} />
       </div>
 

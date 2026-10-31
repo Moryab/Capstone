@@ -8,6 +8,7 @@ from pymongo.errors import DuplicateKeyError
 from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
+from app.modos import tiene_convivencia
 from app.schemas.perfil import calcular_faltantes
 from app.schemas.usuarios import LoginIn, RegistroIn, TokenOut, UsuarioOut, fecha_a_datetime
 from app.security import cifrar_password, crear_token, verificar_password
@@ -66,7 +67,10 @@ async def registrar(datos: RegistroIn):
         "estado_cuenta": "activa",
         "advertencias_recibidas": 0,
         "match_activo_id": None,
-        "buscando_alojamiento": False,  # HU-17: se activa en «Propuestas de match»
+        "buscando_alojamiento": False,  # HU-17: solo un buscador puede activarla
+        # Rol buscador/oferente (modos.py): se elige después del cuestionario de hábitos
+        "modo": None,
+        "fecha_cambio_modo": None,
         "correo_verificado": False,
         "verificacion": {"estado": "no_verificado"},
         # El teléfono se pide al registrarse; el resto del perfil se completa después
@@ -152,4 +156,5 @@ async def logout(usuario: dict = Depends(usuario_actual)):
 
 @router.get("/me", response_model=UsuarioOut)
 async def yo(usuario: dict = Depends(usuario_actual)):
-    return UsuarioOut.desde_doc(usuario)
+    # La convivencia como oferente no queda en el usuario: se revisa en sus matches
+    return UsuarioOut.desde_doc(usuario).model_copy(update={"con_convivencia": await tiene_convivencia(usuario)})

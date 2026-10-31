@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { IconoCampana, IconoCerrar, IconoEditar, IconoEscudo, IconoFlecha, IconoLuna, IconoSol } from '../inicio/iconos.jsx'
+import { NOMBRES_ROL, SIN_CAMBIO_CON_CONVIVENCIA, useCambioRol } from '../rol/CambioRol.jsx'
+import { IconoBuscador, IconoOferente } from '../rol/iconos.jsx'
+import { useSesion } from '../sesion/SesionContext.jsx'
 
 // Interruptor del tema: de día un sol con nube, de noche una luna con estrellas
 function Interruptor({ oscuro, alCambiar, etiqueta }) {
@@ -36,6 +39,10 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
   const dialogo = useRef(null)
   const idTema = useId()
   const oscuro = tema === 'oscuro'
+  const { usuario } = useSesion()
+  const { abrir } = useCambioRol()
+  const destino = usuario?.modo === 'buscador' ? 'oferente' : 'buscador'
+  const IconoRolDestino = destino === 'oferente' ? IconoOferente : IconoBuscador
 
   useEffect(() => {
     const d = dialogo.current
@@ -81,6 +88,27 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
               <span className="i-config-textos"><strong>Editar mis datos</strong><span>Nombre, estudios y contacto</span></span>
               <span className="i-config-flecha" aria-hidden="true"><IconoFlecha /></span>
             </Link>
+            {usuario?.rol === 'estudiante' && usuario.modo && (
+              usuario.con_convivencia ? (
+                <div className="i-config-fila bloqueada">
+                  <span className="i-config-icono" aria-hidden="true"><IconoRolDestino /></span>
+                  <span className="i-config-textos">
+                    <strong>Tu rol: {NOMBRES_ROL[usuario.modo]}</strong>
+                    <span>{SIN_CAMBIO_CON_CONVIVENCIA}.</span>
+                  </span>
+                </div>
+              ) : (
+                <button type="button" className="i-config-fila" aria-haspopup="dialog"
+                  onClick={() => { alCerrar(); abrir(destino) }}>
+                  <span className="i-config-icono" aria-hidden="true"><IconoRolDestino /></span>
+                  <span className="i-config-textos">
+                    <strong>Cambiar a {destino}</strong>
+                    <span>Tu rol hoy: {NOMBRES_ROL[usuario.modo]}</span>
+                  </span>
+                  <span className="i-config-flecha" aria-hidden="true"><IconoFlecha /></span>
+                </button>
+              )
+            )}
           </div>
         </section>
 

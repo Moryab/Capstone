@@ -2,17 +2,19 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from pymongo.errors import DuplicateKeyError
 
 from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto, tipo_imagen
+from app.modos import CambioNoPermitido, Modo, cambiar_modo, resumen_cambio
 from app.routers.auth import campos_duplicados, datos_en_uso
-from app.routers.catalogos import ids_comunas
+from app.routers.catalogos import comunas_cerca_de, ids_comunas
 from app.schemas.busqueda import Preferencias, PreferenciasIn, error_rango
 from app.schemas.perfil import DescripcionIn, EstudiosIn, OrigenIn, PerfilIn, PerfilOut, calcular_faltantes
 from app.schemas.usuarios import fecha_a_datetime
@@ -162,6 +164,10 @@ async def guardar_preferencias(datos: PreferenciasIn, usuario: dict = Depends(us
     comunas = await ids_comunas(datos.comunas_ids)
     if comunas is None:
         return datos_invalidos({"comunas_ids": "Selecciona comunas de la lista"})
+    if datos.cerca_institucion and await comunas_cerca_de(usuario) is None:
+        return datos_invalidos({
+            "cerca_institucion": "Indica tu institución y sede en tu perfil para usar esta opción"
+        })
 
     preferencias = {**datos.model_dump(), "comunas_ids": comunas}
     await db.usuarios.update_one(
@@ -172,6 +178,30 @@ async def guardar_preferencias(datos: PreferenciasIn, usuario: dict = Depends(us
         "mensaje": "Preferencias guardadas",
         "preferencias": preferencias_out({"preferencias_busqueda": preferencias}),
     }
+
+
+class ModoIn(BaseModel):
+    modo: Modo
+
+
+@router.get("/modo")
+async def ver_modo(usuario: dict = Depends(usuario_actual)):
+    """Rol actual y lo que pasaría al cambiarlo, para explicarlo antes de confirmar."""
+    return await resumen_cambio(usuario)
+
+
+@router.put("/modo")
+async def elegir_modo(datos: ModoIn, usuario: dict = Depends(usuario_actual)):
+    """Elegir el rol después del cuestionario o cambiarlo desde el inicio o la configuración.
+    Con una convivencia activa no se puede cambiar (modos.py)."""
+    if usuario["rol"] != "estudiante":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Solo los estudiantes tienen rol de buscador u oferente")
+    try:
+        resultado = await cambiar_modo(usuario, datos.modo)
+    except CambioNoPermitido as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(e))
+    textos = {"buscador": "Ahora buscas dónde vivir", "oferente": "Ahora ofreces un espacio"}
+    return {"mensaje": textos[datos.modo], **resultado}
 
 
 @router.post("/foto")

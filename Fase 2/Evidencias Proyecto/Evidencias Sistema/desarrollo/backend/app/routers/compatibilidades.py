@@ -45,16 +45,37 @@ async def resumenes(usuarios: list[dict]) -> dict[ObjectId, dict]:
     }
 
 
+async def rol_complementario(usuario: dict) -> dict | None:
+    """Condición de Mongo para los estudiantes con el rol opuesto, o None si aún no elige rol.
+
+    Al buscador se le muestran oferentes con al menos un alojamiento activo con cupos; al oferente,
+    buscadores con la búsqueda activada. La compatibilidad se sigue calculando con todos (EP-08).
+    """
+    modo = usuario.get("modo")
+    if modo == "buscador":
+        con_cupos = await db.publicaciones.distinct(
+            "oferente_id", {"estado": "activa", "cupos_disponibles": {"$gt": 0}}
+        )
+        return {"modo": "oferente", "_id": {"$in": con_cupos}}
+    if modo == "oferente":
+        return {"modo": "buscador", "buscando_alojamiento": True}
+    return None
+
+
 @router.get("")
 async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict = Depends(usuario_actual)):
-    """HU-14: estudiantes compatibles, del más al menos compatible, de a 10.
+    """HU-14: estudiantes compatibles con el rol opuesto, del más al menos compatible, de a 10.
 
     CA-14.4: no aparecen quienes no completaron el cuestionario, uno mismo ni las cuentas
     suspendidas. Tampoco los pares descartados por un conflicto en algo imprescindible.
     """
     yo = usuario["_id"]
+    modo = usuario.get("modo")
     if not (usuario.get("cuestionario") or {}).get("completo"):
-        return {"cuestionario_completo": False, "total": 0, "pagina": 1, "paginas": 1, "resultados": []}
+        return {"cuestionario_completo": False, "modo": modo, "total": 0, "pagina": 1, "paginas": 1, "resultados": []}
+    complementario = await rol_complementario(usuario)
+    if complementario is None:
+        return {"cuestionario_completo": True, "modo": None, "total": 0, "pagina": 1, "paginas": 1, "resultados": []}
 
     # CA-17.6: con quien ya se confirmó un match deja de aparecer como posible roomie
     con_match = [
@@ -66,9 +87,13 @@ async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict =
     ]
     calculos = [c async for c in db.compatibilidades.find({**de_usuario(yo), "descartado": False})]
     calculos = [c for c in calculos if el_otro(c, yo) not in con_match]
+    ids = [el_otro(c, yo) for c in calculos]
+    if "_id" in complementario:  # buscador: solo oferentes con cupos
+        permitidos = set(complementario.pop("_id")["$in"])
+        ids = [i for i in ids if i in permitidos]
     otros = {
         u["_id"]: u
-        async for u in db.usuarios.find({**CANDIDATOS, "_id": {"$in": [el_otro(c, yo) for c in calculos]}})
+        async for u in db.usuarios.find({**CANDIDATOS, **complementario, "_id": {"$in": ids}})
     }
     calculos = sorted(
         (c for c in calculos if el_otro(c, yo) in otros), key=lambda c: c["porcentaje"], reverse=True
@@ -88,6 +113,7 @@ async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict =
 
     return {
         "cuestionario_completo": True,
+        "modo": modo,
         "total": len(calculos),
         "pagina": pagina,
         "paginas": max(1, -(-len(calculos) // TAMANO_PAGINA)),

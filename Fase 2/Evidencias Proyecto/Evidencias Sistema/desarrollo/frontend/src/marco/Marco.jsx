@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { guardarLocal, leerLocal } from '../almacenamiento.js'
 import { api } from '../api.js'
 import '../inicio/inicio.css'
+import { CambioRolProvider } from '../rol/CambioRol.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { useAplicarTema, useTema } from '../tema/contexto.js'
 import Avisos from './Avisos.jsx'
@@ -57,6 +58,7 @@ export default function Marco({ children }) {
 
   return (
     <div className={`i-app${contraida ? ' barra-contraida' : ''}`}>
+      <CambioRolProvider>
       <a href="#contenido" className="i-saltar">Saltar al contenido</a>
       <Navegacion usuario={usuario} cerrarSesion={cerrarSesion} irAPublicaciones={irAPublicaciones}
         contraida={contraida} setContraida={setContraida} abrirConfig={() => setConfigAbierta(true)}
@@ -69,6 +71,7 @@ export default function Marco({ children }) {
       <Configuracion abierto={configAbierta} alCerrar={() => setConfigAbierta(false)}
         tema={tema} cambiarTema={cambiarTema} />
       <Avisos abierto={avisosAbiertos} alCerrar={() => setAvisosAbiertos(false)} alCambiar={revisarAvisos} />
+      </CambioRolProvider>
     </div>
   )
 }

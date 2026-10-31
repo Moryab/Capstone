@@ -10,7 +10,7 @@ from app.config import settings
 from app.db import db, siguiente_codigo
 from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto_publicacion, tipo_imagen
-from app.routers.catalogos import ids_comunas
+from app.routers.catalogos import comunas_cerca_de, ids_comunas
 from app.routers.perfil import datos_invalidos
 from app.matching import cerrar_propuestas_de_publicacion, generar_propuestas
 from app.schemas.busqueda import TAMANO_PAGINA, FiltrosBusqueda, error_rango, filtro_preferencias
@@ -21,6 +21,10 @@ router = APIRouter(prefix="/api/publicaciones", tags=["Publicaciones"])
 NO_ENCONTRADA = HTTPException(status.HTTP_404_NOT_FOUND, "Publicación no encontrada")
 NO_ES_TUYA = HTTPException(
     status.HTTP_403_FORBIDDEN, "Solo quien publicó el alojamiento puede modificarlo"
+)
+SOLO_OFERENTE = (
+    "Para publicar un alojamiento cambia tu rol a «Tengo un espacio». "
+    "Mientras buscas dónde vivir no puedes publicar"
 )
 # CA-05.4: la publicación acepta JPG y PNG (la foto de perfil además acepta WebP)
 FORMATOS_FOTO = ("jpg", "png")
@@ -83,9 +87,18 @@ async def campos_desde(datos: PublicacionIn) -> dict | None:
 COMUNA_INVALIDA = {"ubicacion.comuna_id": "Selecciona una comuna de la lista"}
 
 
+async def solo_oferente(usuario: dict = Depends(usuario_actual)) -> dict:
+    """Publica quien tiene el rol de oferente (modos.py). Como dependencia, se revisa antes que los
+    datos del formulario: a un buscador no se le muestran errores de campos, sino que cambie de rol.
+    El frontend reconoce el 409 y le ofrece cambiarlo."""
+    if usuario.get("modo") != "oferente":
+        raise HTTPException(status.HTTP_409_CONFLICT, SOLO_OFERENTE)
+    return usuario
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def publicar(datos: PublicacionIn, usuario: dict = Depends(usuario_actual)):
-    """HU-05 y HU-06: cualquier estudiante puede publicar con su misma cuenta (CA-05.1)."""
+async def publicar(datos: PublicacionIn, usuario: dict = Depends(solo_oferente)):
+    """HU-05 y HU-06: solo el oferente publica (modos.py)."""
     campos = await campos_desde(datos)
     if campos is None:
         return datos_invalidos(COMUNA_INVALIDA)
@@ -111,22 +124,6 @@ async def publicar(datos: PublicacionIn, usuario: dict = Depends(usuario_actual)
         "mensaje": "Publicación creada",
         "publicacion": PublicacionOut.desde_doc(doc, es_propia=True, oferente=usuario),
     }
-
-
-async def comunas_cerca_de(usuario: dict) -> list[ObjectId] | None:
-    """CA-11.3: comunas cercanas a la sede del perfil, según las zonas cargadas en instituciones.
-
-    Si la sede no calza con ninguna, se usan las de todas las sedes de la institución.
-    """
-    perfil = usuario.get("perfil", {})
-    if not perfil.get("institucion_id"):
-        return None
-    institucion = await db.instituciones.find_one({"_id": perfil["institucion_id"]})
-    if not institucion:
-        return None
-    sedes = institucion.get("sedes", [])
-    sedes = [s for s in sedes if s["nombre"] == perfil.get("sede")] or sedes
-    return list({c for s in sedes for c in s.get("comunas_cercanas_ids", [])})
 
 
 @router.get("")
@@ -238,6 +235,8 @@ async def editar(publicacion_id: str, datos: PublicacionIn, usuario: dict = Depe
     if campos is None:
         return datos_invalidos(COMUNA_INVALIDA)
 
+    if doc["estado"] == "pausada":
+        campos["estado"] = "pausada"  # pausada por el cambio de rol: vuelve solo al ser oferente otra vez
     campos["fecha_ultima_modificacion"] = datetime.now(timezone.utc)  # CA-07.5
     await db.publicaciones.update_one({"_id": doc["_id"]}, {"$set": campos})
     actualizado = await db.publicaciones.find_one({"_id": doc["_id"]})

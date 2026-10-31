@@ -207,6 +207,8 @@ class PerfilPublicoOut(BaseModel):
     habitos: dict[str, str] | None = None
     imprescindibles: list[str] = []
     miembro_desde: datetime
+    # Rol buscador/oferente: el match solo se propone entre roles distintos (modos.py)
+    modo: str | None = None
     es_propio: bool
     # Contacto: solo con match confirmado entre ambos (o en el propio perfil)
     contacto_visible: bool = False
@@ -241,6 +243,7 @@ class PerfilPublicoOut(BaseModel):
             if completo
             else [],
             miembro_desde=doc["fecha_registro"],
+            modo=doc.get("modo"),
             es_propio=es_propio,
             contacto_visible=con_contacto,
             telefono=perfil.get("telefono") if con_contacto else None,

@@ -19,6 +19,23 @@ async def ids_comunas(ids: list[str]) -> list[ObjectId] | None:
     return oids
 
 
+async def comunas_cerca_de(usuario: dict) -> list[ObjectId] | None:
+    """CA-11.3: comunas cercanas a la sede del perfil, según las zonas cargadas en instituciones.
+
+    Si la sede no calza con ninguna, se usan las de todas las sedes de la institución.
+    La usan la búsqueda de alojamientos y las propuestas de match (preferencia «Cerca de tu sede»).
+    """
+    perfil = usuario.get("perfil", {})
+    if not perfil.get("institucion_id"):
+        return None
+    institucion = await db.instituciones.find_one({"_id": perfil["institucion_id"]})
+    if not institucion:
+        return None
+    sedes = institucion.get("sedes", [])
+    sedes = [s for s in sedes if s["nombre"] == perfil.get("sede")] or sedes
+    return list({c for s in sedes for c in s.get("comunas_cercanas_ids", [])})
+
+
 @router.get("/perfil")
 async def catalogo_perfil():
     """Opciones de las listas desplegables del formulario de perfil (HU-03)."""

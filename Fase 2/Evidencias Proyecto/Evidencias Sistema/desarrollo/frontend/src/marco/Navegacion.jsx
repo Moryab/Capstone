@@ -80,7 +80,10 @@ export default function Navegacion({
   const idMenu = useId()
   const nombre = mayusculaInicial(usuario.nombre)
   const admin = usuario.rol === 'administrador'
-  const opciones = admin ? OPCIONES_ADMIN : OPCIONES_ESTUDIANTE
+  // Quien busca dónde vivir no publica: «Mis publicaciones» solo la ve el oferente
+  const opciones = admin
+    ? OPCIONES_ADMIN
+    : OPCIONES_ESTUDIANTE.filter((o) => !(o.publicaciones && usuario.modo === 'buscador'))
 
   const contador = noLeidas > 0 && (
     <span className="i-contador" aria-label={`${noLeidas} sin leer`}>{noLeidas > 99 ? '99+' : noLeidas}</span>

@@ -189,6 +189,8 @@ export default function Propuestas() {
 
   const paraMi = datos.propuestas.filter((p) => p.rol === 'buscador')
   const paraMisAlojamientos = datos.propuestas.filter((p) => p.rol === 'oferente')
+  // Cada estudiante tiene un rol: el buscador recibe alojamientos; el oferente, estudiantes que buscan
+  const buscador = datos.modo === 'buscador'
 
   return (
     <main className="pagina-propuestas">
@@ -196,15 +198,17 @@ export default function Propuestas() {
         <div>
           <h1>Propuestas de match</h1>
           <p className="subtitulo">
-            RoomMatch te propone alojamientos de estudiantes con hábitos muy compatibles con los tuyos.
-            Si ambos aceptan, el match queda confirmado.
+            {buscador
+              ? 'RoomMatch te propone alojamientos de estudiantes con hábitos muy compatibles con los tuyos.'
+              : 'RoomMatch te propone estudiantes que buscan alojamiento y tienen hábitos muy compatibles con los tuyos.'}
+            {' '}Si ambos aceptan, el match queda confirmado.
           </p>
         </div>
       </div>
 
       {mensaje && <p className="exito" role="status">{mensaje}</p>}
 
-      <section className="busqueda-interruptor" aria-labelledby="titulo-buscando">
+      {buscador && <section className="busqueda-interruptor" aria-labelledby="titulo-buscando">
         <div>
           <h2 id="titulo-buscando">Estoy buscando alojamiento</h2>
           <p>
@@ -220,7 +224,7 @@ export default function Propuestas() {
           disabled={cambiando || datos.con_convivencia}>
           <span />
         </button>
-      </section>
+      </section>}
 
       {datos.confirmados.length > 0 && (
         <section className="propuestas-seccion">
@@ -231,7 +235,7 @@ export default function Propuestas() {
         </section>
       )}
 
-      <section className="propuestas-seccion">
+      {buscador && <section className="propuestas-seccion">
         <h2>Alojamientos para ti</h2>
         {paraMi.length > 0 ? (
           <ul className="propuestas-lista">
@@ -245,9 +249,9 @@ export default function Propuestas() {
             {datos.buscando && <> Revisa también tus <Link to="/alojamientos">preferencias de búsqueda</Link>.</>}
           </p>
         )}
-      </section>
+      </section>}
 
-      <section className="propuestas-seccion">
+      {!buscador && <section className="propuestas-seccion">
         <h2>Para tus alojamientos</h2>
         {paraMisAlojamientos.length > 0 ? (
           <ul className="propuestas-lista">
@@ -259,7 +263,7 @@ export default function Propuestas() {
             {' '}<Link to="/publicaciones/nueva">Publica un alojamiento</Link> si tienes uno disponible.
           </p>
         )}
-      </section>
+      </section>}
 
       {datos.historial.length > 0 && (
         <details className="propuestas-historial">

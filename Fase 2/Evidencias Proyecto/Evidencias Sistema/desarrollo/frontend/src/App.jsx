@@ -39,6 +39,7 @@ const conCarga = (pagina) => <Suspense fallback={<div className="contenedor-perf
 // El cuestionario de convivencia también usa GSAP
 const PaginaCuestionario = lazy(() => import('./cuestionario/PaginaCuestionario.jsx'))
 const PestanaHabitos = lazy(() => import('./cuestionario/PestanaHabitos.jsx'))
+const PaginaRol = lazy(() => import('./rol/PaginaRol.jsx'))
 
 // En «/»: quien no ha iniciado sesión ve la landing; quien sí, su página de inicio
 function Raiz() {
@@ -47,6 +48,8 @@ function Raiz() {
   if (usuario?.rol === 'administrador') return <Navigate to="/admin" replace />
   // El cuestionario es obligatorio antes de entrar al inicio
   if (usuario && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
+  // Luego elige su rol: buscador u oferente
+  if (usuario && !usuario.modo) return <Navigate to="/bienvenida" replace />
   return (
     <Suspense fallback={usuario ? <p className="cargando">Cargando…</p> : null}>
       {usuario ? <Marco><Inicio /></Marco> : <Landing />}
@@ -73,6 +76,12 @@ export default function App() {
         <Route path="/cuestionario" element={
           <RutaProtegida sinCuestionario>
             <Suspense fallback={<p className="cargando">Cargando…</p>}><PaginaCuestionario /></Suspense>
+          </RutaProtegida>
+        } />
+        {/* «¿Qué te trae a RoomMatch?»: elegir el rol después del cuestionario, también sin la barra */}
+        <Route path="/bienvenida" element={
+          <RutaProtegida sinRol>
+            <Suspense fallback={<p className="cargando">Cargando…</p>}><PaginaRol /></Suspense>
           </RutaProtegida>
         } />
         {/* Páginas con sesión: comparten el marco (barra lateral y configuración), que no se

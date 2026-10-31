@@ -1420,6 +1420,10 @@ p.compat-oferente { font-size: 0.85rem; }
 /* ---------- Verificación de estudiante (HU-21) ---------- */
 .info { padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; color: var(--texto); background: var(--campo); }
 .pagina-form .info { margin: 0 0 16px; }
+/* Recién elegido el rol de oferente: «Publicar después» (rol buscador/oferente) */
+.pagina-form > .form-despues { margin: -4px 0 20px; text-align: center; color: var(--texto-suave); }
+.pagina-form > .form-despues a { font-weight: 600; }
+.pagina-form > .boton + .boton { margin-left: 8px; }
 .verificacion-estado { margin-bottom: 20px; }
 .verificacion-estado > p { margin: 0 0 12px; }
 .verificacion-detalle {

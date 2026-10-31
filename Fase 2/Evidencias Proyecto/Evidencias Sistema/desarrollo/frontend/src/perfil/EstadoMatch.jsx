@@ -21,6 +21,13 @@ const textoRespuestas = (p, nombre) => {
   return 'Ninguno ha respondido todavía.'
 }
 
+// Por qué no habrá propuesta de match con esta persona
+function textoMismoRol(miModo, suModo, nombre) {
+  if (!suModo) return `${nombre} todavía no indica si busca dónde vivir u ofrece un espacio, así que por ahora no hay propuesta de match posible.`
+  if (miModo === 'buscador') return `Los dos buscan dónde vivir. RoomMatch solo propone matches entre quien busca y quien ofrece un espacio.`
+  return `Los dos ofrecen un espacio. RoomMatch solo propone matches entre quien busca y quien ofrece un espacio.`
+}
+
 function Alojamiento({ pub }) {
   return (
     <div className="p2-match-alojamiento">
@@ -38,7 +45,9 @@ function Alojamiento({ pub }) {
  * Sin propuesta solo informa (no hay botones para proponer ni contactar). `alCambiar` avisa
  * cuando cambia (por ejemplo, al confirmarse), para recargar el perfil y mostrar el teléfono.
  */
-export function TarjetaEstadoMatch({ match, nombre, alCambiar }) {
+export function TarjetaEstadoMatch({ match, nombre, alCambiar, miModo, suModo }) {
+  // Un match solo une a quien busca con quien ofrece; con el mismo rol no hay propuesta posible
+  const complementarios = Boolean(miModo && suModo && miModo !== suModo)
   const n = mayuscula(nombre)
   const { estado, propuesta: p } = match
   const [rechazando, setRechazando] = useState(false)
@@ -115,7 +124,9 @@ export function TarjetaEstadoMatch({ match, nombre, alCambiar }) {
           {estado === 'cerrada'
             ? `La propuesta anterior con ${n} se cerró. `
             : ''}
-          RoomMatch te propondrá estudiantes compatibles contigo según sus hábitos y alojamientos disponibles.
+          {complementarios
+            ? 'RoomMatch te propondrá estudiantes compatibles contigo según sus hábitos y alojamientos disponibles.'
+            : textoMismoRol(miModo, suModo, n)}
         </p>
       </>
     )
