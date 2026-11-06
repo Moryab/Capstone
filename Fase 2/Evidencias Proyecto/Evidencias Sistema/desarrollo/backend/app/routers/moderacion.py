@@ -139,7 +139,9 @@ async def aplicar_sobre_perfil(
 async def aplicar_sobre_publicacion(
     accion: str, publicacion: dict, justificacion: str, accion_id: ObjectId, ahora: datetime,
 ) -> tuple[str, str]:
-    moderacion = {"ultima_accion_id": accion_id, "motivo": justificacion, "fecha": ahora}
+    # estado_previo: al restaurar, una publicación que estaba pausada vuelve a «pausada»
+    moderacion = {"ultima_accion_id": accion_id, "motivo": justificacion, "fecha": ahora,
+                  "estado_previo": publicacion["estado"]}
     cambios = {"estado": "suspendida", "moderacion": moderacion}
     if accion == "eliminar":  # eliminación lógica, igual que cuando la elimina el oferente
         cambios = {"estado": "eliminada", "moderacion": moderacion, "eliminada_por": "administrador",
@@ -373,9 +375,11 @@ async def restaurar_publicacion(publicacion_id: str, datos: JustificacionIn, adm
         raise HTTPException(status.HTTP_409_CONFLICT, "Se ocultó por la suspensión de la cuenta: reactiva la cuenta")
 
     # Vuelve al estado que le corresponde hoy: si su dueño pasó a buscador mientras estaba oculta,
-    # queda «pausada» igual que sus otras publicaciones (modos.py); sin cupos, «completa»
+    # queda «pausada» igual que sus otras publicaciones (modos.py). Si ya estaba pausada al
+    # ocultarla, también: su dueño aún no confirma que siga disponible. Sin cupos, «completa»
     oferente = await db.usuarios.find_one({"_id": publicacion["oferente_id"]}, {"modo": 1})
-    if oferente and oferente.get("modo") == "buscador":
+    estaba_pausada = (publicacion.get("moderacion") or {}).get("estado_previo") == "pausada"
+    if estaba_pausada or (oferente and oferente.get("modo") == "buscador"):
         estado = "pausada"
     else:
         estado = "activa" if publicacion["cupos_disponibles"] > 0 else "completa"
@@ -391,9 +395,13 @@ async def restaurar_publicacion(publicacion_id: str, datos: JustificacionIn, adm
         [], ahora, afectado_notificado=True,
         revierte=(publicacion.get("moderacion") or {}).get("ultima_accion_id"),
     )
-    detalle = ("volvió a tus publicaciones y quedará visible cuando vuelvas a ser oferente" if estado == "pausada"
-               else "volvió a estar visible")
+    if estado != "pausada":
+        detalle = "volvió a estar visible"
+    elif oferente and oferente.get("modo") == "oferente":
+        detalle = "volvió a tus publicaciones pausadas. Confirma en el inicio si sigue disponible"
+    else:
+        detalle = "volvió a tus publicaciones y podrás publicarla de nuevo cuando vuelvas a ofrecer un espacio"
     await notificar(publicacion["oferente_id"], "accion_moderacion", "Tu publicación fue restaurada",
                     f"Tu publicación «{publicacion['titulo']}» {detalle}.", ("publicacion", oid))
     return {"mensaje": "Publicación restaurada" if estado != "pausada"
-            else "Publicación restaurada. Quedó pausada porque su dueño hoy es buscador"}
+            else "Publicación restaurada. Quedó pausada: su dueño decide si vuelve a publicarla"}

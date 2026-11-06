@@ -55,7 +55,9 @@ async def cambiar_modo(usuario: dict, nuevo: Modo) -> dict:
     """Asigna o cambia el rol. Devuelve qué se hizo, para contárselo al usuario.
 
     - A oferente: se pausa la búsqueda y vencen sus propuestas abiertas como buscador. Las
-      publicaciones que había pausado al pasar a buscador vuelven a estar visibles.
+      publicaciones que había pausado al pasar a buscador siguen pausadas: puede haber pasado
+      tiempo, así que en el inicio se le pregunta por cada una si sigue disponible (publicarla
+      de nuevo, editarla antes o eliminarla). Ver POST /publicaciones/{id}/reactivar.
     - A buscador: sus publicaciones activas pasan a «pausada» y vencen sus propuestas abiertas
       como oferente. La búsqueda queda apagada hasta que la active (con sus preferencias).
     """
@@ -68,19 +70,16 @@ async def cambiar_modo(usuario: dict, nuevo: Modo) -> dict:
     yo = usuario["_id"]
     ahora = datetime.now(timezone.utc)
     resultado = {"modo": nuevo, "cambio": True, "propuestas_cerradas": 0, "publicaciones_pausadas": 0,
-                 "publicaciones_reactivadas": 0}
+                 "publicaciones_por_confirmar": 0}
     cambios = {"modo": nuevo, "fecha_cambio_modo": ahora, "fecha_actualizacion": ahora}
 
     if nuevo == "oferente":
         cambios["buscando_alojamiento"] = False
         resultado["propuestas_cerradas"] = await _expirar({"usuario_a_id": yo}, ahora)
-        # Las pausadas por el rol vuelven según sus cupos (sin cupos quedan «completa»)
-        for estado, cupos in (("activa", {"$gt": 0}), ("completa", 0)):
-            r = await db.publicaciones.update_many(
-                {"oferente_id": yo, "estado": "pausada", "cupos_disponibles": cupos},
-                {"$set": {"estado": estado, "fecha_ultima_modificacion": ahora}},
-            )
-            resultado["publicaciones_reactivadas"] += r.modified_count
+        # Las pausadas no se tocan: el oferente confirma cada una desde el inicio
+        resultado["publicaciones_por_confirmar"] = await db.publicaciones.count_documents(
+            {"oferente_id": yo, "estado": "pausada"}
+        )
     else:
         resultado["propuestas_cerradas"] = await _expirar({"usuario_b_id": yo}, ahora)
         r = await db.publicaciones.update_many(
@@ -90,7 +89,7 @@ async def cambiar_modo(usuario: dict, nuevo: Modo) -> dict:
         resultado["publicaciones_pausadas"] = r.modified_count
 
     await db.usuarios.update_one({"_id": yo}, {"$set": cambios})
-    if resultado["propuestas_cerradas"] or resultado["publicaciones_reactivadas"]:
+    if resultado["propuestas_cerradas"]:
         await generar_propuestas()  # se liberaron espacios para otros buscadores
     return resultado
 

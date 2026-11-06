@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
@@ -6,8 +6,10 @@ import '../landing/landing.css'
 import { gsap, prefiereSinMovimiento, useAnimacion } from '../landing/animaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import Hero from './Hero.jsx'
+import ModalPausadas from './ModalPausadas.jsx'
 import TarjetaBuscando from './tarjetas/TarjetaBuscando.jsx'
 import TarjetaPasos from './tarjetas/TarjetaPasos.jsx'
+import TarjetaPausadas from './tarjetas/TarjetaPausadas.jsx'
 import TarjetaPerfil from './tarjetas/TarjetaPerfil.jsx'
 import TarjetaPronto from './tarjetas/TarjetaPronto.jsx'
 import TarjetaPublicaciones from './tarjetas/TarjetaPublicaciones.jsx'
@@ -42,14 +44,27 @@ export default function Inicio() {
     return () => document.body.classList.remove('pagina-inicio')
   }, [])
 
+  const cargarPublicaciones = useCallback(() => api('/publicaciones/mias')
+    .then((pubs) => {
+      setErrorPubs('')
+      setPublicaciones(pubs)
+    })
+    .catch((err) => {
+      setErrorPubs(err.message)
+      setPublicaciones([])
+    }), [])
+
   useEffect(() => {
-    api('/publicaciones/mias')
-      .then(setPublicaciones)
-      .catch((err) => {
-        setErrorPubs(err.message)
-        setPublicaciones([])
-      })
-  }, [])
+    cargarPublicaciones()
+  }, [cargarPublicaciones])
+
+  // El oferente que volvió a ese rol confirma si sus publicaciones pausadas siguen disponibles.
+  // `revision` es la lista que se muestra en el modal mientras está abierto (null = cerrado)
+  const pausadas = useMemo(
+    () => (usuario.modo === 'oferente' ? (publicaciones ?? []).filter((p) => p.estado === 'pausada') : []),
+    [usuario.modo, publicaciones],
+  )
+  const [revision, setRevision] = useState(null)
 
   useEffect(() => {
     api(`/usuarios/${usuario.id}/perfil`).then(setPerfil).catch(() => setPerfil(false))
@@ -67,6 +82,15 @@ export default function Inicio() {
       stagger: { each: 0.07, grid: 'auto', from: 'start' },
     })
   })
+
+  // Al volver a ser oferente (CambioRol.jsx), el modal de las pausadas se abre solo, una vez:
+  // el pedido se borra del historial para que no reaparezca al recargar
+  const pubsListas = publicaciones !== null
+  useEffect(() => {
+    if (!state?.revisarPausadas || !pubsListas) return
+    if (pausadas.length > 0) setRevision(pausadas)
+    navegar('.', { replace: true, state: null })
+  }, [state, navegar, pubsListas, pausadas])
 
   // Desde otra página, «Mis publicaciones» trae aquí y pide bajar hasta esa tarjeta.
   // El pedido se borra del historial recién después de bajar: si se borrara antes, el efecto
@@ -93,6 +117,8 @@ export default function Inicio() {
       {/* Una tarjeta principal según el rol: el buscador activa su búsqueda; el oferente publica
           o, si ya publicó, ve el resumen de sus publicaciones */}
       <div className={`i-bento modo-${usuario.modo}`}>
+        {/* Recordatorio si cerró el modal sin responder todas */}
+        {pausadas.length > 0 && <TarjetaPausadas publicaciones={pausadas} alRevisar={() => setRevision(pausadas)} />}
         {usuario.modo === 'oferente' ? (
           publicaciones?.length === 0 && !errorPubs
             ? <TarjetaPublicar />
@@ -103,6 +129,10 @@ export default function Inicio() {
         <TarjetaPasos />
         <TarjetaPerfil perfil={perfil} />
       </div>
+
+      {revision && (
+        <ModalPausadas publicaciones={revision} alCambiar={cargarPublicaciones} alCerrar={() => setRevision(null)} />
+      )}
 
       <section className="i-proximamente" aria-labelledby="i-titulo-pronto">
         <div className="i-seccion-encabezado">
