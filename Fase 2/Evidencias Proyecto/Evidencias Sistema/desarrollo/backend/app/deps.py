@@ -48,6 +48,24 @@ async def usuario_actual(token: str = Depends(oauth2)) -> dict:
     return usuario
 
 
+# RoomMatch es solo para estudiantes: hasta que un administrador apruebe su documento, la cuenta tiene
+# acceso limitado. Puede completar su perfil y el cuestionario, elegir su rol y ver alojamientos, pero
+# no publicar, ver posibles roomies ni recibir o responder propuestas de match, y no se les muestra a
+# los demás. El administrador no se verifica
+VERIFICADO = {"verificacion.estado": "verificado"}
+SIN_VERIFICAR = "Tu cuenta aún no está verificada. Podrás hacerlo cuando aprobemos tu documento de estudiante"
+
+
+def esta_verificado(usuario: dict) -> bool:
+    return usuario["rol"] == "administrador" or usuario.get("verificacion", {}).get("estado") == "verificado"
+
+
+async def estudiante_verificado(usuario: dict = Depends(usuario_actual)) -> dict:
+    if not esta_verificado(usuario):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, SIN_VERIFICAR)
+    return usuario
+
+
 async def solo_admin(usuario: dict = Depends(usuario_actual)) -> dict:
     if usuario["rol"] != "administrador":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Acción reservada para administradores")

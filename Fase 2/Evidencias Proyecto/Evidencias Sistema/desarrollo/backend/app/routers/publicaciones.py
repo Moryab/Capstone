@@ -8,7 +8,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.db import db, siguiente_codigo
-from app.deps import usuario_actual
+from app.deps import SIN_VERIFICAR, VERIFICADO, esta_verificado, usuario_actual
 from app.media import borrar_foto, guardar_foto_publicacion, tipo_imagen
 from app.routers.catalogos import comunas_cerca_de, ids_comunas
 from app.routers.perfil import datos_invalidos
@@ -91,9 +91,17 @@ async def solo_oferente(usuario: dict = Depends(usuario_actual)) -> dict:
     """Publica quien tiene el rol de oferente (modos.py). Como dependencia, se revisa antes que los
     datos del formulario: a un buscador no se le muestran errores de campos, sino que cambie de rol.
     El frontend reconoce el 409 y le ofrece cambiarlo."""
+    if not esta_verificado(usuario):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, SIN_VERIFICAR)
     if usuario.get("modo") != "oferente":
         raise HTTPException(status.HTTP_409_CONFLICT, SOLO_OFERENTE)
     return usuario
+
+
+async def oferentes_verificados() -> list[ObjectId]:
+    """Solo se muestran las publicaciones de oferentes verificados. Las de una cuenta con acceso
+    limitado no cambian de estado: vuelven a verse en cuanto se verifica."""
+    return [u["_id"] async for u in db.usuarios.find(VERIFICADO, {"_id": 1})]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -138,7 +146,8 @@ async def buscar_alojamientos(
         return datos_invalidos(error)
 
     # CA-09.5: eliminadas, suspendidas por un administrador o sin cupos no aparecen
-    consulta: dict = {"estado": "activa", **filtro_preferencias(filtros)}
+    consulta: dict = {"estado": "activa", "oferente_id": {"$in": await oferentes_verificados()},
+                      **filtro_preferencias(filtros)}
 
     zonas: set | None = None
     if filtros.comunas:
@@ -184,7 +193,7 @@ async def opciones_de_filtro(usuario: dict = Depends(usuario_actual)):
     conteo = {
         fila["_id"]: fila["cantidad"]
         async for fila in await db.publicaciones.aggregate([
-            {"$match": {"estado": "activa"}},
+            {"$match": {"estado": "activa", "oferente_id": {"$in": await oferentes_verificados()}}},
             {"$group": {"_id": "$ubicacion.comuna_id", "cantidad": {"$sum": 1}}},
         ])
     }
@@ -220,6 +229,9 @@ async def detalle(publicacion_id: str, usuario: dict = Depends(usuario_actual)):
         raise NO_ENCONTRADA
 
     oferente = await db.usuarios.find_one({"_id": doc["oferente_id"]})
+    # Una cuenta con acceso limitado no se les muestra a los demás, tampoco sus publicaciones
+    if not es_propia and (not oferente or not esta_verificado(oferente)):
+        raise NO_ENCONTRADA
     return PublicacionOut.desde_doc(doc, es_propia=es_propia, oferente=oferente)
 
 

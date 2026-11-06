@@ -136,8 +136,13 @@ def calcular(
     }
 
 
-# CA-14.4: con quién se puede calcular
-CANDIDATOS = {"cuestionario.completo": True, "estado_cuenta": {"$nin": ["suspendida", "inhabilitada"]}}
+# CA-14.4: con quién se puede calcular. También debe estar verificado: las cuentas con acceso limitado
+# no se les muestran a los demás ni reciben propuestas (deps.VERIFICADO)
+CANDIDATOS = {
+    "cuestionario.completo": True,
+    "estado_cuenta": {"$nin": ["suspendida", "inhabilitada"]},
+    "verificacion.estado": "verificado",
+}
 
 
 async def recalcular(usuario: dict) -> int:
