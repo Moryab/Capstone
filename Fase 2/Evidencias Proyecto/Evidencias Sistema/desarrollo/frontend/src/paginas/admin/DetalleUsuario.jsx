@@ -7,7 +7,7 @@ import { formatearPesos } from '../../publicaciones.js'
 import { textoEstadoReporte, textoMotivo, textoTipoReporte } from '../../reportes.js'
 import { ESTADOS_SOLICITUD, fechaCorta, fechaHora, textoTipo } from '../verificacion/datos.js'
 import { textoCuenta, textoPublicacion, textoVerificacion } from './datos.js'
-import EliminarCuenta from './EliminarCuenta.jsx'
+import AccionCuenta from './AccionCuenta.jsx'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
 
@@ -173,9 +173,15 @@ export default function DetalleUsuario() {
       </Seccion>
 
       {perfil.estado_cuenta === 'suspendida' && <ReactivarCuenta usuarioId={perfil.id} alTerminar={alTerminar} />}
-      {perfil.estado_cuenta !== 'eliminada' && (
-        <EliminarCuenta usuarioId={perfil.id} nombre={perfil.nombre_completo}
-          alEliminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
+      {/* Una cuenta eliminada también se puede suspender, para que no vuelva a registrarse */}
+      {['activa', 'eliminada'].includes(perfil.estado_cuenta) && (
+        <AccionCuenta key={`suspender-${id}`} accion="suspender" usuarioId={perfil.id}
+          nombre={perfil.nombre_completo} alTerminar={alTerminar} />
+      )}
+      {/* Una suspendida no: eliminada podría volver a registrarse y se perdería el bloqueo */}
+      {perfil.estado_cuenta === 'activa' && (
+        <AccionCuenta key={`eliminar-${id}`} accion="eliminar" usuarioId={perfil.id} nombre={perfil.nombre_completo}
+          alTerminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
       )}
     </main>
   )

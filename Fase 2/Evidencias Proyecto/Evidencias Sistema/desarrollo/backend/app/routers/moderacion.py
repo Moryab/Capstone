@@ -105,6 +105,8 @@ async def suspender_cuenta(usuario: dict, admin: dict, justificacion: str, accio
                 "estado_cuenta": "suspendida",
                 "suspension": {
                     "motivo": justificacion, "fecha": ahora, "admin_id": admin["_id"], "accion_id": accion_id,
+                    # Al reactivar vuelve a este estado: una cuenta eliminada sigue eliminada
+                    "estado_previo": usuario["estado_cuenta"],
                 },
                 "fecha_actualizacion": ahora,
             },
@@ -242,20 +244,31 @@ async def accion_sobre_reporte(reporte_id: str, datos: AccionReporteIn, admin: d
 
 @router.post("/usuarios/{usuario_id}/reactivar")
 async def reactivar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
-    """CA-27.5: la cuenta vuelve a la normalidad, con las publicaciones que ocultó la suspensión."""
+    """CA-27.5: la cuenta vuelve a la normalidad, con las publicaciones que ocultó la suspensión. Si
+    estaba eliminada cuando se suspendió, vuelve a «eliminada» (y puede volver a registrarse)."""
     try:
         oid = ObjectId(usuario_id)
     except InvalidId:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
     ahora = datetime.now(timezone.utc)
-    usuario = await db.usuarios.find_one_and_update(
+    usuario = await db.usuarios.find_one({"_id": oid, "estado_cuenta": "suspendida"})
+    previo = ((usuario or {}).get("suspension") or {}).get("estado_previo") or "activa"
+    # Solo si sigue suspendida: dos reactivaciones simultáneas no se aplican dos veces
+    reactivada = usuario and await db.usuarios.update_one(
         {"_id": oid, "estado_cuenta": "suspendida"},
-        {"$set": {"estado_cuenta": "activa", "suspension": None, "fecha_actualizacion": ahora}},
+        {"$set": {"estado_cuenta": previo, "suspension": None, "fecha_actualizacion": ahora}},
     )
-    if not usuario:
+    if not reactivada or not reactivada.modified_count:
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta cuenta no está suspendida")
 
-    suspension_id = (usuario.get("suspension") or {}).get("accion_id")
+    suspension_id = usuario["suspension"].get("accion_id")
+    if previo == "eliminada":
+        await registrar_accion(
+            ObjectId(), "reactivar_usuario", admin, ("usuario", oid), datos.justificacion,
+            ("suspendida", "eliminada"), [], ahora, afectado_notificado=False, revierte=suspension_id,
+        )
+        return {"mensaje": "Se levantó la suspensión. La cuenta sigue eliminada y puede volver a registrarse"}
+
     if suspension_id:
         await db.publicaciones.update_many(
             {"oferente_id": oid, "estado": "suspendida", "moderacion.ultima_accion_id": suspension_id},
@@ -269,6 +282,41 @@ async def reactivar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict 
                     "Ya puedes volver a iniciar sesión y tus publicaciones están visibles nuevamente.",
                     ("usuario", oid))
     return {"mensaje": "Cuenta reactivada"}
+
+
+@router.post("/usuarios/{usuario_id}/suspender")
+async def suspender_directo(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
+    """Suspensión desde la ficha del usuario (HU-28), tenga reportes o no. Bloquea la cuenta: no puede
+    ingresar y, como el registro sigue existiendo, su correo, RUT y teléfono no sirven para otra cuenta.
+    También se puede suspender una cuenta eliminada, para que no vuelva a registrarse."""
+    try:
+        oid = ObjectId(usuario_id)
+    except InvalidId:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    usuario = await db.usuarios.find_one({"_id": oid})
+    if not usuario:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    if usuario["rol"] == "administrador":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta acción no se aplica a un administrador")
+    if usuario["estado_cuenta"] not in ("activa", "eliminada"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta cuenta ya está suspendida")
+
+    accion, resolucion = ACCIONES["suspender"]
+    accion_id, ahora = ObjectId(), datetime.now(timezone.utc)
+    # Igual que en la HU-30: sus reportes abiertos quedan vinculados a esta acción y resueltos
+    cerrados = await cerrar_abiertos("usuario", oid, cierre_de_reporte(resolucion, admin, accion_id, ahora))
+    await suspender_cuenta(usuario, admin, datos.justificacion, accion_id, ahora)
+    avisar = usuario["estado_cuenta"] == "activa"  # una cuenta eliminada ya no ve sus avisos
+    await registrar_accion(
+        accion_id, accion, admin, ("usuario", oid), datos.justificacion,
+        (usuario["estado_cuenta"], "suspendida"), [r["_id"] for r in cerrados], ahora, afectado_notificado=avisar,
+    )
+    if avisar:
+        titulo, texto = AVISOS["suspender"]
+        await notificar(oid, "accion_moderacion", titulo, f"{texto}. Motivo: {datos.justificacion.rstrip('.')}.",
+                        ("usuario", oid))
+    await avisar_reportantes(cerrados)
+    return {"mensaje": f"La cuenta de {nombre_completo(usuario)} fue suspendida"}
 
 
 async def terminar_convivencias(oid: ObjectId, ahora: datetime) -> None:
@@ -325,6 +373,9 @@ async def eliminar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict =
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
     if usuario["rol"] == "administrador":
         raise HTTPException(status.HTTP_409_CONFLICT, "No se puede eliminar la cuenta de un administrador")
+    # Eliminada podría volver a registrarse: eso desharía el bloqueo de la suspensión
+    if usuario["estado_cuenta"] == "suspendida":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Una cuenta suspendida no se puede eliminar")
 
     ahora = datetime.now(timezone.utc)
     accion_id = ObjectId()
