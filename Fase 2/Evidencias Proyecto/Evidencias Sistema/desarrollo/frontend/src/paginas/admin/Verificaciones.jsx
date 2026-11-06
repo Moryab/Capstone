@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
-import { ESTADOS_SOLICITUD, fechaCorta, textoTipo } from '../verificacion/datos.js'
+import { ESTADOS_SOLICITUD, fechaCorta, textoSituacion, textoTipo } from '../verificacion/datos.js'
 
 const VISTAS = [
   { valor: 'pendientes', texto: 'Pendientes' },
@@ -75,7 +75,10 @@ export default function Verificaciones() {
                     <span className="admin-tabla-sub">{s.correo}</span>
                   </td>
                   <td>{s.institucion_nombre ?? 'Sin indicar'}</td>
-                  <td>{textoTipo(s.tipo_comprobante)}</td>
+                  <td>
+                    {textoTipo(s.tipo_comprobante)}
+                    <span className="admin-tabla-sub">{textoSituacion(s.situacion)}</span>
+                  </td>
                   <td>{fechaCorta.format(new Date(vista === 'pendientes' ? s.fecha_solicitud : s.fecha_revision))}</td>
                   {vista === 'procesadas' && (
                     <td><span className={`etiqueta-estado ${s.estado}`}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</span></td>

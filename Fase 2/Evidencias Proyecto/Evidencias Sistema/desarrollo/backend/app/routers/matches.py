@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.compatibilidad import nivel_de
 from app.db import db
-from app.deps import usuario_actual
+from app.deps import estudiante_verificado, usuario_actual
 from app.matching import ABIERTAS, VIGENCIA, MatchNoDisponible, generar_propuestas, responder
 from app.routers.compatibilidades import el_otro, resumenes
 from app.routers.evaluaciones import estado_evaluacion
@@ -77,7 +77,7 @@ async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
 
 
 @router.get("")
-async def mis_propuestas(usuario: dict = Depends(usuario_actual)):
+async def mis_propuestas(usuario: dict = Depends(estudiante_verificado)):
     """HU-17: las propuestas de match de RoomMatch, como buscador y como oferente."""
     yo = usuario["_id"]
     await generar_propuestas(usuario)  # también vence las que pasaron su plazo
@@ -152,13 +152,13 @@ async def contestar(match_id: str, usuario: dict, acepta: bool, motivo: str | No
 
 
 @router.post("/{match_id}/aceptar")
-async def aceptar(match_id: str, usuario: dict = Depends(usuario_actual)):
+async def aceptar(match_id: str, usuario: dict = Depends(estudiante_verificado)):
     """CA-17.2: cuando ambos aceptan, el match queda confirmado."""
     return await contestar(match_id, usuario, acepta=True)
 
 
 @router.post("/{match_id}/rechazar")
-async def rechazar(match_id: str, datos: RechazoIn, usuario: dict = Depends(usuario_actual)):
+async def rechazar(match_id: str, datos: RechazoIn, usuario: dict = Depends(estudiante_verificado)):
     """CA-17.3: la propuesta queda rechazada y no se crea convivencia."""
     return await contestar(match_id, usuario, acepta=False, motivo=datos.motivo)
 

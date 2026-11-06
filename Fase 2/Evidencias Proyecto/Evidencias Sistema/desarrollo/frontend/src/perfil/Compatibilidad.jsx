@@ -44,6 +44,9 @@ export default function Compatibilidad({ estado, datos, nombre, yoCompleto, otro
     if (!yoCompleto) {
       titulo = 'Completa tus hábitos para ver tu compatibilidad'
       texto = <>Responde el cuestionario de convivencia y verás qué tan compatible eres con {n}. <Link to="/perfil/cuestionario">Completar mis hábitos</Link></>
+    } else if (estado === 'sin_verificar') {
+      titulo = 'Tu compatibilidad aparecerá cuando tu cuenta esté verificada'
+      texto = <>Estamos revisando tu documento de estudiante. <Link to="/verificacion">Ver el estado de mi solicitud</Link></>
     } else if (estado === 'no_disponible') {
       titulo = 'Compatibilidad no disponible'
       texto = otroCompleto

@@ -3,7 +3,7 @@ from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db import db
-from app.deps import usuario_actual
+from app.deps import esta_verificado, usuario_actual
 from app.schemas.perfil import PerfilPublicoOut
 from app.schemas.publicaciones import PublicacionOut
 
@@ -21,8 +21,11 @@ async def ver_perfil_publico(usuario_id: str, actual: dict = Depends(usuario_act
         raise PERFIL_NO_DISPONIBLE
 
     doc = await db.usuarios.find_one({"_id": oid})
-    # CA-16.4: las cuentas suspendidas se tratan igual que las que no existen
+    # CA-16.4: las cuentas suspendidas se tratan igual que las que no existen; las que no están
+    # verificadas tampoco se les muestran a los demás (su dueño sí ve su perfil)
     if not doc or doc["estado_cuenta"] in ("suspendida", "inhabilitada"):
+        raise PERFIL_NO_DISPONIBLE
+    if doc["_id"] != actual["_id"] and not esta_verificado(doc):
         raise PERFIL_NO_DISPONIBLE
 
     institucion_id = doc.get("perfil", {}).get("institucion_id")
@@ -58,8 +61,10 @@ async def publicaciones_de(usuario_id: str, actual: dict = Depends(usuario_actua
     # CA-16.4: las cuentas suspendidas se tratan igual que las que no existen
     if not doc or doc["estado_cuenta"] in ("suspendida", "inhabilitada"):
         raise PERFIL_NO_DISPONIBLE
-
     es_propio = oid == actual["_id"]
+    if not es_propio and not esta_verificado(doc):
+        raise PERFIL_NO_DISPONIBLE
+
     return [
         PublicacionOut.desde_doc(p, es_propia=es_propio, oferente=doc)
         async for p in db.publicaciones.find({"oferente_id": oid, "estado": "activa"}).sort("fecha_publicacion", -1)

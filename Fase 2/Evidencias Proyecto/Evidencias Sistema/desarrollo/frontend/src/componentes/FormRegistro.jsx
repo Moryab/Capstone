@@ -32,11 +32,12 @@ export default function FormRegistro() {
       await api('/auth/registro', { metodo: 'POST', datos })
       // El formulario sigue montado tras deslizar al login, así que se limpia
       setDatos(VACIO)
-      // Registro → cuestionario de convivencia (obligatorio) → inicio: se entra de inmediato.
+      // Registro → documento de estudiante → cuestionario de convivencia → rol → inicio: se entra
+      // de inmediato y cada paso obligatorio lleva al siguiente.
       // Si el inicio de sesión automático fallara, queda el camino de siempre por el login
       try {
         await iniciarSesion(datos.correo, datos.password)
-        navegar('/cuestionario', { replace: true })
+        navegar('/confirma-estudiante', { replace: true })
       } catch {
         navegar('/login', { state: { registrado: datos.correo } })
       }

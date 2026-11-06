@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.compatibilidad import CANDIDATOS
 from app.db import db
-from app.deps import usuario_actual
+from app.deps import estudiante_verificado
 from app.schemas.busqueda import TAMANO_PAGINA
 
 router = APIRouter(prefix="/api/compatibilidades", tags=["Compatibilidad"])
@@ -63,7 +63,7 @@ async def rol_complementario(usuario: dict) -> dict | None:
 
 
 @router.get("")
-async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict = Depends(usuario_actual)):
+async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict = Depends(estudiante_verificado)):
     """HU-14: estudiantes compatibles con el rol opuesto, del más al menos compatible, de a 10.
 
     CA-14.4: no aparecen quienes no completaron el cuestionario, uno mismo ni las cuentas
@@ -122,7 +122,7 @@ async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict =
 
 
 @router.get("/{usuario_id}")
-async def compatibilidad_con(usuario_id: str, usuario: dict = Depends(usuario_actual)):
+async def compatibilidad_con(usuario_id: str, usuario: dict = Depends(estudiante_verificado)):
     """Compatibilidad con un estudiante, categoría por categoría, vista desde quien consulta
     (CA-16.2: en qué coinciden y en qué no). El porcentaje es el mismo para ambos (CA-14.2)."""
     try:

@@ -3,8 +3,23 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-# Mismos valores que el enum del modelo de datos (colección solicitudes_verificacion)
-TipoComprobante = Literal["certificado_alumno_regular", "comprobante_matricula", "credencial_estudiantil"]
+# Enum del modelo de datos (colección solicitudes_verificacion), más «carta_aceptacion» para quien
+# recién quedó seleccionado: ficha de selección o carta de aceptación (aún no está en el modelo)
+TipoComprobante = Literal[
+    "certificado_alumno_regular", "comprobante_matricula", "credencial_estudiantil", "carta_aceptacion"
+]
+
+# «¿En qué situación estás?»: define qué documentos sirven (campo nuevo, aún no está en el modelo)
+Situacion = Literal["matriculado", "seleccionado"]
+TIPOS_POR_SITUACION = {
+    "matriculado": ("certificado_alumno_regular", "comprobante_matricula", "credencial_estudiantil"),
+    "seleccionado": ("carta_aceptacion",),
+}
+
+
+def situacion_de(tipo_comprobante: str) -> str:
+    """La situación que corresponde a un tipo de documento (solicitudes anteriores sin el campo)."""
+    return next(s for s, tipos in TIPOS_POR_SITUACION.items() if tipo_comprobante in tipos)
 
 
 class SolicitudOut(BaseModel):
@@ -14,6 +29,7 @@ class SolicitudOut(BaseModel):
     codigo: int
     institucion_id: str
     institucion_nombre: str | None = None
+    situacion: str
     tipo_comprobante: str
     estado: str  # pendiente | en_revision | aprobada | rechazada
     fecha_solicitud: datetime
@@ -29,6 +45,7 @@ class SolicitudOut(BaseModel):
             codigo=doc["codigo"],
             institucion_id=str(doc["institucion_id"]),
             institucion_nombre=institucion_nombre,
+            situacion=doc.get("situacion") or situacion_de(doc["tipo_comprobante"]),
             tipo_comprobante=doc["tipo_comprobante"],
             estado=doc["estado"],
             fecha_solicitud=doc["fecha_solicitud"],
@@ -48,6 +65,7 @@ class SolicitudResumenOut(BaseModel):
     nombre: str
     correo: str
     institucion_nombre: str | None = None
+    situacion: str
     tipo_comprobante: str
     estado: str
     fecha_solicitud: datetime

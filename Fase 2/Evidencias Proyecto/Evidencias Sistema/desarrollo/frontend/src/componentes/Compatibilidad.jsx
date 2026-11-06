@@ -2,17 +2,22 @@ import { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import { formatearPorcentaje, NIVELES_COMPATIBILIDAD, parecido } from '../compatibilidad.js'
 import { CATEGORIAS, textoRespuesta, tituloCategoria } from '../cuestionario.js'
+import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 
 /**
  * Compatibilidad con otro estudiante, vista desde quien consulta (CA-15.5: nunca entre terceros).
- * Devuelve { estado: 'cargando' | 'lista' | 'no_disponible' | 'error', datos }. «no_disponible» es
- * cuando no hay cálculo: la otra persona no respondió el cuestionario o su cuenta no está activa.
+ * Devuelve { estado: 'cargando' | 'lista' | 'no_disponible' | 'sin_verificar' | 'error', datos }.
+ * «no_disponible» es cuando no hay cálculo: la otra persona no respondió el cuestionario o su cuenta
+ * no está activa. «sin_verificar»: quien consulta aún no tiene su cuenta verificada.
  */
 export function useCompatibilidad(otroId) {
+  const { usuario } = useSesion()
+  const verificado = estaVerificado(usuario)
   const [resultado, setResultado] = useState({ id: null, estado: 'cargando', datos: null })
 
   useEffect(() => {
-    if (!otroId) return undefined
+    if (!otroId || !verificado) return undefined
     let vigente = true // evita mostrar una respuesta vieja si se cambia de persona rápido
     api(`/compatibilidades/${otroId}`)
       .then((datos) => vigente && setResultado({ id: otroId, estado: 'lista', datos }))
@@ -22,8 +27,9 @@ export function useCompatibilidad(otroId) {
     return () => {
       vigente = false
     }
-  }, [otroId])
+  }, [otroId, verificado])
 
+  if (!verificado) return { estado: 'sin_verificar', datos: null }
   return resultado.id === otroId ? resultado : { estado: 'cargando', datos: null }
 }
 
@@ -59,9 +65,10 @@ export function CompatibilidadOferente({ oferente }) {
   if (estado !== 'lista') {
     return (
       <p className="compat-oferente sin-dato">
-        {estado === 'no_disponible'
-          ? `Compatibilidad no disponible: ${oferente.nombre} aún no responde el cuestionario de hábitos.`
-          : 'No pudimos cargar la compatibilidad.'}
+        {{
+          no_disponible: `Compatibilidad no disponible: ${oferente.nombre} aún no responde el cuestionario de hábitos.`,
+          sin_verificar: 'Verás tu compatibilidad cuando tu cuenta esté verificada.',
+        }[estado] ?? 'No pudimos cargar la compatibilidad.'}
       </p>
     )
   }
@@ -86,6 +93,9 @@ export function SeccionCompatibilidad({ otroId, nombre }) {
         <p className="sin-dato">
           Compatibilidad no disponible: {nombre} aún no responde el cuestionario de hábitos.
         </p>
+      )}
+      {estado === 'sin_verificar' && (
+        <p className="sin-dato">Verás tu compatibilidad cuando tu cuenta esté verificada.</p>
       )}
       {estado === 'error' && <p className="alerta">No pudimos cargar la compatibilidad.</p>}
       {estado === 'lista' && (

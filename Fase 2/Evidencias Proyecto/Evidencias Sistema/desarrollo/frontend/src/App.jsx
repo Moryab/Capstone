@@ -25,6 +25,7 @@ import Verificaciones from './paginas/admin/Verificaciones.jsx'
 import Evaluacion from './paginas/evaluacion/Evaluacion.jsx'
 import Razones from './paginas/evaluacion/Razones.jsx'
 import Terminar from './paginas/evaluacion/Terminar.jsx'
+import PasoVerificacion from './paginas/verificacion/PasoVerificacion.jsx'
 import Verificacion from './paginas/verificacion/Verificacion.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
@@ -46,6 +47,8 @@ function Raiz() {
   const { usuario, cargando } = useSesion()
   if (cargando) return <p className="cargando">Cargando…</p>
   if (usuario?.rol === 'administrador') return <Navigate to="/admin" replace />
+  // Primero debe enviar el documento que acredita que es estudiante
+  if (usuario?.verificacion_estado === 'no_verificado') return <Navigate to="/confirma-estudiante" replace />
   // El cuestionario es obligatorio antes de entrar al inicio
   if (usuario && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
   // Luego elige su rol: buscador u oferente
@@ -73,6 +76,10 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Raiz />} />
         {/* HU-13: obligatorio justo después del registro, a pantalla completa y sin la barra */}
+        {/* EP-02: «Último paso: confirma que eres estudiante», obligatorio antes del cuestionario */}
+        <Route path="/confirma-estudiante" element={
+          <RutaProtegida sinVerificacion sinCuestionario sinRol><PasoVerificacion /></RutaProtegida>
+        } />
         <Route path="/cuestionario" element={
           <RutaProtegida sinCuestionario>
             <Suspense fallback={<p className="cargando">Cargando…</p>}><PaginaCuestionario /></Suspense>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import '../landing/landing.css'
 import { gsap, prefiereSinMovimiento, useAnimacion } from '../landing/animaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
@@ -84,6 +85,10 @@ export default function Inicio() {
   return (
     <main ref={ref} className="i-contenido">
       <Hero usuario={usuario} momento={momento} />
+
+      <AvisoVerificacion detalle={usuario.modo === 'buscador'
+        ? 'Mientras tanto puedes activar tu búsqueda: las propuestas empezarán a llegar cuando te verifiquemos.'
+        : null} />
 
       {/* Una tarjeta principal según el rol: el buscador activa su búsqueda; el oferente publica
           o, si ya publicó, ve el resumen de sus publicaciones */}

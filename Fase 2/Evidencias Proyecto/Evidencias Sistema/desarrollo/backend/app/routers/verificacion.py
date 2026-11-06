@@ -14,14 +14,16 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse
 
+from app.compatibilidad import recalcular
 from app.config import settings
 from app.db import db, siguiente_codigo
 from app.deps import solo_admin, usuario_actual
+from app.matching import generar_propuestas
 from app.media import formato_comprobante, guardar_comprobante, ruta_comprobante
 from app.notificaciones import notificar
 from app.schemas.verificacion import (
-    RechazoIn, RevocacionIn, SolicitanteOut, SolicitudAdminOut, SolicitudOut, SolicitudResumenOut, TipoComprobante,
-    VerificacionOut,
+    TIPOS_POR_SITUACION, RechazoIn, RevocacionIn, Situacion, SolicitanteOut, SolicitudAdminOut, SolicitudOut,
+    SolicitudResumenOut, TipoComprobante, VerificacionOut, situacion_de,
 )
 
 router = APIRouter(prefix="/api/verificacion", tags=["Verificación"])
@@ -67,12 +69,17 @@ async def solicitar_verificacion(
     institucion_id: str = Form(...),
     tipo_comprobante: TipoComprobante = Form(...),
     comprobante: UploadFile = File(...),
+    situacion: Situacion | None = Form(default=None),
     usuario: dict = Depends(usuario_actual),
 ):
-    """HU-21: el estudiante indica su institución y adjunta un comprobante (CA-21.1 y CA-21.2)."""
+    """HU-21: el estudiante indica su situación y su institución, y adjunta un comprobante
+    (CA-21.1 y CA-21.2). Sin «situacion» se deduce del tipo de documento."""
     estado = usuario.get("verificacion", {}).get("estado", "no_verificado")
     if estado not in PUEDE_SOLICITAR:
         raise HTTPException(status.HTTP_409_CONFLICT, MENSAJES_NO_PUEDE[estado])
+    situacion = situacion or situacion_de(tipo_comprobante)
+    if tipo_comprobante not in TIPOS_POR_SITUACION[situacion]:
+        return datos_invalidos({"tipo_comprobante": "Este documento no corresponde a tu situación"})
 
     try:
         institucion_oid = ObjectId(institucion_id)
@@ -109,6 +116,7 @@ async def solicitar_verificacion(
         "usuario_id": usuario["_id"],
         "institucion_id": institucion_oid,
         "admin_revisor_id": None,
+        "situacion": situacion,
         "tipo_comprobante": tipo_comprobante,
         "vigencia_hasta": None,
         "fecha_solicitud": ahora,
@@ -195,6 +203,7 @@ async def listar_solicitudes(
             nombre=nombre_completo(u),
             correo=u["correo"],
             institucion_nombre=instituciones.get(s["institucion_id"]),
+            situacion=s.get("situacion") or situacion_de(s["tipo_comprobante"]),
             tipo_comprobante=s["tipo_comprobante"],
             estado=s["estado"],
             fecha_solicitud=s["fecha_solicitud"],
@@ -273,6 +282,12 @@ async def aprobar_solicitud(solicitud_id: str, admin: dict = Depends(solo_admin)
             "fecha_actualizacion": solicitud["fecha_revision"],
         }},
     )
+    # Hasta ahora no contaba en la compatibilidad ni en el matching: se calcula de inmediato para
+    # que aparezca como posible roomie y pueda recibir propuestas sin esperar otro cambio
+    verificado = await db.usuarios.find_one({"_id": solicitud["usuario_id"]})
+    if verificado and (verificado.get("cuestionario") or {}).get("completo"):
+        await recalcular(verificado)
+        await generar_propuestas()
     await notificar(
         solicitud["usuario_id"], "verificacion_estudiante", "Tu condición de estudiante fue verificada",
         "Revisamos tu comprobante y tu perfil ya aparece como estudiante verificado.",
