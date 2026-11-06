@@ -372,8 +372,13 @@ async def restaurar_publicacion(publicacion_id: str, datos: JustificacionIn, adm
     if await oculta_por_cuenta(publicacion):
         raise HTTPException(status.HTTP_409_CONFLICT, "Se ocultó por la suspensión de la cuenta: reactiva la cuenta")
 
-    # Sin cupos no vuelve como activa: se habría ocultado estando completa
-    estado = "activa" if publicacion["cupos_disponibles"] > 0 else "completa"
+    # Vuelve al estado que le corresponde hoy: si su dueño pasó a buscador mientras estaba oculta,
+    # queda «pausada» igual que sus otras publicaciones (modos.py); sin cupos, «completa»
+    oferente = await db.usuarios.find_one({"_id": publicacion["oferente_id"]}, {"modo": 1})
+    if oferente and oferente.get("modo") == "buscador":
+        estado = "pausada"
+    else:
+        estado = "activa" if publicacion["cupos_disponibles"] > 0 else "completa"
     ahora = datetime.now(timezone.utc)
     restaurada = await db.publicaciones.update_one(
         {"_id": oid, "estado": "suspendida"}, {"$set": {"estado": estado, "moderacion": None}}
@@ -386,6 +391,9 @@ async def restaurar_publicacion(publicacion_id: str, datos: JustificacionIn, adm
         [], ahora, afectado_notificado=True,
         revierte=(publicacion.get("moderacion") or {}).get("ultima_accion_id"),
     )
+    detalle = ("volvió a tus publicaciones y quedará visible cuando vuelvas a ser oferente" if estado == "pausada"
+               else "volvió a estar visible")
     await notificar(publicacion["oferente_id"], "accion_moderacion", "Tu publicación fue restaurada",
-                    f"Tu publicación «{publicacion['titulo']}» volvió a estar visible.", ("publicacion", oid))
-    return {"mensaje": "Publicación restaurada"}
+                    f"Tu publicación «{publicacion['titulo']}» {detalle}.", ("publicacion", oid))
+    return {"mensaje": "Publicación restaurada" if estado != "pausada"
+            else "Publicación restaurada. Quedó pausada porque su dueño hoy es buscador"}

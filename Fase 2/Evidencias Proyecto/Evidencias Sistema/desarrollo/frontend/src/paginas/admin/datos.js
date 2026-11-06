@@ -15,10 +15,12 @@ export const ESTADOS_CUENTA = [
   { valor: 'suspendida', texto: 'Suspendida' },
 ]
 
-// CA-29.1: «suspendida» es como se guarda una publicación oculta por moderación (HU-27 y HU-30)
+// CA-29.1: «suspendida» es como se guarda una publicación oculta por moderación (HU-27 y HU-30).
+// «pausada»: su dueño pasó a buscador (modos.py) y vuelve a verse cuando sea oferente de nuevo
 export const ESTADOS_PUBLICACION = [
   { valor: 'activa', texto: 'Activa' },
   { valor: 'completa', texto: 'Sin cupos' },
+  { valor: 'pausada', texto: 'Pausada' },
   { valor: 'suspendida', texto: 'Oculta' },
   { valor: 'eliminada', texto: 'Eliminada' },
 ]
