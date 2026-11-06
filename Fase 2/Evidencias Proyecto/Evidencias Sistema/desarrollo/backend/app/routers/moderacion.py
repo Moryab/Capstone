@@ -9,10 +9,12 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
 from app.db import db, siguiente_codigo
 from app.deps import solo_admin
+from app.media import borrar_foto, ruta_comprobante
 from app.notificaciones import notificar
 from app.routers.reportes import buscar_reporte
 from app.routers.verificacion import nombre_completo, quitar_verificacion
@@ -268,6 +270,85 @@ async def reactivar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict 
                     "Ya puedes volver a iniciar sesión y tus publicaciones están visibles nuevamente.",
                     ("usuario", oid))
     return {"mensaje": "Cuenta reactivada"}
+
+
+async def liberar_convivencias(oid: ObjectId) -> None:
+    """Antes de borrar la cuenta, quien convivía con ella queda libre: el buscador puede volver a
+    buscar y, si se va el buscador, el cupo vuelve al alojamiento."""
+    async for match in db.matches.find({"$or": [{"usuario_a_id": oid}, {"usuario_b_id": oid}], "estado": "confirmado"}):
+        buscador_id = match["usuario_a_id"]
+        pub = await db.publicaciones.find_one({"_id": match["publicacion_id"]})
+        titulo = pub["titulo"] if pub else "el alojamiento"
+        if buscador_id != oid:
+            await db.usuarios.update_one(
+                {"_id": buscador_id, "match_activo_id": match["_id"]},
+                {"$set": {"match_activo_id": None, "buscando_alojamiento": False}},
+            )
+            await notificar(
+                buscador_id, "respuesta_match", "Una convivencia terminó",
+                f"La cuenta de quien ofrecía «{titulo}» ya no está en RoomMatch. "
+                "Si necesitas otro lugar, activa «Estoy buscando alojamiento» en tus propuestas.",
+            )
+            continue
+        if pub and pub["estado"] in ("activa", "completa") and pub["cupos_disponibles"] < pub["cupos_totales"]:
+            await db.publicaciones.update_one(
+                {"_id": pub["_id"]}, {"$inc": {"cupos_disponibles": 1}, "$set": {"estado": "activa"}}
+            )
+        await notificar(
+            match["usuario_b_id"], "respuesta_match", "Una convivencia terminó",
+            f"La cuenta de quien vivía en «{titulo}» ya no está en RoomMatch. El cupo quedó disponible otra vez.",
+        )
+
+
+def borrar_archivos(fotos: list[str | None], comprobantes: list[str]) -> None:
+    for url in fotos:
+        borrar_foto(url)
+    for nombre in comprobantes:
+        ruta_comprobante(nombre).unlink(missing_ok=True)
+
+
+@router.post("/usuarios/{usuario_id}/eliminar")
+async def eliminar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
+    """El administrador elimina una cuenta de estudiante con todos sus datos: perfil, publicaciones,
+    propuestas, compatibilidades, avisos, solicitudes de verificación y sus archivos. Los reportes y
+    las acciones de moderación se conservan como historial; en ellos la cuenta aparece como eliminada."""
+    try:
+        oid = ObjectId(usuario_id)
+    except InvalidId:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    usuario = await db.usuarios.find_one({"_id": oid})
+    if not usuario:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    if usuario["rol"] == "administrador":
+        raise HTTPException(status.HTTP_409_CONFLICT, "No se puede eliminar la cuenta de un administrador")
+
+    await liberar_convivencias(oid)
+
+    publicaciones = await db.publicaciones.find({"oferente_id": oid}, {"fotos.url": 1}).to_list(None)
+    solicitudes = await db.solicitudes_verificacion.find({"usuario_id": oid}, {"archivo.ruta": 1}).to_list(None)
+    fotos = [usuario.get("perfil", {}).get("foto_url")] + [f["url"] for p in publicaciones for f in p.get("fotos", [])]
+    comprobantes = [s["archivo"]["ruta"] for s in solicitudes if s.get("archivo")]
+
+    # Las propuestas de sus alojamientos también se van, porque en ellas la cuenta es el oferente
+    await db.matches.delete_many({"$or": [{"usuario_a_id": oid}, {"usuario_b_id": oid}]})
+    await db.compatibilidades.delete_many({"$or": [{"usuario_a_id": oid}, {"usuario_b_id": oid}]})
+    await db.publicaciones.delete_many({"oferente_id": oid})
+    await db.solicitudes_verificacion.delete_many({"usuario_id": oid})
+    await db.notificaciones.delete_many({"usuario_id": oid})
+    await db.historial_cuestionario.delete_many({"usuario_id": oid})
+    await db.usuarios.delete_one({"_id": oid})
+    await run_in_threadpool(borrar_archivos, fotos, comprobantes)
+
+    accion_id = ObjectId()
+    await registrar_accion(
+        accion_id, "eliminar_usuario", admin, ("usuario", oid), datos.justificacion,
+        (usuario["estado_cuenta"], "eliminada"), [], datetime.now(timezone.utc), afectado_notificado=False,
+    )
+    # Campo nuevo (no está en el modelo de datos): sin la cuenta, el historial necesita saber quién era
+    await db.acciones_moderacion.update_one({"_id": accion_id}, {"$set": {"usuario_eliminado": {
+        "nombre": nombre_completo(usuario), "correo": usuario["correo"], "rut": usuario.get("rut"),
+    }}})
+    return {"mensaje": f"La cuenta de {nombre_completo(usuario)} fue eliminada"}
 
 
 # ---------- HU-30: gestión directa de publicaciones, tengan reportes o no ----------

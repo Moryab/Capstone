@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import { fechaCorta } from '../verificacion/datos.js'
 import { ESTADOS_CUENTA, ESTADOS_VERIFICACION, textoCuenta, textoVerificacion } from './datos.js'
@@ -10,6 +10,7 @@ import './reportes.css'
 // para que «volver» desde una ficha regrese al mismo listado
 export default function Usuarios() {
   const [parametros, setParametros] = useSearchParams()
+  const aviso = useLocation().state?.aviso // al volver de eliminar una cuenta desde su ficha
   const consulta = parametros.toString()
   const [texto, setTexto] = useState(parametros.get('buscar') ?? '')
   // Se guarda junto con la consulta pedida: al cambiar, lo anterior deja de mostrarse
@@ -52,6 +53,7 @@ export default function Usuarios() {
     <main className="tarjeta pagina-admin">
       <h1>Usuarios</h1>
       <p className="subtitulo">Estudiantes registrados en RoomMatch.</p>
+      {aviso && <p className="exito" role="status">{aviso}</p>}
 
       <form className="admin-filtros" onSubmit={buscar} role="search">
         <label className="admin-buscador">

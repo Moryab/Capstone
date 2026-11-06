@@ -52,6 +52,7 @@ const ACCIONES_REGISTRADAS = [
   { valor: 'suspender_publicacion', texto: 'Publicación ocultada' },
   { valor: 'eliminar_publicacion', texto: 'Publicación eliminada' },
   { valor: 'reactivar_usuario', texto: 'Cuenta reactivada' },
+  { valor: 'eliminar_usuario', texto: 'Cuenta eliminada' },
   { valor: 'reactivar_publicacion', texto: 'Publicación restaurada' },
 ]
 

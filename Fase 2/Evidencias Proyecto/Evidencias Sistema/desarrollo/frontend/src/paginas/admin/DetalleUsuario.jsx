@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { textoGenero } from '../../perfil.js'
@@ -7,6 +7,7 @@ import { formatearPesos } from '../../publicaciones.js'
 import { textoEstadoReporte, textoMotivo, textoTipoReporte } from '../../reportes.js'
 import { ESTADOS_SOLICITUD, fechaCorta, fechaHora, textoTipo } from '../verificacion/datos.js'
 import { textoCuenta, textoPublicacion, textoVerificacion } from './datos.js'
+import EliminarCuenta from './EliminarCuenta.jsx'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
 
@@ -33,6 +34,7 @@ function Seccion({ id, titulo, vacio, elementos, children }) {
 export default function DetalleUsuario() {
   const { id } = useParams()
   const { state } = useLocation()
+  const navegar = useNavigate()
   const volver = state?.volver ?? '/admin/usuarios'
   // Se guarda junto con el id: al pasar a otro usuario, lo anterior deja de mostrarse
   const [cargado, setCargado] = useState({ id: null, datos: null, error: '' })
@@ -161,6 +163,8 @@ export default function DetalleUsuario() {
       </Seccion>
 
       {perfil.estado_cuenta === 'suspendida' && <ReactivarCuenta usuarioId={perfil.id} alTerminar={alTerminar} />}
+      <EliminarCuenta usuarioId={perfil.id} nombre={perfil.nombre_completo}
+        alEliminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
     </main>
   )
 }
