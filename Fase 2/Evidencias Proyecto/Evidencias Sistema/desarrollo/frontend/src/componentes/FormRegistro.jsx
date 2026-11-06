@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { GENEROS } from '../perfil.js'
@@ -10,6 +10,33 @@ const VACIO = {
   correo: '', telefono: '', password: '', confirmacion: '',
 }
 
+// Correos personales más comunes: con ellos se recomienda usar el institucional
+const PERSONALES = [
+  'gmail.com', 'hotmail.com', 'hotmail.cl', 'outlook.com', 'outlook.cl', 'outlook.es', 'live.com',
+  'live.cl', 'yahoo.com', 'yahoo.es', 'icloud.com', 'me.com', 'protonmail.com', 'proton.me',
+]
+
+/**
+ * Indicación bajo el correo: con el correo institucional la cuenta se verifica al instante en el
+ * paso «Confirma que eres estudiante»; con uno personal hay que subir un documento. Mismo criterio
+ * que el backend: el dominio o un subdominio suyo (p. ej. «alumnos.ubiobio.cl»).
+ */
+function sugerenciaCorreo(correo, institucionales) {
+  const dominio = correo.includes('@') ? correo.split('@').pop().trim().toLowerCase() : ''
+  const institucional = institucionales.find((i) => dominio === i.dominio || dominio.endsWith(`.${i.dominio}`))
+  if (institucional) {
+    return { tipo: 'ok', texto: `✓ Correo de ${institucional.institucion}: verificaremos tu cuenta al instante.` }
+  }
+  if (PERSONALES.includes(dominio)) {
+    return {
+      tipo: 'aviso',
+      texto: 'Con un correo personal tendrás que subir un documento y esperar a que lo revisemos. '
+        + 'Si tienes correo de tu institución, úsalo y te verificamos al instante.',
+    }
+  }
+  return { tipo: '', texto: 'Usa el correo de tu institución (por ejemplo @duocuc.cl o @udec.cl) y te verificamos al instante.' }
+}
+
 // HU-01: registro de estudiante
 export default function FormRegistro() {
   const navegar = useNavigate()
@@ -18,8 +45,24 @@ export default function FormRegistro() {
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [institucionales, setInstitucionales] = useState(null)
+  const cargandoDominios = useRef(false)
+
+  const cargarDominios = () => {
+    if (cargandoDominios.current) return
+    cargandoDominios.current = true
+    api('/catalogos/correos-institucionales')
+      .then(setInstitucionales)
+      .catch(() => {}) // el registro sigue igual; solo falta reconocer el correo institucional
+      .finally(() => { cargandoDominios.current = false })
+  }
+  useEffect(cargarDominios, [])
+
+  const sugerencia = sugerenciaCorreo(datos.correo, institucionales ?? [])
 
   const cambiar = (e) => {
+    // Si la primera carga falló (p. ej. la API aún no partía), se reintenta al escribir el dominio
+    if (e.target.name === 'correo' && e.target.value.includes('@') && !institucionales) cargarDominios()
     setDatos({ ...datos, [e.target.name]: e.target.value })
     setErrores({ ...errores, [e.target.name]: undefined })
   }
@@ -76,11 +119,16 @@ export default function FormRegistro() {
       </div>
       <div className="fila">
         <Campo etiqueta="Correo" nombre="correo" id="reg-correo" type="email" value={datos.correo}
-          onChange={cambiar} error={errores.correo} autoComplete="email" required />
+          onChange={cambiar} error={errores.correo} autoComplete="email" required
+          aria-describedby={['reg-correo-sugerencia', errores.correo && 'reg-correo-error'].filter(Boolean).join(' ')} />
         <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
           onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
           autoComplete="tel" required />
       </div>
+      {/* Fuera de la fila para que el correo y el teléfono sigan alineados */}
+      <p id="reg-correo-sugerencia" className={`sugerencia-correo ${sugerencia.tipo}`} aria-live="polite">
+        {sugerencia.texto}
+      </p>
       <div className="fila">
         <Campo etiqueta="Contraseña" nombre="password" id="reg-password" type="password"
           value={datos.password} onChange={cambiar} error={errores.password}

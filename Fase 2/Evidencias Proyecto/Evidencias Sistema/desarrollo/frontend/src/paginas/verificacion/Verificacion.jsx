@@ -31,7 +31,12 @@ function EstadoVerificacion({ verificacion, verComprobante, abriendo }) {
   if (estado === 'verificado') {
     return (
       <section className="verificacion-estado">
-        <p className="exito">Tu condición de estudiante está verificada.</p>
+        <p className="exito">
+          Tu condición de estudiante está verificada
+          {verificacion.verificado_con_correo
+            ? <> con tu correo institucional de <strong>{verificacion.institucion_correo}</strong>.</>
+            : '.'}
+        </p>
         {detalle}
       </section>
     )
@@ -75,7 +80,7 @@ function EstadoVerificacion({ verificacion, verComprobante, abriendo }) {
 // su solicitud y, si fue rechazada o revocada, envía otra. El primer envío es un paso obligatorio del
 // registro (PasoVerificacion)
 export default function Verificacion() {
-  const { recargarUsuario } = useSesion()
+  const { usuario, recargarUsuario } = useSesion()
   const [verificacion, setVerificacion] = useState(null)
   const [instituciones, setInstituciones] = useState(null)
   const [institucionPerfil, setInstitucionPerfil] = useState('')
@@ -139,7 +144,10 @@ export default function Verificacion() {
 
       {verificacion.puede_solicitar ? (
         <FormComprobante instituciones={instituciones} institucionInicial={institucionPerfil} alEnviar={alEnviar}
-          acciones={volver} />
+          acciones={volver}
+          correoInstitucional={verificacion.puede_verificar_correo
+            ? { correo: usuario.correo, institucion: verificacion.institucion_correo }
+            : null} />
       ) : (
         <div className="acciones">{volver}</div>
       )}

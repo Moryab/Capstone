@@ -21,6 +21,8 @@ html.tema-oscuro {
   --error-fondo: rgb(255 138 128 / 0.12);
   --exito: #6ee7a0;
   --exito-fondo: rgb(110 231 160 / 0.12);
+  --aviso: #fcd34d;
+  --aviso-fondo: rgb(252 211 77 / 0.12);
   --sobre-primario: #04201d;
 }
 /* La landing conserva su diseño claro */

@@ -17,11 +17,15 @@ export default function PasoVerificacion() {
   useAplicarTema(true) // igual que el cuestionario: siempre en claro
   const navegar = useNavigate()
   const [instituciones, setInstituciones] = useState(null)
+  const [verificacion, setVerificacion] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api('/catalogos/perfil')
-      .then((catalogo) => setInstituciones(catalogo.instituciones))
+    Promise.all([api('/catalogos/perfil'), api('/verificacion')])
+      .then(([catalogo, verificacionApi]) => {
+        setInstituciones(catalogo.instituciones)
+        setVerificacion(verificacionApi)
+      })
       .catch((err) => setError(err.message))
   }, [])
 
@@ -43,15 +47,20 @@ export default function PasoVerificacion() {
         <p className="v-paso-etiqueta">Último paso</p>
         <h1>Confirma que eres estudiante</h1>
         <p className="subtitulo">
-          RoomMatch es exclusiva para estudiantes. Sube un documento que lo acredite y un administrador lo revisará.
+          RoomMatch es exclusiva para estudiantes. Si te registraste con el correo de tu institución te
+          verificamos al instante; si no, sube un documento que lo acredite y un administrador lo revisará.
         </p>
         <p className="v-paso-nota">
-          Mientras lo revisamos podrás completar tu perfil y ver alojamientos. Te avisaremos cuando tu cuenta esté verificada.
+          Mientras revisamos un documento podrás completar tu perfil y ver alojamientos. Te avisaremos cuando tu cuenta esté verificada.
         </p>
         {error && <p className="alerta" role="alert">{error}</p>}
-        {!instituciones && !error && <p className="cargando">Cargando…</p>}
-        {instituciones && (
-          <FormComprobante instituciones={instituciones} alEnviar={alEnviar} textoEnviar="Enviar y continuar" />
+        {(!instituciones || !verificacion) && !error && <p className="cargando">Cargando…</p>}
+        {instituciones && verificacion && (
+          <FormComprobante instituciones={instituciones} alEnviar={alEnviar} textoEnviar="Enviar y continuar"
+            textoCorreo="Verificar y continuar"
+            correoInstitucional={verificacion.puede_verificar_correo
+              ? { correo: usuario.correo, institucion: verificacion.institucion_correo }
+              : null} />
         )}
       </main>
     </div>

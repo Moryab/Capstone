@@ -135,3 +135,8 @@ class VerificacionOut(BaseModel):
     puede_solicitar: bool
     motivo_revocacion: str | None = None
     solicitud: SolicitudOut | None = None
+    # Institución a la que pertenece el dominio del correo de la cuenta, si es institucional
+    institucion_correo: str | None = None
+    # Con un correo institucional el estudiante matriculado se verifica sin enviar un comprobante
+    puede_verificar_correo: bool = False
+    verificado_con_correo: bool = False

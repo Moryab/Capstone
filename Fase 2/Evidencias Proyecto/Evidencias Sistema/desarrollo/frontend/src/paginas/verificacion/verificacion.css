@@ -51,6 +51,7 @@
   color: var(--primario);
 }
 .v-paso-nota { margin: 0 0 20px; font-size: 0.9rem; color: var(--texto-suave); }
+.v-correo { margin: 0 0 20px; line-height: 1.5; overflow-wrap: anywhere; }
 @media (max-width: 560px) {
   .v-opciones { grid-template-columns: 1fr; }
 }

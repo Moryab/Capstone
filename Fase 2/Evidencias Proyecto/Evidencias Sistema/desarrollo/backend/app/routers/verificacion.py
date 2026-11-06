@@ -37,25 +37,58 @@ MENSAJES_NO_PUEDE = {
 
 TIPOS_MIME = {"pdf": "application/pdf", "jpg": "image/jpeg", "png": "image/png"}
 
+# Con estos estados basta el correo institucional. Una verificación revocada por un administrador
+# no se recupera con el correo: hay que enviar un comprobante
+PUEDE_CORREO = ("no_verificado", "rechazado")
+
 
 def datos_invalidos(errores: dict) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": "Datos inválidos", "errores": errores})
 
 
+async def institucion_del_correo(correo: str) -> dict | None:
+    """La institución activa cuyo dominio coincide con el del correo (también sus subdominios,
+    p. ej. «alumnos.ubiobio.cl»). Los dominios están en dominios_correo de cada institución."""
+    dominio = correo.rsplit("@", 1)[-1].lower()
+    async for institucion in db.instituciones.find(
+        {"activa": True}, {"nombre": 1, "sigla": 1, "dominios_correo": 1}
+    ):
+        if any(dominio == d or dominio.endswith(f".{d}") for d in institucion.get("dominios_correo") or []):
+            return institucion
+    return None
+
+
 async def verificacion_out(usuario: dict) -> VerificacionOut:
-    estado = usuario.get("verificacion", {}).get("estado", "no_verificado")
+    verificacion = usuario.get("verificacion", {})
+    estado = verificacion.get("estado", "no_verificado")
     solicitud = await db.solicitudes_verificacion.find_one(
         {"usuario_id": usuario["_id"]}, sort=[("fecha_solicitud", -1)]
     )
     if solicitud:
         institucion = await db.instituciones.find_one({"_id": solicitud["institucion_id"]}, {"nombre": 1})
         solicitud = SolicitudOut.desde_doc(solicitud, institucion and institucion["nombre"])
+    institucion_correo = await institucion_del_correo(usuario["correo"])
     return VerificacionOut(
         estado=estado,
         puede_solicitar=estado in PUEDE_SOLICITAR,
-        motivo_revocacion=usuario.get("verificacion", {}).get("motivo_revocacion") if estado == "revocado" else None,
+        motivo_revocacion=verificacion.get("motivo_revocacion") if estado == "revocado" else None,
         solicitud=solicitud,
+        institucion_correo=institucion_correo and (
+            institucion_correo["nombre"] if institucion_correo["sigla"] == institucion_correo["nombre"]
+            else f"{institucion_correo['nombre']} ({institucion_correo['sigla']})"
+        ),
+        puede_verificar_correo=bool(institucion_correo) and estado in PUEDE_CORREO,
+        verificado_con_correo=estado == "verificado" and verificacion.get("metodo") == "correo_institucional",
     )
+
+
+async def al_quedar_verificado(usuario_id: ObjectId) -> None:
+    """Hasta ahora no contaba en la compatibilidad ni en el matching: se calcula de inmediato para
+    que aparezca como posible roomie y pueda recibir propuestas sin esperar otro cambio."""
+    verificado = await db.usuarios.find_one({"_id": usuario_id})
+    if verificado and (verificado.get("cuestionario") or {}).get("completo"):
+        await recalcular(verificado)
+        await generar_propuestas()
 
 
 @router.get("", response_model=VerificacionOut)
@@ -141,6 +174,49 @@ async def solicitar_verificacion(
     usuario["verificacion"] = {**usuario.get("verificacion", {}), "estado": "pendiente"}
     return {
         "mensaje": "Recibimos tu comprobante. Tu solicitud quedó pendiente de validación",
+        "verificacion": await verificacion_out(usuario),
+    }
+
+
+@router.post("/correo")
+async def verificar_con_correo(usuario: dict = Depends(usuario_actual)):
+    """El estudiante matriculado que se registró con el correo de su institución (p. ej.
+    «@duocuc.cl») queda verificado al instante, sin comprobante ni revisión de un administrador."""
+    estado = usuario.get("verificacion", {}).get("estado", "no_verificado")
+    if estado not in PUEDE_CORREO:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            MENSAJES_NO_PUEDE.get(estado, "Para volver a verificarte envía un comprobante actualizado"),
+        )
+    institucion = await institucion_del_correo(usuario["correo"])
+    if not institucion:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "Tu correo no es de una institución reconocida. Sube un documento que acredite que eres estudiante",
+        )
+
+    # Igual que al enviar un comprobante: solo cambia si el estado no cambió entretanto
+    ahora = datetime.now(timezone.utc)
+    verificacion = {
+        "estado": "verificado",
+        "metodo": "correo_institucional",  # campo nuevo (no está en el modelo de datos)
+        "institucion_id": institucion["_id"],
+        "fecha_verificacion": ahora,
+        "fecha_revocacion": None,
+        "admin_id": None,
+        "solicitud_id": None,
+    }
+    marcado = await db.usuarios.update_one(
+        {"_id": usuario["_id"], "verificacion.estado": {"$in": list(PUEDE_CORREO)}},
+        {"$set": {"verificacion": verificacion, "fecha_actualizacion": ahora}},
+    )
+    if not marcado.modified_count:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Tu verificación cambió. Recarga la página")
+
+    await al_quedar_verificado(usuario["_id"])
+    usuario["verificacion"] = verificacion
+    return {
+        "mensaje": f"Listo: verificamos tu cuenta con tu correo de {institucion['nombre']}",
         "verificacion": await verificacion_out(usuario),
     }
 
@@ -282,12 +358,7 @@ async def aprobar_solicitud(solicitud_id: str, admin: dict = Depends(solo_admin)
             "fecha_actualizacion": solicitud["fecha_revision"],
         }},
     )
-    # Hasta ahora no contaba en la compatibilidad ni en el matching: se calcula de inmediato para
-    # que aparezca como posible roomie y pueda recibir propuestas sin esperar otro cambio
-    verificado = await db.usuarios.find_one({"_id": solicitud["usuario_id"]})
-    if verificado and (verificado.get("cuestionario") or {}).get("completo"):
-        await recalcular(verificado)
-        await generar_propuestas()
+    await al_quedar_verificado(solicitud["usuario_id"])
     await notificar(
         solicitud["usuario_id"], "verificacion_estudiante", "Tu condición de estudiante fue verificada",
         "Revisamos tu comprobante y tu perfil ya aparece como estudiante verificado.",

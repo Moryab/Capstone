@@ -11,10 +11,16 @@ const VACIO = { situacion: '', institucion_id: '', tipo_comprobante: '' }
  * registro y la página «Verificar mi condición de estudiante». Primero pregunta la situación, porque
  * de ella dependen los documentos que sirven.
  *
+ * Si el correo de la cuenta es institucional (`correoInstitucional`: { correo, institucion }), al
+ * elegir «Ya estoy matriculado/a» no se pide documento: la cuenta se verifica con el correo.
+ *
  * `alEnviar(respuesta)` se llama cuando la API aceptó el comprobante; `acciones` son los botones
  * que van junto a «Enviar».
  */
-export default function FormComprobante({ instituciones, institucionInicial = '', alEnviar, acciones, textoEnviar = 'Enviar solicitud' }) {
+export default function FormComprobante({
+  instituciones, institucionInicial = '', alEnviar, acciones, textoEnviar = 'Enviar solicitud',
+  correoInstitucional = null, textoCorreo = 'Verificar con mi correo',
+}) {
   const [datos, setDatos] = useState({ ...VACIO, institucion_id: institucionInicial })
   const [archivo, setArchivo] = useState(null)
   const [errores, setErrores] = useState({})
@@ -22,6 +28,7 @@ export default function FormComprobante({ instituciones, institucionInicial = ''
   const [enviando, setEnviando] = useState(false)
 
   const tipos = tiposDe(datos.situacion)
+  const conCorreo = Boolean(correoInstitucional) && datos.situacion === 'matriculado'
 
   const cambiar = (e) => {
     const { name, value } = e.target
@@ -45,8 +52,21 @@ export default function FormComprobante({ instituciones, institucionInicial = ''
     setErrores({ ...errores, comprobante: error })
   }
 
+  const verificarConCorreo = async () => {
+    setEnviando(true)
+    setMensaje('')
+    try {
+      const respuesta = await api('/verificacion/correo', { metodo: 'POST' })
+      await alEnviar(respuesta)
+    } catch (err) {
+      setMensaje(err.message)
+      setEnviando(false)
+    }
+  }
+
   const enviar = async (e) => {
     e.preventDefault()
+    if (conCorreo) return verificarConCorreo()
     const faltan = {
       ...(!datos.situacion && { situacion: 'Cuéntanos en qué situación estás' }),
       ...(!datos.institucion_id && { institucion_id: 'Este campo es obligatorio' }),
@@ -97,7 +117,15 @@ export default function FormComprobante({ instituciones, institucionInicial = ''
         {errores.situacion && <p className="campo-error" id="situacion-error">{errores.situacion}</p>}
       </fieldset>
 
-      {datos.situacion && (
+      {conCorreo && (
+        <p className="exito v-correo">
+          Te registraste con <strong>{correoInstitucional.correo}</strong>, un correo
+          de <strong>{correoInstitucional.institucion}</strong>. No necesitas subir ningún documento:
+          tu cuenta quedará verificada al instante.
+        </p>
+      )}
+
+      {datos.situacion && !conCorreo && (
         <fieldset>
           <legend>Tu documento</legend>
           <Campo etiqueta="Institución" nombre="institucion_id" value={datos.institucion_id}
@@ -115,7 +143,7 @@ export default function FormComprobante({ instituciones, institucionInicial = ''
       <div className="acciones">
         {acciones}
         <button type="submit" className="boton" disabled={enviando}>
-          {enviando ? 'Enviando…' : textoEnviar}
+          {enviando ? (conCorreo ? 'Verificando…' : 'Enviando…') : (conCorreo ? textoCorreo : textoEnviar)}
         </button>
       </div>
     </form>

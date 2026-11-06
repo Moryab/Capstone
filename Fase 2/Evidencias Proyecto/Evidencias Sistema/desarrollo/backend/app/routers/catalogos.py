@@ -51,6 +51,17 @@ async def catalogo_perfil():
     return {"regiones": REGIONES, "instituciones": instituciones}
 
 
+@router.get("/correos-institucionales")
+async def correos_institucionales():
+    """Dominios de correo de cada institución. El registro los usa para recomendar el correo
+    institucional, con el que la cuenta se verifica al instante (verificacion.py)."""
+    return [
+        {"dominio": dominio, "institucion": inst["nombre"]}
+        async for inst in db.instituciones.find({"activa": True}, {"nombre": 1, "dominios_correo": 1})
+        for dominio in inst.get("dominios_correo") or []
+    ]
+
+
 @router.get("/publicacion")
 async def catalogo_publicacion():
     """Comunas para la ubicación del alojamiento (CA-06.2)."""

@@ -15,6 +15,8 @@
   --error-fondo: #fdecea;
   --exito: #2e7d32;
   --exito-fondo: #e8f5e9;
+  --aviso: #8a4b08;
+  --aviso-fondo: #fff4dc;
   --duracion: 0.6s;
   --curva: ease-in-out;
   font-family: 'Work Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -147,6 +149,21 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
 .form-acceso h2 { margin: 0 0 6px; font-size: 1.9rem; }
 .form-acceso .subtitulo { margin: 0 0 22px; color: var(--texto-suave); }
+/* Registro: recomienda el correo institucional, con el que la cuenta se verifica al instante */
+.sugerencia-correo {
+  margin: -4px 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: left;
+  color: var(--texto-suave);
+  background: var(--campo);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.sugerencia-correo.ok { color: var(--exito); background: var(--exito-fondo); font-weight: 600; }
+.sugerencia-correo.aviso { color: var(--aviso); background: var(--aviso-fondo); }
+
 .form-acceso .campo,
 .form-acceso .ayuda,
 .form-acceso .alerta,
