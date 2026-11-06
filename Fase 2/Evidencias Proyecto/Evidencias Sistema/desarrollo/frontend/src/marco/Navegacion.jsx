@@ -8,11 +8,11 @@ import {
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 
-// Opciones de la barra. `a` es la ruta; «Mis publicaciones» es un botón que baja a esa tarjeta del
-// inicio. `movil` es el texto corto de la barra inferior (sin él, la opción no va en el celular)
+// Opciones de la barra. `a` es la ruta y `movil` el texto corto de la barra inferior (sin él, la
+// opción no va en el celular). `oferente`: solo la ve quien ofrece un espacio
 const OPCIONES_ESTUDIANTE = [
   { a: '/', texto: 'Inicio', movil: 'Inicio', Icono: IconoInicio },
-  { publicaciones: true, texto: 'Mis publicaciones', movil: 'Publicaciones', Icono: IconoLista },
+  { a: '/mis-publicaciones', oferente: true, texto: 'Mis publicaciones', movil: 'Publicaciones', Icono: IconoLista },
   { a: '/alojamientos', texto: 'Buscar alojamiento', movil: 'Buscar', Icono: IconoLupa },
   // No caben 7 botones en el celular: «Encontrar roomie» queda en el inicio
   { a: '/roomies', texto: 'Encontrar roomie', Icono: IconoPersonas },
@@ -69,11 +69,10 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
 /**
  * Navegación de las páginas con sesión: barra lateral contraíble en escritorio y barra inferior en móvil.
  * Muestra las opciones del estudiante o las del panel de administración según el rol.
- * «Mis publicaciones» baja hasta esa tarjeta del inicio. El perfil se abre desde la cuenta
- * y publicar, desde la tarjeta grande del inicio.
+ * El perfil se abre desde la cuenta y publicar, desde el inicio o «Mis publicaciones».
  */
 export default function Navegacion({
-  usuario, cerrarSesion, irAPublicaciones, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, pathname,
+  usuario, cerrarSesion, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, pathname,
 }) {
   const actual = (ruta) => (pathname === ruta ? 'page' : undefined)
   const [menuAbierto, setMenuAbierto] = useState(false)
@@ -83,7 +82,7 @@ export default function Navegacion({
   // Quien busca dónde vivir no publica: «Mis publicaciones» solo la ve el oferente
   const opciones = admin
     ? OPCIONES_ADMIN
-    : OPCIONES_ESTUDIANTE.filter((o) => !(o.publicaciones && usuario.modo === 'buscador'))
+    : OPCIONES_ESTUDIANTE.filter((o) => !(o.oferente && usuario.modo === 'buscador'))
 
   const contador = noLeidas > 0 && (
     <span className="i-contador" aria-label={`${noLeidas} sin leer`}>{noLeidas > 99 ? '99+' : noLeidas}</span>
@@ -102,25 +101,17 @@ export default function Navegacion({
     </button>
   )
 
-  const opcionLateral = ({ a, publicaciones, texto, Icono }) => (
+  const opcionLateral = ({ a, texto, Icono }) => (
     <li key={texto}>
-      {publicaciones ? (
-        <button type="button" className="i-nav-item" onClick={irAPublicaciones} data-titulo={texto}>
-          <Icono /> <span className="i-nav-texto">{texto}</span>
-        </button>
-      ) : (
-        <Link to={a} className="i-nav-item" aria-current={actual(a)} data-titulo={texto}>
-          <Icono /> <span className="i-nav-texto">{texto}</span>
-        </Link>
-      )}
+      <Link to={a} className="i-nav-item" aria-current={actual(a)} data-titulo={texto}>
+        <Icono /> <span className="i-nav-texto">{texto}</span>
+      </Link>
     </li>
   )
 
-  const opcionMovil = ({ a, publicaciones, movil, Icono }) => (publicaciones ? (
-    <button key={movil} type="button" className="i-movil-item" onClick={irAPublicaciones}><Icono /><span>{movil}</span></button>
-  ) : (
+  const opcionMovil = ({ a, movil, Icono }) => (
     <Link key={movil} to={a} className="i-movil-item" aria-current={actual(a)}><Icono /><span>{movil}</span></Link>
-  ))
+  )
   const enMovil = opciones.filter((o) => o.movil)
 
   return (

@@ -97,8 +97,8 @@ function Formulario() {
   // Props comunes de cada campo: valor, cambio y su mensaje de error
   const campo = (nombre) => ({ nombre, value: datos[nombre], onChange: cambiar, error: errores[nombre] })
 
-  // Al terminar se vuelve al perfil, que muestra el aviso en la sección «Mis publicaciones»
-  const avisar = (tipo, texto) => navegar('/perfil', { state: { aviso: { tipo, texto } } })
+  // Al terminar se vuelve a «Mis publicaciones», que muestra el aviso arriba
+  const avisar = (tipo, texto) => navegar('/mis-publicaciones', { state: { aviso: { tipo, texto } } })
 
   const enviar = async (e) => {
     e.preventDefault()
@@ -258,7 +258,7 @@ function Formulario() {
         )}
 
         <div className="acciones">
-          <Link to="/perfil" className="boton secundario">Cancelar</Link>
+          <Link to="/mis-publicaciones" className="boton secundario">Cancelar</Link>
           <button type="submit" className="boton" disabled={enviando}>
             {enviando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Publicar'}
           </button>

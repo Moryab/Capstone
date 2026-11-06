@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api.js'
 import { formatearPesos, textoDe, TIPOS } from '../../publicaciones.js'
-import { EnlaceCambioRol } from '../../rol/CambioRol.jsx'
 import { useSesion } from '../../sesion/SesionContext.jsx'
 import { IconoFlecha } from '../iconos.jsx'
 import {
@@ -25,6 +24,14 @@ const REGLAS = [
   ['requiere_visitas', 'Con visitas', 'Sin visitas'],
 ]
 const EXTRAS = [['gastos_incluidos', 'Gastos incluidos'], ['amoblado', 'Amoblado'], ['estacionamiento', 'Estacionamiento']]
+
+// Destello: «recomendaciones» que RoomMatch calcula por ti
+const IconoChispa = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+    strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M19 17v4M17 19h4" />
+  </svg>
+)
 
 // usuarios.preferencias_busqueda → chips legibles. `nombres` traduce los ids de comuna
 function chipsDe(p, nombres) {
@@ -295,6 +302,7 @@ export default function TarjetaBuscando() {
     <div className="i-tarjeta i-area-buscar">
       <section ref={tarjeta} className="i-buscar" data-activo={activo} data-estado={estado}
         aria-labelledby="i-titulo-buscar">
+        <span className="i-buscar-fondo" aria-hidden="true" />
         <span className="i-buscar-brillo" aria-hidden="true" />
 
         <Casa />
@@ -349,7 +357,6 @@ export default function TarjetaBuscando() {
                       </li>
                     )}
                   </ul>
-                  <Link to="/propuestas" className="i-enlace i-buscar-propuestas">Ver mis propuestas <IconoFlecha /></Link>
                 </div>
               )}
             </div>
@@ -358,26 +365,42 @@ export default function TarjetaBuscando() {
           {(mensaje || error) && (
             <p className={error ? 'i-error i-buscar-aviso' : 'i-buscar-aviso'}>{error || mensaje}</p>
           )}
-          {!preguntando && <EnlaceCambioRol />}
         </div>
 
-        <button ref={interruptor} type="button" role="switch" aria-checked={activo}
-          aria-label="Estoy buscando alojamiento" aria-disabled={enviando}
-          className="i-buscar-interruptor" data-encendido={interruptorEncendido} onClick={alternar}>
-          <span className="i-riel">
-            {ondas > 0 && <span key={ondas} className="i-riel-onda" aria-hidden="true" />}
-            <span className="i-riel-si" aria-hidden="true">Sí</span>
-            <span className="i-riel-no" aria-hidden="true">No</span>
-            <span className="i-pulgar" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
-              </svg>
+        {/* Panel del interruptor: qué activa, en qué estado está y el atajo a las propuestas */}
+        <div className="i-buscar-control" data-encendido={interruptorEncendido}>
+          <p className="i-buscar-control-titulo" id="i-buscar-control-titulo">
+            <IconoChispa /> Recomendaciones de match
+          </p>
+          <button ref={interruptor} type="button" role="switch" aria-checked={activo}
+            aria-labelledby="i-buscar-control-titulo" aria-describedby="i-buscar-control-ayuda"
+            aria-disabled={enviando}
+            className="i-buscar-interruptor" data-encendido={interruptorEncendido} onClick={alternar}>
+            <span className="i-riel">
+              {ondas > 0 && <span key={ondas} className="i-riel-onda" aria-hidden="true" />}
+              <span className="i-riel-si" aria-hidden="true">Sí</span>
+              <span className="i-riel-no" aria-hidden="true">No</span>
+              <span className="i-pulgar" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
+                </svg>
+              </span>
             </span>
-          </span>
-          <span className="i-buscar-leyenda" aria-hidden="true">
-            {estado === 'preguntando' && !activo ? 'Falta confirmar' : activo ? 'Buscando' : 'Búsqueda pausada'}
-          </span>
-        </button>
+            <span className="i-buscar-leyenda" aria-hidden="true">
+              {estado === 'preguntando' && !activo ? 'Falta confirmar' : activo ? 'Activadas' : 'Desactivadas'}
+            </span>
+          </button>
+          <p className="i-buscar-control-ayuda" id="i-buscar-control-ayuda">
+            {estado === 'preguntando'
+              ? 'Confirma lo que buscas para activarlas.'
+              : activo
+                ? 'Te avisamos cuando un alojamiento calce contigo.'
+                : 'Actívalas para recibir alojamientos compatibles.'}
+          </p>
+          {estado === 'activo' && (
+            <Link to="/propuestas" className="i-buscar-control-enlace">Ver mis propuestas <IconoFlecha /></Link>
+          )}
+        </div>
 
         {/* El lector anuncia el cambio y, cuando llega, el mensaje del servidor */}
         <p className="visualmente-oculto" aria-live="polite">{error ? anuncio : [anuncio, mensaje].filter(Boolean).join('. ')}</p>

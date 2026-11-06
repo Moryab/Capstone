@@ -3,12 +3,20 @@ import { Link } from 'react-router-dom'
 import { api } from '../../api.js'
 import { describirFaltantes, FOTO_MAX_MB, FOTO_TIPOS } from '../../perfil.js'
 import { useSesion } from '../../sesion/SesionContext.jsx'
+import { estaVerificado } from '../../sesion/verificacion.js'
 import { Ayuda, Tarjeta } from '../comunes.jsx'
 import { lanzarConfeti } from '../confeti.js'
-import { IconoCamara, IconoCandado, IconoCheck } from '../iconos.jsx'
+import { IconoCamara, IconoCheck } from '../iconos.jsx'
 import { guardarLocal, leerLocal } from '../utilidades.js'
 
-const PROXIMOS = ['Propuestas de match']
+// Etiqueta junto al paso de verificación, según el estado del documento de estudiante
+const ESTADO_VERIFICACION = {
+  verificado: { texto: 'Verificado', tono: 'ok' },
+  pendiente: { texto: 'En revisión', tono: 'espera' },
+  rechazado: { texto: 'Rechazado', tono: 'alerta' },
+  revocado: { texto: 'Revocado', tono: 'alerta' },
+  no_verificado: { texto: 'Sin verificar', tono: 'alerta' },
+}
 
 // Anillo de avance. Parte vacío y se llena al aparecer (con «reducir movimiento» ya está lleno)
 function Anillo({ hechos, total }) {
@@ -93,7 +101,11 @@ export default function TarjetaPasos() {
     { clave: 'foto', titulo: 'Sube tu foto de perfil', hecho: Boolean(usuario.foto_url) },
     // HU-13: el cuestionario de hábitos alimenta el cálculo de compatibilidad
     { clave: 'cuestionario', titulo: 'Responde el cuestionario de convivencia', hecho: Boolean(usuario.cuestionario_completo) },
+    // HU-22: lo aprueba un administrador; aquí solo se muestra en qué va
+    { clave: 'verificacion', titulo: 'Verifica que eres estudiante', hecho: estaVerificado(usuario) },
   ]
+  const verificacion = ESTADO_VERIFICACION[estaVerificado(usuario) ? 'verificado' : usuario.verificacion_estado]
+    ?? ESTADO_VERIFICACION.pendiente
   const hechos = pasos.filter((p) => p.hecho).length
   const siguiente = pasos.find((p) => !p.hecho)
   const estado = Object.fromEntries(pasos.map((p) => [p.clave, p.hecho]))
@@ -132,14 +144,11 @@ export default function TarjetaPasos() {
             <li key={p.clave} className={`${p.hecho ? 'hecho' : ''}${celebrado === p.clave ? ' celebrado' : ''}${siguiente === p ? ' siguiente' : ''}`}>
               <span className="i-check" aria-hidden="true">{p.hecho && <IconoCheck />}</span>
               <span>{p.titulo}</span>
-              <span className="visualmente-oculto">{p.hecho ? ' (listo)' : ' (pendiente)'}</span>
-            </li>
-          ))}
-          {PROXIMOS.map((titulo) => (
-            <li key={titulo} className="pronto">
-              <span className="i-check" aria-hidden="true"><IconoCandado tamano={11} /></span>
-              <span>{titulo}</span>
-              <span className="i-muy-pronto">Muy pronto</span>
+              {p.clave === 'verificacion'
+                ? <span className={`i-estado-verif ${verificacion.tono}`}>
+                    <span className="visualmente-oculto">: </span>{verificacion.texto}
+                  </span>
+                : <span className="visualmente-oculto">{p.hecho ? ' (listo)' : ' (pendiente)'}</span>}
             </li>
           ))}
         </ol>
@@ -172,10 +181,32 @@ export default function TarjetaPasos() {
             <SubirFoto />
           </>
         )}
+        {siguiente?.clave === 'verificacion' && usuario.verificacion_estado === 'pendiente' && (
+          <>
+            <p className="i-siguiente-titulo">Estamos revisando tu documento de estudiante</p>
+            <p className="i-siguiente-texto">
+              No tienes que hacer nada más: te avisaremos apenas tu perfil quede verificado.
+            </p>
+            <Link to="/verificacion" className="l-boton">Ver mi solicitud</Link>
+          </>
+        )}
+        {siguiente?.clave === 'verificacion' && usuario.verificacion_estado !== 'pendiente' && (
+          <>
+            <p className="i-siguiente-titulo">Siguiente paso: verifica que eres estudiante</p>
+            <p className="i-siguiente-texto">
+              {usuario.verificacion_estado === 'rechazado'
+                ? 'Tu documento fue rechazado. Revisa el motivo y envía otro.'
+                : 'Envía un documento vigente para que otros estudiantes confíen en tu perfil.'}
+            </p>
+            <Link to="/verificacion" className="l-boton">
+              {usuario.verificacion_estado === 'rechazado' ? 'Ver el motivo y enviar otro' : 'Enviar documento'}
+            </Link>
+          </>
+        )}
         {!siguiente && (
           <p className="i-siguiente-listo">
             <span className="i-check grande" aria-hidden="true"><IconoCheck tamano={16} /></span>
-            Completaste todos los pasos disponibles por ahora. Los siguientes se habilitarán más adelante.
+            Completaste todos tus primeros pasos y tu perfil está verificado.
           </p>
         )}
       </div>

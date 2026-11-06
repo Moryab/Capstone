@@ -239,7 +239,9 @@ export default function ModalPausadas({ publicaciones, alCambiar, alCerrar }) {
             <p id="p-texto">
               {terminado
                 ? 'Las publicaciones activas ya pueden recibir propuestas de estudiantes compatibles.'
-                : 'Los pausaste mientras buscabas alojamiento. Confirma antes de volver a mostrarlos: así nadie postula a un espacio que ya no tienes.'}
+                : lista.length === 1
+                  ? 'Lo pausaste mientras buscabas alojamiento. Confirma antes de volver a mostrarlo: así nadie postula a un espacio que ya no tienes.'
+                  : 'Los pausaste mientras buscabas alojamiento. Confirma antes de volver a mostrarlos: así nadie postula a un espacio que ya no tienes.'}
             </p>
           </div>
           {!terminado && lista.length > 1 && (

@@ -1,5 +1,4 @@
-import { BotonMagnetico } from '../../landing/componentes.jsx'
-import { EnlaceCambioRol } from '../../rol/CambioRol.jsx'
+import { Link } from 'react-router-dom'
 import { useSesion } from '../../sesion/SesionContext.jsx'
 import { estaVerificado } from '../../sesion/verificacion.js'
 import { Ayuda, Tarjeta } from '../comunes.jsx'
@@ -39,14 +38,14 @@ export default function TarjetaPublicar() {
         <h2 id="i-titulo-publicar">¿Tienes una habitación o departamento disponible?</h2>
         <p>Publícalo con fotos, precio, gastos y reglas de convivencia. Quedará visible para los estudiantes que buscan alojamiento.</p>
         {verificado ? (
-          <BotonMagnetico to="/publicaciones/nueva" className="l-boton-luz l-boton-grande">
+          // Botón quieto (sin efecto magnético): dentro de la plataforma el movimiento se siente brusco
+          <Link to="/publicaciones/nueva" className="l-boton l-boton-luz l-boton-grande i-publicar-boton">
             <IconoMas tamano={18} /> Publicar alojamiento
-          </BotonMagnetico>
+          </Link>
         ) : (
           // Acceso limitado: se publica con la cuenta verificada
           <p className="i-publicar-espera"><strong>Podrás publicar cuando tu cuenta esté verificada.</strong></p>
         )}
-        <EnlaceCambioRol claro />
       </div>
       <Ilustracion />
     </Tarjeta>

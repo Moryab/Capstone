@@ -3,11 +3,12 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import '../landing/landing.css'
-import { gsap, prefiereSinMovimiento, useAnimacion } from '../landing/animaciones.js'
+import { gsap, useAnimacion } from '../landing/animaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import Hero from './Hero.jsx'
 import ModalPausadas from './ModalPausadas.jsx'
 import TarjetaBuscando from './tarjetas/TarjetaBuscando.jsx'
+import TarjetaCambioRol from './tarjetas/TarjetaCambioRol.jsx'
 import TarjetaPasos from './tarjetas/TarjetaPasos.jsx'
 import TarjetaPausadas from './tarjetas/TarjetaPausadas.jsx'
 import TarjetaPerfil from './tarjetas/TarjetaPerfil.jsx'
@@ -54,9 +55,11 @@ export default function Inicio() {
       setPublicaciones([])
     }), [])
 
+  // También al cambiar de rol: si el cambio se hace desde aquí el inicio no se vuelve a montar, y
+  // sin recargar seguiría mostrando las publicaciones como estaban antes (activas o pausadas)
   useEffect(() => {
     cargarPublicaciones()
-  }, [cargarPublicaciones])
+  }, [cargarPublicaciones, usuario.modo])
 
   // El oferente que volvió a ese rol confirma si sus publicaciones pausadas siguen disponibles.
   // `revision` es la lista que se muestra en el modal mientras está abierto (null = cerrado)
@@ -83,28 +86,23 @@ export default function Inicio() {
     })
   })
 
-  // Al volver a ser oferente (CambioRol.jsx), el modal de las pausadas se abre solo, una vez:
-  // el pedido se borra del historial para que no reaparezca al recargar
-  const pubsListas = publicaciones !== null
+  // Al volver a ser oferente (CambioRol.jsx), el modal de las pausadas se abre solo, una vez.
+  // Se piden las publicaciones en ese momento, sin esperar ni confiar en la lista que ya estaba
+  // cargada: con un cambio rápido de ida y vuelta esa lista todavía las tenía como activas.
+  // El pedido se borra del historial para que no reaparezca al recargar
+  const pideRevisar = Boolean(state?.revisarPausadas)
   useEffect(() => {
-    if (!state?.revisarPausadas || !pubsListas) return
-    if (pausadas.length > 0) setRevision(pausadas)
+    if (!pideRevisar) return
     navegar('.', { replace: true, state: null })
-  }, [state, navegar, pubsListas, pausadas])
-
-  // Desde otra página, «Mis publicaciones» trae aquí y pide bajar hasta esa tarjeta.
-  // El pedido se borra del historial recién después de bajar: si se borrara antes, el efecto
-  // se volvería a ejecutar y cancelaría la bajada
-  useEffect(() => {
-    if (state?.ir !== 'publicaciones') return undefined
-    const t = setTimeout(() => {
-      const destino = document.getElementById('i-publicaciones')
-      destino?.scrollIntoView({ behavior: prefiereSinMovimiento() ? 'auto' : 'smooth', block: 'start' })
-      destino?.focus({ preventScroll: true })
-      navegar('.', { replace: true, state: null })
-    }, 350)
-    return () => clearTimeout(t)
-  }, [state, navegar])
+    api('/publicaciones/mias')
+      .then((pubs) => {
+        setErrorPubs('')
+        setPublicaciones(pubs)
+        const porRevisar = pubs.filter((p) => p.estado === 'pausada')
+        if (porRevisar.length > 0) setRevision(porRevisar)
+      })
+      .catch(() => {}) // si falla, la tarjeta del inicio sigue recordándolas
+  }, [pideRevisar, navegar])
 
   return (
     <main ref={ref} className="i-contenido">
@@ -128,6 +126,7 @@ export default function Inicio() {
         )}
         <TarjetaPasos />
         <TarjetaPerfil perfil={perfil} />
+        <TarjetaCambioRol />
       </div>
 
       {revision && (

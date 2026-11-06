@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
@@ -145,32 +145,5 @@ export function CambioRolProvider({ children }) {
       {children}
       <ModalCambioRol destino={destino} alCerrar={() => setDestino(null)} />
     </CambioRolContext.Provider>
-  )
-}
-
-/**
- * Enlace discreto para pasar al otro rol, dentro de la tarjeta del inicio. Con una convivencia
- * activa queda deshabilitado y explica por qué (la API lo vuelve a revisar).
- */
-export function EnlaceCambioRol({ claro = false }) {
-  const { usuario } = useSesion()
-  const { abrir } = useCambioRol()
-  const idMotivo = useId()
-  const destino = usuario.modo === 'buscador' ? 'oferente' : 'buscador'
-  const pregunta = destino === 'oferente' ? '¿Ahora tienes un espacio para ofrecer?' : '¿Ahora buscas dónde vivir?'
-
-  if (usuario.con_convivencia) {
-    return (
-      <p className={`r-enlace bloqueado${claro ? ' claro' : ''}`}>
-        <button type="button" disabled aria-describedby={idMotivo}>Cambiar a {destino}</button>
-        <span id={idMotivo}>{SIN_CAMBIO_CON_CONVIVENCIA}.</span>
-      </p>
-    )
-  }
-  return (
-    <p className={`r-enlace${claro ? ' claro' : ''}`}>
-      {pregunta}{' '}
-      <button type="button" onClick={() => abrir(destino)} aria-haspopup="dialog">Cambiar a {destino}</button>
-    </p>
   )
 }

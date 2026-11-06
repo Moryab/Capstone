@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Tarjeta } from '../comunes.jsx'
-import { IconoCandado, IconoCheck, IconoFlecha } from '../iconos.jsx'
+import { IconoCandado, IconoFlecha } from '../iconos.jsx'
 
 // Ilustraciones pequeñas de cada función que viene
 const ILUSTRACIONES = {
@@ -61,11 +61,8 @@ export default function TarjetaPronto({ tipo, titulo, texto, a }) {
   const id = `i-pronto-${tipo}`
   return (
     <Tarjeta className="i-area-pronto" cuerpo={`i-pronto${a ? ' disponible' : ''}`} etiqueta={id}>
-      {a ? (
-        <span className="i-candado disponible"><IconoCheck tamano={12} /> Disponible</span>
-      ) : (
-        <span className="i-candado"><IconoCandado /> Muy pronto</span>
-      )}
+      {/* Solo se marca lo que todavía no existe: lo disponible se reconoce por el enlace */}
+      {!a && <span className="i-candado"><IconoCandado /> Muy pronto</span>}
       <div className="i-pronto-ilustracion">{ILUSTRACIONES[tipo]}</div>
       <h3 id={id}>
         {/* El enlace del título cubre toda la tarjeta */}

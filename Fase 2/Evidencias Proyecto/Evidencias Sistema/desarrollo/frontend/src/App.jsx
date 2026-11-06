@@ -41,6 +41,7 @@ const conCarga = (pagina) => <Suspense fallback={<div className="contenedor-perf
 const PaginaCuestionario = lazy(() => import('./cuestionario/PaginaCuestionario.jsx'))
 const PestanaHabitos = lazy(() => import('./cuestionario/PestanaHabitos.jsx'))
 const PaginaRol = lazy(() => import('./rol/PaginaRol.jsx'))
+const MisPublicaciones = lazy(() => import('./publicaciones/MisPublicaciones.jsx'))
 
 // En «/»: quien no ha iniciado sesión ve la landing; quien sí, su página de inicio
 function Raiz() {
@@ -104,6 +105,7 @@ export default function App() {
           {/* Vista previa del propio perfil como lo ven los demás */}
           <Route path="/perfil-publico" element={conCarga(<VistaPublica />)} />
           {/* EP-03: publicación de alojamientos */}
+          <Route path="/mis-publicaciones" element={<Suspense fallback={null}><MisPublicaciones /></Suspense>} />
           <Route path="/publicaciones/nueva" element={<FormPublicacion />} />
           <Route path="/publicaciones/:id/editar" element={<FormPublicacion />} />
           <Route path="/alojamientos/:id" element={<DetallePublicacion />} />
@@ -132,7 +134,7 @@ export default function App() {
           <Route path="/admin/publicaciones/:id" element={<DetallePublicacionAdmin />} />{/* HU-29 y HU-30 */}
         </Route>
         {/* Las publicaciones propias se ven y administran en el perfil; la dirección antigua lleva ahí */}
-        <Route path="/publicaciones" element={<Navigate to="/perfil" replace />} />
+        <Route path="/publicaciones" element={<Navigate to="/mis-publicaciones" replace />} />
         {/* Ruta padre compartida: Acceso no se desmonta al cambiar entre /login y /registro,
             así el panel se desliza en vez de recargar la página */}
         <Route element={<Acceso />}>
