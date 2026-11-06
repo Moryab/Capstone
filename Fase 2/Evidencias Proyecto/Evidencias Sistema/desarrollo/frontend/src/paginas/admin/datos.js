@@ -13,6 +13,7 @@ export const ESTADOS_VERIFICACION = [
 export const ESTADOS_CUENTA = [
   { valor: 'activa', texto: 'Activa' },
   { valor: 'suspendida', texto: 'Suspendida' },
+  { valor: 'eliminada', texto: 'Eliminada' },
 ]
 
 // CA-29.1: «suspendida» es como se guarda una publicación oculta por moderación (HU-27 y HU-30).

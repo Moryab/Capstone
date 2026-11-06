@@ -23,7 +23,7 @@ async def ver_perfil_publico(usuario_id: str, actual: dict = Depends(usuario_act
     doc = await db.usuarios.find_one({"_id": oid})
     # CA-16.4: las cuentas suspendidas se tratan igual que las que no existen; las que no están
     # verificadas tampoco se les muestran a los demás (su dueño sí ve su perfil)
-    if not doc or doc["estado_cuenta"] in ("suspendida", "inhabilitada"):
+    if not doc or doc["estado_cuenta"] in ("suspendida", "inhabilitada", "eliminada"):
         raise PERFIL_NO_DISPONIBLE
     if doc["_id"] != actual["_id"] and not esta_verificado(doc):
         raise PERFIL_NO_DISPONIBLE
@@ -59,7 +59,7 @@ async def publicaciones_de(usuario_id: str, actual: dict = Depends(usuario_actua
         raise PERFIL_NO_DISPONIBLE
     doc = await db.usuarios.find_one({"_id": oid})
     # CA-16.4: las cuentas suspendidas se tratan igual que las que no existen
-    if not doc or doc["estado_cuenta"] in ("suspendida", "inhabilitada"):
+    if not doc or doc["estado_cuenta"] in ("suspendida", "inhabilitada", "eliminada"):
         raise PERFIL_NO_DISPONIBLE
     es_propio = oid == actual["_id"]
     if not es_propio and not esta_verificado(doc):

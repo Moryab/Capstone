@@ -140,7 +140,7 @@ def calcular(
 # no se les muestran a los demás ni reciben propuestas (deps.VERIFICADO)
 CANDIDATOS = {
     "cuestionario.completo": True,
-    "estado_cuenta": {"$nin": ["suspendida", "inhabilitada"]},
+    "estado_cuenta": {"$nin": ["suspendida", "inhabilitada", "eliminada"]},
     "verificacion.estado": "verificado",
 }
 

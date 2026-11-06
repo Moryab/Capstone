@@ -17,6 +17,9 @@ NO_AUTORIZADO = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
+# Eliminación lógica de una cuenta: sus datos se conservan y puede volver a registrarse (auth.registrar)
+CUENTA_ELIMINADA = "Esta cuenta fue eliminada. Puedes volver a registrarte con el mismo correo"
+
 
 async def usuario_actual(token: str = Depends(oauth2)) -> dict:
     """Valida el token y la inactividad (CA-02.4 y CA-02.5). Devuelve el documento del usuario."""
@@ -39,6 +42,8 @@ async def usuario_actual(token: str = Depends(oauth2)) -> dict:
     if ultima and ahora - ultima > timedelta(minutes=settings.inactividad_minutos):
         raise NO_AUTORIZADO
 
+    if usuario["estado_cuenta"] == "eliminada":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, CUENTA_ELIMINADA)
     if usuario["estado_cuenta"] in ("suspendida", "inhabilitada"):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Tu cuenta está suspendida")
 

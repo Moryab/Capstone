@@ -70,7 +70,7 @@ async def reportar_perfil(
 
     reportado = await db.usuarios.find_one({"_id": reportado_id}, {"estado_cuenta": 1})
     # Igual que al abrir el perfil (CA-16.4), una cuenta suspendida se trata como si no existiera
-    if not reportado or reportado["estado_cuenta"] in ("suspendida", "inhabilitada"):
+    if not reportado or reportado["estado_cuenta"] in ("suspendida", "inhabilitada", "eliminada"):
         raise PERFIL_NO_DISPONIBLE
 
     await crear_reporte(

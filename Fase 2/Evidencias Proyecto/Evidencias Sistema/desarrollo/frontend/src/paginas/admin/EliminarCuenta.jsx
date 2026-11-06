@@ -4,8 +4,8 @@ import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import { MAX_JUSTIFICACION } from '../../reportes.js'
 
-// Eliminar una cuenta de estudiante desde su ficha (HU-28). Exige una justificación, que queda
-// registrada en las acciones de moderación, y una confirmación porque no se puede deshacer
+// Eliminar una cuenta de estudiante desde su ficha (HU-28). Es una eliminación lógica: se conservan
+// sus datos y su historial. Exige una justificación, que queda registrada en las acciones de moderación
 export default function EliminarCuenta({ usuarioId, nombre, alEliminar }) {
   const [justificacion, setJustificacion] = useState('')
   const [error, setError] = useState('')
@@ -39,8 +39,9 @@ export default function EliminarCuenta({ usuarioId, nombre, alEliminar }) {
     <form onSubmit={pedirConfirmacion} noValidate className="reporte-accion">
       <h2>Eliminar la cuenta</h2>
       <p className="revision-sub">
-        Se borran su perfil, sus publicaciones, propuestas, compatibilidades y documentos. Si convive con alguien,
-        esa persona queda libre. Los reportes y las acciones de moderación se conservan como historial.
+        La persona no podrá ingresar y dejará de aparecer para los demás estudiantes, junto con sus publicaciones.
+        Si convive con alguien, la convivencia termina y esa persona queda libre. Sus convivencias, evaluaciones
+        y reportes se conservan: si vuelve a registrarse con el mismo correo, recupera su historial.
       </p>
       <Campo etiqueta="Justificación" nombre="justificacion" id="eliminar-justificacion" multilinea rows={2}
         value={justificacion} onChange={(e) => { setJustificacion(e.target.value); setError('') }}
@@ -51,7 +52,7 @@ export default function EliminarCuenta({ usuarioId, nombre, alEliminar }) {
       <Confirmar
         abierto={confirmando}
         titulo="¿Eliminar esta cuenta?"
-        mensaje={`Se eliminará la cuenta de ${nombre} con todos sus datos. Esta acción no se puede deshacer.`}
+        mensaje={`${nombre} ya no podrá ingresar a RoomMatch y sus publicaciones dejarán de mostrarse. Sus datos e historial se conservan.`}
         textoConfirmar="Sí, eliminar"
         textoOcupado="Eliminando…"
         ocupado={enviando}

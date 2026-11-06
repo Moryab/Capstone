@@ -16,7 +16,7 @@ from app.db import db
 from app.deps import solo_admin
 from app.routers.verificacion import nombre_completo
 from app.schemas.admin import (
-    EstadoCuenta, EstadoPublicacion, EstadoVerificacion, PublicacionFilaOut, PublicacionUsuarioOut,
+    EliminacionOut, EstadoCuenta, EstadoPublicacion, EstadoVerificacion, PublicacionFilaOut, PublicacionUsuarioOut,
     ReporteRecibidoOut, SolicitudUsuarioOut, SuspensionOut, UsuarioDetalleOut, UsuarioFilaOut, UsuarioPerfilOut,
 )
 
@@ -110,6 +110,7 @@ def perfil_de(usuario: dict, institucion: str | None) -> UsuarioPerfilOut:
         advertencias_recibidas=usuario.get("advertencias_recibidas", 0),
         fecha_registro=usuario["fecha_registro"],
         suspension=SuspensionOut(motivo=suspension.get("motivo"), fecha=suspension.get("fecha")) if suspension else None,
+        eliminacion=EliminacionOut(**usuario["eliminacion"]) if usuario.get("eliminacion") else None,
     )
 
 

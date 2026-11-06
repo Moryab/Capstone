@@ -7,7 +7,7 @@ from pymongo.errors import DuplicateKeyError
 
 from app.config import settings
 from app.db import db
-from app.deps import usuario_actual
+from app.deps import CUENTA_ELIMINADA, usuario_actual
 from app.modos import tiene_convivencia
 from app.schemas.perfil import calcular_faltantes
 from app.schemas.usuarios import LoginIn, RegistroIn, TokenOut, UsuarioOut, fecha_a_datetime
@@ -43,13 +43,19 @@ def campos_duplicados(error: DuplicateKeyError) -> list[str]:
 @router.post("/registro", status_code=status.HTTP_201_CREATED)
 async def registrar(datos: RegistroIn):
     """HU-01: registro de estudiante."""
+    # Si el correo es de una cuenta eliminada, se reactiva ese mismo registro con los datos nuevos:
+    # así sus convivencias, evaluaciones y reportes siguen unidos a la persona
+    eliminada = await db.usuarios.find_one({"correo": datos.correo, "estado_cuenta": "eliminada"})
+    otra_cuenta = {"_id": {"$ne": eliminada["_id"]}} if eliminada else {}
     repetidos = [
         campo
         for campo, ruta in RUTA_EN_DOC.items()
-        if await db.usuarios.find_one({ruta: getattr(datos, campo)}, {"_id": 1})
+        if await db.usuarios.find_one({ruta: getattr(datos, campo), **otra_cuenta}, {"_id": 1})
     ]
     if repetidos:
         return datos_en_uso(repetidos)
+    if eliminada:
+        return await registrar_de_nuevo(eliminada, datos)
 
     ahora = datetime.now(timezone.utc)
     doc = {
@@ -91,6 +97,48 @@ async def registrar(datos: RegistroIn):
     return {"mensaje": "Registro exitoso", "usuario": UsuarioOut.desde_doc(doc)}
 
 
+async def registrar_de_nuevo(cuenta: dict, datos: RegistroIn):
+    """Vuelve a registrarse alguien cuya cuenta fue eliminada: se reactiva el mismo documento con los
+    datos y la contraseña nuevos. Se conservan su perfil, su cuestionario y todo su historial; la
+    verificación de estudiante se vuelve a pedir."""
+    ahora = datetime.now(timezone.utc)
+    perfil = {**cuenta.get("perfil", {}), "telefono": datos.telefono}
+    faltantes = calcular_faltantes(perfil)
+    try:
+        await db.usuarios.update_one(
+            {"_id": cuenta["_id"], "estado_cuenta": "eliminada"},
+            {
+                "$set": {
+                    "rut": datos.rut,
+                    "nombre": datos.nombre,
+                    "ap_paterno": datos.ap_paterno,
+                    "ap_materno": datos.ap_materno,
+                    "fecha_nac": fecha_a_datetime(datos.fecha_nac),
+                    "genero": datos.genero,
+                    "password": cifrar_password(datos.password),  # CA-01.5
+                    "fecha_actualizacion": ahora,
+                    "estado_cuenta": "activa",
+                    "correo_verificado": False,
+                    "verificacion": {"estado": "no_verificado"},
+                    "match_activo_id": None,
+                    "buscando_alojamiento": False,
+                    "perfil.telefono": datos.telefono,
+                    "perfil.perfil_completo": not faltantes,
+                    "perfil.campos_faltantes": faltantes,
+                    "eliminacion.fecha_nuevo_registro": ahora,
+                    "seguridad.intentos_fallidos": 0,
+                    "seguridad.bloqueado_hasta": None,
+                },
+                "$inc": {"seguridad.token_version": 1},
+            },
+        )
+    except DuplicateKeyError as e:
+        return datos_en_uso(campos_duplicados(e))
+
+    doc = await db.usuarios.find_one({"_id": cuenta["_id"]})
+    return {"mensaje": "Registro exitoso", "usuario": UsuarioOut.desde_doc(doc)}
+
+
 async def _iniciar_sesion(correo: str, password: str) -> TokenOut:
     ahora = datetime.now(timezone.utc)
     usuario = await db.usuarios.find_one({"correo": correo.lower()})
@@ -115,6 +163,8 @@ async def _iniciar_sesion(correo: str, password: str) -> TokenOut:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, CREDENCIALES_INVALIDAS)
 
     # CA-02.3: se valida después de la contraseña para no revelar qué correos existen
+    if usuario["estado_cuenta"] == "eliminada":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, CUENTA_ELIMINADA)
     if usuario["estado_cuenta"] in ("suspendida", "inhabilitada"):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Tu cuenta está suspendida")
 

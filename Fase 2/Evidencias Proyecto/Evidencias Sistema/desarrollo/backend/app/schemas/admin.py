@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 # Mismos valores que los enum del modelo de datos
 EstadoVerificacion = Literal["no_verificado", "pendiente", "verificado", "rechazado", "revocado"]
-EstadoCuenta = Literal["pendiente", "activa", "suspendida", "inhabilitada"]
+EstadoCuenta = Literal["pendiente", "activa", "suspendida", "inhabilitada", "eliminada"]
 EstadoPublicacion = Literal["activa", "pausada", "completa", "suspendida", "eliminada"]
 
 
@@ -38,6 +38,14 @@ class SuspensionOut(BaseModel):
     fecha: datetime | None = None
 
 
+class EliminacionOut(BaseModel):
+    """Eliminación lógica de la cuenta. Con «fecha_nuevo_registro», la persona volvió a registrarse."""
+
+    motivo: str | None = None
+    fecha: datetime | None = None
+    fecha_nuevo_registro: datetime | None = None
+
+
 class UsuarioPerfilOut(BaseModel):
     """Datos del perfil. Se nombra cada campo: la contraseña y los tokens nunca salen (CA-28.4)."""
 
@@ -64,6 +72,7 @@ class UsuarioPerfilOut(BaseModel):
     advertencias_recibidas: int
     fecha_registro: datetime
     suspension: SuspensionOut | None = None
+    eliminacion: EliminacionOut | None = None
 
 
 class PublicacionUsuarioOut(BaseModel):

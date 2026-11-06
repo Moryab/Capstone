@@ -92,6 +92,16 @@ export default function DetalleUsuario() {
         </p>
       )}
 
+      {perfil.eliminacion && (
+        <p className={perfil.estado_cuenta === 'eliminada' ? 'alerta' : 'info'}>
+          {perfil.estado_cuenta === 'eliminada' ? 'Cuenta eliminada' : 'Esta cuenta fue eliminada'}
+          {perfil.eliminacion.fecha && ` el ${fechaHora.format(new Date(perfil.eliminacion.fecha))}`}
+          {perfil.eliminacion.motivo && `. Motivo: ${perfil.eliminacion.motivo}`}.
+          {perfil.eliminacion.fecha_nuevo_registro
+            && ` Volvió a registrarse el ${fechaHora.format(new Date(perfil.eliminacion.fecha_nuevo_registro))}.`}
+        </p>
+      )}
+
       <div className="reporte-detalle">
         <section aria-labelledby="titulo-personales">
           <h2 id="titulo-personales">Datos personales</h2>
@@ -163,8 +173,10 @@ export default function DetalleUsuario() {
       </Seccion>
 
       {perfil.estado_cuenta === 'suspendida' && <ReactivarCuenta usuarioId={perfil.id} alTerminar={alTerminar} />}
-      <EliminarCuenta usuarioId={perfil.id} nombre={perfil.nombre_completo}
-        alEliminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
+      {perfil.estado_cuenta !== 'eliminada' && (
+        <EliminarCuenta usuarioId={perfil.id} nombre={perfil.nombre_completo}
+          alEliminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
+      )}
     </main>
   )
 }
