@@ -247,8 +247,10 @@ async def editar(publicacion_id: str, datos: PublicacionIn, usuario: dict = Depe
     if campos is None:
         return datos_invalidos(COMUNA_INVALIDA)
 
-    if doc["estado"] == "pausada":
-        campos["estado"] = "pausada"  # pausada por el cambio de rol: vuelve solo al ser oferente otra vez
+    # Pausada por el cambio de rol: si su dueño sigue siendo buscador, sigue pausada. Si ya volvió a
+    # ser oferente, guardarla equivale a responder «sí, sigue disponible» (opción «Editarla antes»)
+    if doc["estado"] == "pausada" and usuario.get("modo") != "oferente":
+        campos["estado"] = "pausada"
     campos["fecha_ultima_modificacion"] = datetime.now(timezone.utc)  # CA-07.5
     await db.publicaciones.update_one({"_id": doc["_id"]}, {"$set": campos})
     actualizado = await db.publicaciones.find_one({"_id": doc["_id"]})
@@ -260,6 +262,27 @@ async def editar(publicacion_id: str, datos: PublicacionIn, usuario: dict = Depe
         "mensaje": "Cambios guardados",
         "publicacion": PublicacionOut.desde_doc(actualizado, es_propia=True, oferente=usuario),
     }
+
+
+@router.post("/{publicacion_id}/reactivar")
+async def reactivar(publicacion_id: str, usuario: dict = Depends(usuario_actual)):
+    """El oferente que volvió a ese rol confirma que su publicación pausada sigue disponible
+    (modos.py). Vuelve a verse si tiene cupos; si no, queda «completa»."""
+    doc = await buscar_propia(publicacion_id, usuario)
+    if usuario.get("modo") != "oferente":
+        raise HTTPException(status.HTTP_409_CONFLICT, SOLO_OFERENTE)
+    estado = "activa" if doc["cupos_disponibles"] > 0 else "completa"
+    # La condición evita reactivar algo que, entretanto, un administrador ocultó
+    resultado = await db.publicaciones.update_one(
+        {"_id": doc["_id"], "estado": "pausada"},
+        {"$set": {"estado": estado, "fecha_ultima_modificacion": datetime.now(timezone.utc)}},
+    )
+    if not resultado.modified_count:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta publicación ya no está pausada")
+    if estado == "activa":
+        await generar_propuestas()  # HU-17: se puede proponer otra vez a quienes buscan
+    return {"mensaje": "Publicación activa de nuevo" if estado == "activa"
+            else "Publicación guardada como completa: no tiene cupos disponibles", "estado": estado}
 
 
 @router.delete("/{publicacion_id}")

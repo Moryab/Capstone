@@ -26,8 +26,8 @@ function consecuencias(destino, r) {
         ? `${plural(r.propuestas_como_buscador, 'propuesta pendiente', 'propuestas pendientes')} donde buscas alojamiento ${r.propuestas_como_buscador === 1 ? 'se cierra' : 'se cierran'}.`
         : 'No tienes propuestas pendientes como buscador.',
       r.publicaciones_pausadas > 0
-        && `${plural(r.publicaciones_pausadas, 'publicación pausada vuelve', 'publicaciones pausadas vuelven')} a estar ${r.publicaciones_pausadas === 1 ? 'visible' : 'visibles'}.`,
-      'Después te llevamos a publicar tu alojamiento.',
+        ? `Tienes ${plural(r.publicaciones_pausadas, 'publicación pausada', 'publicaciones pausadas')}: te preguntaremos si ${r.publicaciones_pausadas === 1 ? 'sigue disponible' : 'siguen disponibles'} antes de volver a mostrar${r.publicaciones_pausadas === 1 ? 'la' : 'las'}.`
+        : 'Después te llevamos a publicar tu alojamiento.',
     ].filter(Boolean)
   }
   return [
@@ -76,8 +76,10 @@ function ModalCambioRol({ destino, alCerrar }) {
       await api('/perfil/modo', { metodo: 'PUT', datos: { modo: destino } })
       await recargarUsuario()
       alCerrar()
-      if (destino === 'oferente') navegar('/publicaciones/nueva', { state: { cambioRol: true } })
-      else navegar('/', { state: { preguntar: true } }) // el inicio abre «¿Qué estás buscando?»
+      if (destino === 'buscador') navegar('/', { state: { preguntar: true } }) // el inicio abre «¿Qué estás buscando?»
+      // Con publicaciones pausadas, el inicio pregunta si siguen disponibles; si no, a publicar
+      else if (resumen.publicaciones_pausadas > 0) navegar('/', { state: { revisarPausadas: true } })
+      else navegar('/publicaciones/nueva')
     } catch (err) {
       setError(err.message)
     } finally {
