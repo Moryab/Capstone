@@ -1,5 +1,7 @@
 import { BotonMagnetico } from '../../landing/componentes.jsx'
 import { EnlaceCambioRol } from '../../rol/CambioRol.jsx'
+import { useSesion } from '../../sesion/SesionContext.jsx'
+import { estaVerificado } from '../../sesion/verificacion.js'
 import { Ayuda, Tarjeta } from '../comunes.jsx'
 import { IconoMas } from '../iconos.jsx'
 
@@ -29,15 +31,21 @@ function Ilustracion() {
 
 // Acción principal: publicar un alojamiento
 export default function TarjetaPublicar() {
+  const verificado = estaVerificado(useSesion().usuario)
   return (
     <Tarjeta className="i-area-publicar" cuerpo="i-publicar" etiqueta="i-titulo-publicar" oscura>
       <div className="i-publicar-texto">
         <p className="i-etiqueta claro">Ofrece tu espacio <Ayuda claro texto="Publica tu habitación o departamento y RoomMatch te propondrá estudiantes compatibles que buscan dónde vivir." /></p>
         <h2 id="i-titulo-publicar">¿Tienes una habitación o departamento disponible?</h2>
         <p>Publícalo con fotos, precio, gastos y reglas de convivencia. Quedará visible para los estudiantes que buscan alojamiento.</p>
-        <BotonMagnetico to="/publicaciones/nueva" className="l-boton-luz l-boton-grande">
-          <IconoMas tamano={18} /> Publicar alojamiento
-        </BotonMagnetico>
+        {verificado ? (
+          <BotonMagnetico to="/publicaciones/nueva" className="l-boton-luz l-boton-grande">
+            <IconoMas tamano={18} /> Publicar alojamiento
+          </BotonMagnetico>
+        ) : (
+          // Acceso limitado: se publica con la cuenta verificada
+          <p className="i-publicar-espera"><strong>Podrás publicar cuando tu cuenta esté verificada.</strong></p>
+        )}
         <EnlaceCambioRol claro />
       </div>
       <Ilustracion />

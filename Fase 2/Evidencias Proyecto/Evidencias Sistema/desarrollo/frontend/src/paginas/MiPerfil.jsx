@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import { IconoCamara } from '../componentes/Iconos.jsx'
 import Completitud from '../perfil/Completitud.jsx'
 import DatosClave from '../perfil/DatosClave.jsx'
@@ -101,12 +102,7 @@ export default function MiPerfil() {
 
   const aviso = (
     <>
-      {['no_verificado', 'rechazado', 'revocado'].includes(usuario.verificacion_estado) && (
-        <p className="p2-aviso info">
-          Tu perfil aún no está verificado como estudiante.{' '}
-          <Link to="/verificacion">Verificar mi condición de estudiante</Link>
-        </p>
-      )}
+      <AvisoVerificacion className="p2-aviso" />
       {mensaje.texto && (
         <p className={`p2-aviso ${mensaje.tipo}`} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>
       )}

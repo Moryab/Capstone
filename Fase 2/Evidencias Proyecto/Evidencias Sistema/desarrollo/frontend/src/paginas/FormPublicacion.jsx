@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api.js'
+import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import { NOMBRES_ROL, SIN_CAMBIO_CON_CONVIVENCIA, useCambioRol } from '../rol/CambioRol.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 import Campo from '../componentes/Campo.jsx'
 import FotosPublicacion from '../componentes/FotosPublicacion.jsx'
 import {
@@ -20,7 +22,7 @@ const INCLUIDO = [
 
 // HU-05 y HU-06 (/publicaciones/nueva) y HU-07 (/publicaciones/:id/editar): mismo formulario
 // y mismas validaciones al publicar y al editar (CA-07.3)
-export default function FormPublicacion() {
+function Formulario() {
   const { id } = useParams()
   const editando = Boolean(id)
   const navegar = useNavigate()
@@ -264,4 +266,19 @@ export default function FormPublicacion() {
       </form>
     </main>
   )
+}
+
+// Sin cuenta verificada no se publica (acceso limitado); editar una publicación propia sí se permite
+export default function FormPublicacion() {
+  const { id } = useParams()
+  const { usuario } = useSesion()
+  if (!id && !estaVerificado(usuario)) {
+    return (
+      <main className="aviso-pagina">
+        <h1>Publicar alojamiento</h1>
+        <AvisoVerificacion detalle="Podrás publicar cuando tu cuenta esté verificada." />
+      </main>
+    )
+  }
+  return <Formulario />
 }

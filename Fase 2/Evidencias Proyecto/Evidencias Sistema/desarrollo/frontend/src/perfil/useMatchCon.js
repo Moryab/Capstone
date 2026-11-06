@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 
 /**
  * Propuestas de match con esta persona, desde GET /api/matches (la plataforma las genera; aquí
  * solo se responden). Devuelve { estado, propuesta, recargar } con estado: 'cargando' |
- * 'confirmado' | 'abierta' | 'cerrada' | 'ninguna' | 'error'.
+ * 'confirmado' | 'abierta' | 'cerrada' | 'ninguna' | 'error'. Sin cuenta verificada no hay propuestas.
  */
 export function useMatchCon(otroId) {
+  const verificado = estaVerificado(useSesion().usuario)
   const [resultado, setResultado] = useState({ estado: 'cargando', propuesta: null })
   const recargar = useCallback(() => {
-    if (!otroId) return Promise.resolve()
+    if (!otroId || !verificado) return Promise.resolve()
     return api('/matches')
       .then((r) => {
         const con = (lista) => lista.find((m) => m.otro?.id === otroId)
@@ -22,9 +25,11 @@ export function useMatchCon(otroId) {
         else setResultado({ estado: 'ninguna', propuesta: null })
       })
       .catch(() => setResultado({ estado: 'error', propuesta: null }))
-  }, [otroId])
+  }, [otroId, verificado])
   useEffect(() => {
     recargar()
   }, [recargar])
+  // Sin cuenta verificada no se consulta: no tiene propuestas
+  if (!verificado) return { estado: 'ninguna', propuesta: null, recargar }
   return { ...resultado, recargar }
 }

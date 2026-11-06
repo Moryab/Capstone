@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import Avatar from '../componentes/Avatar.jsx'
 import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
@@ -8,6 +9,7 @@ import { mayusculaInicial } from '../inicio/utilidades.js'
 import { formatearFecha, formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
 import { MOTIVOS_FIN } from './evaluacion/Terminar.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 
 // CA-17.3: el motivo es opcional; ayuda a mejorar las próximas propuestas (EP-08)
 const MOTIVOS_RECHAZO = [
@@ -145,7 +147,7 @@ function TarjetaPropuesta({ p, alResponder }) {
 
 // HU-17: RoomMatch propone el match entre quien busca alojamiento y el oferente de uno compatible;
 // ambos responden y, si los dos aceptan, empieza la convivencia
-export default function Propuestas() {
+function PaginaPropuestas() {
   const { recargarUsuario } = useSesion()
   const [datos, setDatos] = useState(null)
   const [error, setError] = useState('')
@@ -284,4 +286,18 @@ export default function Propuestas() {
       )}
     </main>
   )
+}
+
+// Sin cuenta verificada se muestra el aviso en lugar de las propuestas (acceso limitado)
+export default function Propuestas() {
+  const { usuario } = useSesion()
+  if (!estaVerificado(usuario)) {
+    return (
+      <main className="aviso-pagina">
+        <h1>Propuestas de match</h1>
+        <AvisoVerificacion detalle="Cuando tu cuenta esté verificada, RoomMatch empezará a proponerte match." />
+      </main>
+    )
+  }
+  return <PaginaPropuestas />
 }

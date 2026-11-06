@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
+import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import Avatar from '../componentes/Avatar.jsx'
 import { NivelCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { tituloCategoria } from '../cuestionario.js'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 
 // Cuántas coincidencias se nombran en la tarjeta; el resto se resume como «y N más»
 const COINCIDENCIAS_VISIBLES = 3
@@ -42,7 +44,7 @@ function TarjetaRoomie({ roomie, desde }) {
 }
 
 // HU-15: «Posibles roomies», los estudiantes del más al menos compatible (CA-15.1)
-export default function Roomies() {
+function ListaRoomies() {
   const { usuario } = useSesion()
   const [params, setParams] = useSearchParams()
   const { pathname, search } = useLocation()
@@ -135,4 +137,18 @@ export default function Roomies() {
       )}
     </main>
   )
+}
+
+// Sin cuenta verificada se muestra el aviso en lugar de la lista de roomies (acceso limitado)
+export default function Roomies() {
+  const { usuario } = useSesion()
+  if (!estaVerificado(usuario)) {
+    return (
+      <main className="aviso-pagina">
+        <h1>Posibles roomies</h1>
+        <AvisoVerificacion detalle="Cuando tu cuenta esté verificada verás aquí a los estudiantes compatibles contigo." />
+      </main>
+    )
+  }
+  return <ListaRoomies />
 }

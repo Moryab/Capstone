@@ -1,0 +1,19 @@
+/* Aviso de acceso limitado mientras la cuenta no está verificada: informativo, no un error */
+.aviso-verificacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 14px 18px;
+  color: var(--texto);
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--primario);
+  border-radius: 12px;
+}
+.aviso-verificacion p { flex: 1 1 280px; margin: 0; line-height: 1.5; }
+.aviso-verificacion a { font-weight: 700; color: var(--primario); white-space: nowrap; }
+.aviso-pagina { width: min(720px, calc(100% - 32px)); margin: 8px auto 32px; }
+.aviso-pagina h1 { margin: 0 0 12px; }
+.i-contenido > .aviso-verificacion { margin: 0 0 20px; }
