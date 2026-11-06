@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, apiArchivo } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import Campo from '../../componentes/Campo.jsx'
-import { ESTADOS_SOLICITUD, fechaHora, textoTipo } from '../verificacion/datos.js'
+import { ESTADOS_SOLICITUD, fechaHora, textoSituacion, textoTipo } from '../verificacion/datos.js'
 
 const MAX_MOTIVO = 300
 const POR_REVISAR = ['pendiente', 'en_revision']
@@ -128,7 +128,9 @@ export default function DetalleVerificacion() {
       <div className="revision">
         <section className="revision-comprobante" aria-labelledby="titulo-comprobante">
           <h2 id="titulo-comprobante">Comprobante</h2>
-          <p className="revision-sub">{textoTipo(solicitud.tipo_comprobante)} · {solicitud.institucion_nombre}</p>
+          <p className="revision-sub">
+            {textoSituacion(solicitud.situacion)} · {textoTipo(solicitud.tipo_comprobante)} · {solicitud.institucion_nombre}
+          </p>
           <VistaComprobante solicitud={solicitud} />
         </section>
 
