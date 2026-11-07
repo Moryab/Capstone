@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -5,6 +6,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.db import db, siguiente_codigo
@@ -134,14 +136,9 @@ async def publicar(datos: PublicacionIn, usuario: dict = Depends(solo_oferente))
     }
 
 
-@router.get("")
-async def buscar_alojamientos(
-    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
-):
-    """HU-09 a HU-12: alojamientos activos, del más reciente al más antiguo y de a 10 (CA-09.1).
-
-    Todos los filtros se combinan a la vez (CA-11.4 y CA-12.3).
-    """
+async def consulta_de_busqueda(filtros: FiltrosBusqueda, usuario: dict) -> dict | JSONResponse:
+    """La consulta de Mongo con todos los filtros combinados (CA-11.4 y CA-12.3). La usan el
+    listado y el mapa, para que muestren exactamente lo mismo. Devuelve un 422 si algo no calza."""
     if error := error_rango(filtros.costo_min, filtros.costo_max):
         return datos_invalidos(error)
 
@@ -164,6 +161,17 @@ async def buscar_alojamientos(
         zonas = set(cercanas) if zonas is None else zonas & set(cercanas)
     if zonas is not None:
         consulta["ubicacion.comuna_id"] = {"$in": list(zonas)}
+    return consulta
+
+
+@router.get("")
+async def buscar_alojamientos(
+    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
+):
+    """HU-09 a HU-12: alojamientos activos, del más reciente al más antiguo y de a 10 (CA-09.1)."""
+    consulta = await consulta_de_busqueda(filtros, usuario)
+    if isinstance(consulta, JSONResponse):
+        return consulta
 
     total = await db.publicaciones.count_documents(consulta)
     cursor = (
@@ -181,6 +189,72 @@ async def buscar_alojamientos(
             async for doc in cursor
         ],
     }
+
+
+# El mapa trae todos los resultados de una vez (sin páginas), con este tope por si crecen mucho
+MAX_PUNTOS_MAPA = 300
+
+
+def distancia_km(a: list[float], b: list[float]) -> float:
+    """Distancia en línea recta entre dos puntos [longitud, latitud] (fórmula del haversine)."""
+    lon1, lat1, lon2, lat2 = map(math.radians, (*a, *b))
+    h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+    return 6371 * 2 * math.asin(math.sqrt(h))
+
+
+async def sede_del_perfil(usuario: dict) -> dict | None:
+    """La sede del perfil con sus coordenadas, para ubicarla en el mapa y medir distancias. Si la
+    sede no calza con ninguna, se usa la primera de la institución."""
+    perfil = usuario.get("perfil", {})
+    if not perfil.get("institucion_id"):
+        return None
+    institucion = await db.instituciones.find_one({"_id": perfil["institucion_id"]}, {"sigla": 1, "sedes": 1})
+    sedes = (institucion or {}).get("sedes", [])
+    sede = next((s for s in sedes if s["nombre"] == perfil.get("sede")), sedes[0] if sedes else None)
+    if not sede or not sede.get("coordenadas"):
+        return None
+    return {"institucion": institucion["sigla"], "nombre": sede["nombre"], "coordenadas": sede["coordenadas"]["coordinates"]}
+
+
+@router.get("/mapa")
+async def mapa_de_alojamientos(
+    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
+):
+    """Los mismos alojamientos del listado, como puntos para el mapa, con la distancia a la sede.
+
+    Por ahora la ubicación es el centro de la comuna: varias publicaciones pueden compartir punto.
+    """
+    consulta = await consulta_de_busqueda(filtros, usuario)
+    if isinstance(consulta, JSONResponse):
+        return consulta
+    sede = await sede_del_perfil(usuario)
+    total = await db.publicaciones.count_documents(consulta)
+    cursor = (
+        db.publicaciones.find(consulta, {
+            "titulo": 1, "tipo": 1, "costo_mensual": 1, "cupos_disponibles": 1, "ubicacion": 1, "fotos": 1,
+            "oferente_id": 1,
+        })
+        .sort([("fecha_publicacion", -1), ("_id", -1)])
+        .limit(MAX_PUNTOS_MAPA)
+    )
+    puntos = []
+    async for p in cursor:
+        coordenadas = p["ubicacion"]["coordenadas"]["coordinates"]
+        principal = next((f["url"] for f in p.get("fotos", []) if f["es_principal"]), None)
+        puntos.append({
+            "id": str(p["_id"]),
+            "titulo": p["titulo"],
+            "tipo": p["tipo"],
+            "costo_mensual": p["costo_mensual"],
+            "cupos_disponibles": p["cupos_disponibles"],
+            "comuna": p["ubicacion"]["comuna_nombre"],
+            "sector": p["ubicacion"]["sector"],
+            "foto_url": principal,
+            "coordenadas": coordenadas,
+            "distancia_km": round(distancia_km(coordenadas, sede["coordenadas"]), 1) if sede else None,
+            "es_propia": p["oferente_id"] == usuario["_id"],
+        })
+    return {"total": total, "mostrados": len(puntos), "sede": sede, "puntos": puntos}
 
 
 @router.get("/filtros")

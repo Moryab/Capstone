@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Campo from '../componentes/Campo.jsx'
 import { IconoLupa, IconoUbicacion } from '../componentes/Iconos.jsx'
+import '../componentes/mapa.css'
 import {
   aPreferencias, aURL, desdePreferencias, desdeURL, EXTRAS_FILTRO, FILTROS_VACIOS, hayFiltros,
   OPCIONES_REGLA, REGLAS_FILTRO, sinPreferencias, soloCosto, validarCosto, ZONAS,
@@ -10,6 +11,9 @@ import {
 import { formatearPesos, GENEROS_PREFERIDOS, textoDe, TIPOS } from '../publicaciones.js'
 
 const TIPOS_FILTRO = [{ valor: '', texto: 'Habitación o departamento' }, ...TIPOS]
+
+// El mapa (Leaflet) se descarga solo cuando se elige esa vista
+const MapaAlojamientos = lazy(() => import('../componentes/MapaAlojamientos.jsx'))
 
 // Lista desplegable con una opción «da lo mismo» con valor vacío (Campo la deja deshabilitada)
 function Selector({ etiqueta, nombre, value, onChange, opciones }) {
@@ -52,7 +56,12 @@ function TarjetaAlojamiento({ pub, desde }) {
 export default function Alojamientos() {
   const [params, setParams] = useSearchParams()
   const { pathname, search } = useLocation()
-  const clave = params.toString()
+  // «vista=mapa» va en la dirección para volver al mapa desde un detalle, pero no es un filtro:
+  // no se envía a la API ni cuenta como filtro aplicado
+  const enMapa = params.get('vista') === 'mapa'
+  const filtrosURL = new URLSearchParams(params)
+  filtrosURL.delete('vista')
+  const clave = filtrosURL.toString()
 
   const [opciones, setOpciones] = useState(null) // comunas con publicaciones e institución del perfil
   const [borrador, setBorrador] = useState(() => desdeURL(params))
@@ -103,9 +112,23 @@ export default function Alojamientos() {
     setBorrador({ ...borrador, comunas: marcar ? [...resto, ...ids] : resto })
   }
 
+  // Al aplicar o limpiar filtros se mantiene la vista elegida (lista o mapa)
   const ir = (nuevos) => {
-    setParams(nuevos)
+    const destino = new URLSearchParams(nuevos)
+    if (enMapa) destino.set('vista', 'mapa')
+    setParams(destino)
     listado.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }
+
+  const cambiarVista = (mapa) => {
+    const nuevos = new URLSearchParams(params)
+    if (mapa) {
+      nuevos.set('vista', 'mapa')
+      nuevos.delete('pagina') // el mapa muestra todos los resultados juntos
+    } else {
+      nuevos.delete('vista')
+    }
+    setParams(nuevos, { replace: true })
   }
 
   const aplicar = (e) => {
@@ -168,7 +191,7 @@ export default function Alojamientos() {
 
   const cargando = resultado.clave !== clave
   const { datos } = resultado
-  const conFiltros = hayFiltros(params)
+  const conFiltros = hayFiltros(filtrosURL)
   const institucion = opciones?.institucion
   const zonas = ZONAS.map((zona) => ({
     ...zona,
@@ -282,6 +305,11 @@ export default function Alojamientos() {
           aria-busy={cargando}>
           <h2 id="titulo-resultados" className="visualmente-oculto">Resultados</h2>
 
+          <div className="vista-selector" role="group" aria-label="Cómo ver los resultados">
+            <button type="button" aria-pressed={!enMapa} onClick={() => cambiarVista(false)}>Lista</button>
+            <button type="button" aria-pressed={enMapa} onClick={() => cambiarVista(true)}>Mapa</button>
+          </div>
+
           {resultado.error && !cargando && <p className="alerta" role="alert">{resultado.error}</p>}
           {!datos && !resultado.error && <p className="cargando">Cargando alojamientos…</p>}
 
@@ -296,7 +324,7 @@ export default function Alojamientos() {
                 <div className="alojamientos-vacio">
                   {!conFiltros ? (
                     <h3>No hay alojamientos disponibles por ahora</h3> // CA-09.4
-                  ) : soloCosto(params) ? (
+                  ) : soloCosto(filtrosURL) ? (
                     <>
                       <h3>No encontramos alojamientos en ese rango</h3>
                       <p>Prueba ampliando el rango de precios.</p>{/* CA-10.4 */}
@@ -313,13 +341,21 @@ export default function Alojamientos() {
                 </div>
               )}
 
-              <ul className={`alojamientos-lista${cargando ? ' actualizando' : ''}`}>
-                {datos.resultados.map((pub) => (
-                  <TarjetaAlojamiento key={pub.id} pub={pub} desde={pathname + search} />
-                ))}
-              </ul>
+              {enMapa && datos.total > 0 && (
+                <Suspense fallback={<p className="cargando">Cargando el mapa…</p>}>
+                  <MapaAlojamientos consulta={clave} desde={pathname + search} />
+                </Suspense>
+              )}
 
-              {datos.paginas > 1 && (
+              {!enMapa && (
+                <ul className={`alojamientos-lista${cargando ? ' actualizando' : ''}`}>
+                  {datos.resultados.map((pub) => (
+                    <TarjetaAlojamiento key={pub.id} pub={pub} desde={pathname + search} />
+                  ))}
+                </ul>
+              )}
+
+              {!enMapa && datos.paginas > 1 && (
                 <nav className="paginacion" aria-label="Páginas de resultados">
                   <button type="button" className="boton secundario" disabled={datos.pagina <= 1}
                     onClick={() => ir(aURL(desdeURL(params), datos.pagina - 1))}>
