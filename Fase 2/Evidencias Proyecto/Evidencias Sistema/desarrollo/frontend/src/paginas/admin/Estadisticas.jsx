@@ -16,6 +16,7 @@ import { RAZONES, textoDe } from '../evaluacion/SelectorRazones.jsx'
 import { consultaDe, descargarCsv, pedir, slug, useEstadisticas } from './estadisticas/datos.js'
 import Hero from './estadisticas/Hero.jsx'
 import Semana, { diaLargo, SERIES_SEMANA } from './estadisticas/Semana.jsx'
+import Calendario from './estadisticas/Calendario.jsx'
 import { useResumenAdmin } from '../../marco/ResumenAdmin.jsx'
 import { BarrasMes, Lineas, Meta, nombreMes, pct, Ranking, SERIES_LINEAS } from './estadisticas/Graficos.jsx'
 import {
@@ -374,8 +375,7 @@ export default function Estadisticas() {
   const periodo = esPeriodo(params.get('periodo')) ? params.get('periodo') : (desdeUrl || hastaUrl ? 'personalizado' : 'todo')
   const global = { periodo, desde: desdeUrl, hasta: hastaUrl }
   const ciudad = params.get('ciudad') ?? ''
-  const [fechas, setFechas] = useState({ desde: desdeUrl, hasta: hastaUrl, abiertas: periodo === 'personalizado' })
-  const [errorFechas, setErrorFechas] = useState('')
+  const [calendarioAbierto, setCalendarioAbierto] = useState(false)
   const [comunas, setComunas] = useState([])
   const [activas, setActivas] = useState(SERIES_LINEAS.map((s) => s.clave))
   const [orden, setOrden] = useState(() => ordenValido(leerLocal(claveOrden, ORDEN_INICIAL)))
@@ -397,26 +397,17 @@ export default function Estadisticas() {
   }
   const elegirPeriodo = (valor) => {
     if (valor === 'personalizado') {
-      setFechas((f) => ({ ...f, abiertas: true }))
+      setCalendarioAbierto((abierto) => !abierto)
       return
     }
-    setFechas({ desde: '', hasta: '', abiertas: false })
-    setErrorFechas('')
+    setCalendarioAbierto(false)
     cambiarParams({ periodo: valor === 'todo' ? '' : valor, desde: '', hasta: '' })
   }
   // CA-20.4: período a elección, con la misma validación que el backend
-  const aplicarFechas = (e) => {
-    e.preventDefault()
-    if (!fechas.desde && !fechas.hasta) {
-      setErrorFechas('Elige al menos una fecha')
-      return
-    }
-    if (fechas.desde && fechas.hasta && fechas.desde > fechas.hasta) {
-      setErrorFechas('La fecha final debe ser igual o posterior a la inicial')
-      return
-    }
-    setErrorFechas('')
-    cambiarParams({ periodo: 'personalizado', desde: fechas.desde, hasta: fechas.hasta })
+  // CA-20.4: período a elección desde el calendario (que ya impide un fin anterior al inicio)
+  const aplicarFechas = (desde, hasta) => {
+    cambiarParams({ periodo: 'personalizado', desde, hasta })
+    setCalendarioAbierto(false)
   }
   const propioDe = (id) => {
     const valor = params.get(`p.${id}`)
@@ -504,16 +495,21 @@ export default function Estadisticas() {
       ) : (
         <section className="a-filtros m-filtros" aria-label="Filtros del panel">
           <div className="a-filtros-controles">
-            <div className="m-filtro">
+            <div className="m-filtro m-filtro-periodo">
               <span className="m-filtro-titulo" id="m-titulo-periodo">Período</span>
               <div className="a-segmentos" role="group" aria-labelledby="m-titulo-periodo">
                 {PERIODOS.map((p) => (
                   <button key={p.valor} type="button" onClick={() => elegirPeriodo(p.valor)}
-                    aria-pressed={p.valor === 'personalizado' ? fechas.abiertas : periodo === p.valor && !fechas.abiertas}>
+                    data-abre-calendario={p.valor === 'personalizado' || undefined}
+                    aria-pressed={p.valor === 'personalizado' ? calendarioAbierto || periodo === 'personalizado' : periodo === p.valor && !calendarioAbierto}
+                    aria-expanded={p.valor === 'personalizado' ? calendarioAbierto : undefined}>
                     {p.texto}
                   </button>
                 ))}
               </div>
+              {calendarioAbierto && (
+                <Calendario desde={desdeUrl} hasta={hastaUrl} alAplicar={aplicarFechas} alCancelar={() => setCalendarioAbierto(false)} />
+              )}
             </div>
             <CampoDesplegable etiqueta="Ciudad" valor={ciudad} alCambiar={(v) => cambiarParams({ ciudad: v })}
               opciones={[{ valor: '', texto: 'Todas las ciudades' }, ...comunas.map((c) => ({ valor: c.id, texto: c.nombre }))]} />
@@ -521,16 +517,6 @@ export default function Estadisticas() {
               {textoPeriodo(global)}{nombreCiudad ? ` · ${nombreCiudad}` : ''}
             </p>
           </div>
-          {fechas.abiertas && (
-            <form className="m-fechas" onSubmit={aplicarFechas} noValidate>
-              <label>Desde<input type="date" value={fechas.desde} max={fechas.hasta || undefined}
-                onChange={(e) => setFechas({ ...fechas, desde: e.target.value })} /></label>
-              <label>Hasta<input type="date" value={fechas.hasta} min={fechas.desde || undefined}
-                onChange={(e) => setFechas({ ...fechas, hasta: e.target.value })} /></label>
-              <button type="submit" className="a-boton primario">Aplicar fechas</button>
-              {errorFechas && <p className="m-error" role="alert">{errorFechas}</p>}
-            </form>
-          )}
           {ciudad && (
             <p className="m-nota">
               Con una ciudad, los registros nuevos siguen contando a todos los estudiantes y los reportes solo

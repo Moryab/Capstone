@@ -4,6 +4,7 @@ import { api } from '../api.js'
 import { GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import Campo from './Campo.jsx'
+import FechaNacimiento, { OpcionesBoton } from './FechaNacimiento.jsx'
 
 const VACIO = {
   rut: '', nombre: '', ap_paterno: '', ap_materno: '', fecha_nac: '', genero: '',
@@ -46,6 +47,7 @@ export default function FormRegistro() {
   const [mensaje, setMensaje] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [institucionales, setInstitucionales] = useState(null)
+  const [reinicio, setReinicio] = useState(0) // al limpiar el formulario, la fecha en partes vuelve a empezar
   const cargandoDominios = useRef(false)
 
   const cargarDominios = () => {
@@ -67,6 +69,12 @@ export default function FormRegistro() {
     setErrores({ ...errores, [e.target.name]: undefined })
   }
 
+  // Para los campos que no son un <input> (fecha en partes y género)
+  const cambiarValor = (nombre, valor) => {
+    setDatos((d) => ({ ...d, [nombre]: valor }))
+    setErrores((e) => ({ ...e, [nombre]: undefined }))
+  }
+
   const enviar = async (e) => {
     e.preventDefault()
     setEnviando(true)
@@ -75,6 +83,7 @@ export default function FormRegistro() {
       await api('/auth/registro', { metodo: 'POST', datos })
       // El formulario sigue montado tras deslizar al login, así que se limpia
       setDatos(VACIO)
+      setReinicio((n) => n + 1)
       // Registro → documento de estudiante → cuestionario de convivencia → rol → inicio: se entra
       // de inmediato y cada paso obligatorio lleva al siguiente.
       // Si el inicio de sesión automático fallara, queda el camino de siempre por el login
@@ -111,12 +120,12 @@ export default function FormRegistro() {
         <Campo etiqueta="Apellido materno" nombre="ap_materno" value={datos.ap_materno}
           onChange={cambiar} error={errores.ap_materno} maxLength={60} required />
       </div>
-      <div className="fila">
-        <Campo etiqueta="Fecha de nacimiento" nombre="fecha_nac" type="date" value={datos.fecha_nac}
-          onChange={cambiar} error={errores.fecha_nac} autoComplete="bday" required />
-        <Campo etiqueta="Género" nombre="genero" value={datos.genero} onChange={cambiar}
-          error={errores.genero} opciones={GENEROS} required />
-      </div>
+      {/* Día, mes y año por separado (más rápido que un calendario para una fecha lejana) y el
+          género como opciones visibles; cada uno ocupa su fila */}
+      <FechaNacimiento key={reinicio} valor={datos.fecha_nac} error={errores.fecha_nac}
+        alCambiar={(v) => cambiarValor('fecha_nac', v)} />
+      <OpcionesBoton etiqueta="Género" nombre="genero" valor={datos.genero} opciones={GENEROS}
+        error={errores.genero} alCambiar={(v) => cambiarValor('genero', v)} />
       <div className="fila">
         <Campo etiqueta="Correo" nombre="correo" id="reg-correo" type="email" value={datos.correo}
           onChange={cambiar} error={errores.correo} autoComplete="email" required

@@ -18,9 +18,6 @@ html.tema-oscuro .pagina-estadisticas { --est-exitoso: #91b3b9; --est-no-exitoso
 .m-filtro { display: grid; gap: 6px; }
 .m-filtro-titulo { font-size: 0.8rem; font-weight: 600; color: var(--a-suave); }
 .m-filtro-resumen { margin-left: auto; align-self: center; font-size: 0.88rem; font-weight: 600; color: var(--a-suave); }
-.m-fechas { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding-top: 12px; border-top: 1px solid var(--a-borde); }
-.m-fechas input { min-width: 160px; }
-.m-error { width: 100%; margin: 0; font-size: 0.86rem; font-weight: 600; color: var(--a-error); }
 .m-nota { font-size: 0.82rem; color: var(--a-suave); }
 
 /* Modo edición */
@@ -637,6 +634,157 @@ html.tema-oscuro .s-tramo { background: linear-gradient(to top, #b3e1f8, #e3f5fe
 html.tema-oscuro .s-tramo.t2 { background: linear-gradient(to top, #3f9fd8, #6fc0ec); }
 html.tema-oscuro .s-tramo.t3 { background: linear-gradient(to top, #164f80, #2471ad); }
 html.tema-oscuro .g-lineas-zona { --est-exitoso: #8fc28c; --est-no-exitoso: #e08bb6; --est-registros: #8fd0f5; }
+
+
+/* ---------- Calendario del período personalizado (Calendario.jsx) ----------
+   Ventanita que se abre sobre el panel, bajo el control de período */
+.m-filtro-periodo { position: relative; }
+.c-ventana {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  gap: 14px;
+  width: min(560px, calc(100vw - 32px));
+  padding: 16px;
+  background: color-mix(in srgb, var(--a-sup) 94%, transparent);
+  border: 1px solid var(--a-borde);
+  border-radius: 20px;
+  box-shadow: 0 30px 60px -24px rgb(11 31 58 / 0.45), 0 2px 8px rgb(11 31 58 / 0.08);
+  backdrop-filter: blur(18px) saturate(1.3);
+  transform-origin: top left;
+  animation: a-desplegar 180ms var(--a-curva);
+}
+html.tema-oscuro .es-admin .c-ventana { background: color-mix(in srgb, var(--a-sup) 97%, transparent); box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.75); }
+
+/* Desde → Hasta: el que se está eligiendo queda resaltado */
+.c-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.c-campo {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  font: inherit;
+  text-align: left;
+  background: var(--a-sup-2);
+  border: 1px solid var(--a-borde);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.c-campo:hover { border-color: var(--a-borde-fuerte); }
+.c-campo[aria-pressed='true'] { border-color: var(--a-acento); box-shadow: 0 0 0 3px var(--a-tinte); }
+.c-campo-etiqueta { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-suave); }
+.c-campo[aria-pressed='true'] .c-campo-etiqueta { color: var(--a-acento); }
+.c-campo-valor { font-size: 0.95rem; font-weight: 700; color: var(--a-titulo); }
+
+.c-cuerpo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; }
+.c-atajos { display: grid; align-content: start; gap: 4px; margin: 0; padding: 0 14px 0 0; list-style: none; border-right: 1px solid var(--a-borde); }
+.c-atajos button {
+  width: 100%;
+  white-space: nowrap;
+  min-height: 34px;
+  padding: 6px 10px;
+  font: 600 0.84rem 'Work Sans', system-ui, sans-serif;
+  color: var(--a-texto);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.c-atajos button:hover { background: var(--a-hover); }
+.c-atajos button[aria-pressed='true'] { color: var(--a-acento); background: var(--a-tinte); }
+
+.c-mes { min-width: 0; }
+.c-mes-cabeza { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.c-mes-cabeza .a-desplegable:first-of-type { flex: 1; }
+.c-mes-cabeza .a-desplegable-boton { min-width: 0; font-size: 0.86rem; color: var(--a-titulo); }
+.c-nav {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--a-titulo);
+  background: none;
+  border: 1px solid var(--a-borde);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms var(--a-curva);
+}
+.c-nav svg { width: 18px; height: 18px; }
+.c-nav:hover:not(:disabled) { border-color: var(--a-acento); }
+.c-nav:active:not(:disabled) { transform: scale(0.95); }
+.c-nav:disabled { cursor: not-allowed; opacity: 0.35; }
+.c-mes table { width: 100%; border-collapse: separate; border-spacing: 0 2px; table-layout: fixed; }
+.c-mes th { padding: 4px 0; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--a-suave); }
+.c-mes td { padding: 0; text-align: center; }
+/* El tramo elegido es una banda continua entre el inicio y el fin */
+.c-mes td[data-tramo] { background: var(--a-tinte); }
+.c-mes td[data-borde='inicio'] { background: linear-gradient(to right, transparent 50%, var(--a-tinte) 50%); }
+.c-mes td[data-borde='fin'] { background: linear-gradient(to left, transparent 50%, var(--a-tinte) 50%); }
+.c-mes td button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  font: 600 0.84rem 'Work Sans', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--a-texto);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, transform 120ms var(--a-curva);
+}
+.c-mes td button:hover:not(:disabled) { background: color-mix(in srgb, var(--a-acento) 14%, transparent); }
+.c-mes td button:active:not(:disabled) { transform: scale(0.94); }
+.c-mes td button:focus-visible { outline: 2px solid var(--a-acento); outline-offset: 1px; }
+.c-mes td button:disabled { cursor: default; color: var(--a-suave); opacity: 0.4; }
+.c-mes td button[data-hoy]::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--a-acento);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+.c-mes td button[data-elegido], .c-mes td button[data-elegido]:hover:not(:disabled) {
+  color: #fff;
+  background: var(--a-acento);
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--a-acento) 80%, transparent);
+}
+html.tema-oscuro .es-admin .c-mes td button[data-elegido],
+html.tema-oscuro .es-admin .c-mes td button[data-elegido]:hover:not(:disabled) { color: #06101d; }
+.c-mes td button[data-elegido][data-hoy]::after { background: currentColor; }
+
+.c-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--a-borde); }
+.c-acciones { display: flex; gap: 8px; }
+.c-pie .a-enlace:disabled { opacity: 0.4; cursor: default; }
+@media (max-width: 600px) {
+  /* En el celular es una hoja que sube desde abajo, sobre la barra de navegación */
+  .c-ventana {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 84px;
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    transform-origin: bottom center;
+  }
+  .c-cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .c-atajos { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 12px; border-right: 0; border-bottom: 1px solid var(--a-borde); }
+  .c-atajos button { width: auto; background: var(--a-sup-2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .c-ventana { animation: none; }
+}
 
 /* ---------- Pantallas más chicas ---------- */
 @media (max-width: 1180px) {

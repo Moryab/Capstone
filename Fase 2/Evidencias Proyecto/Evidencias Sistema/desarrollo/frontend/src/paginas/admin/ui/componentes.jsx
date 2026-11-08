@@ -56,8 +56,8 @@ const ESTADOS = {
     activa: ['ok', 'ojo'],
     completa: ['info', 'lleno'],
     pausada: ['espera', 'pausa'],
-    suspendida: ['error', 'oculto'],
-    eliminada: ['neutro', 'x'],
+    suspendida: ['violeta', 'oculto'], // oculta por moderación
+    eliminada: ['error', 'x'],
   },
 }
 

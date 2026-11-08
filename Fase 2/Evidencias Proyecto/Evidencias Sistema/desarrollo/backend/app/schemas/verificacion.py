@@ -70,6 +70,7 @@ class SolicitudResumenOut(BaseModel):
     estado: str
     fecha_solicitud: datetime
     fecha_revision: datetime | None = None
+    foto_url: str | None = None
 
 
 class SolicitanteOut(BaseModel):

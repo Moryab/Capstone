@@ -1,22 +1,33 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
-import { ESTADOS_SOLICITUD, fechaCorta, textoSituacion, textoTipo } from '../verificacion/datos.js'
-import { ChipEstado, EncabezadoAdmin, EstadoVacio, PaginaAdmin, TablaAdmin } from './ui/componentes.jsx'
+import Avatar from '../../componentes/Avatar.jsx'
+import { ESTADOS_SOLICITUD, textoSituacion, textoTipo } from '../verificacion/datos.js'
+import { ChipEstado, EncabezadoAdmin, EstadoVacio, ICONOS_ESTADO, PaginaAdmin, TablaAdmin, TarjetaKpi } from './ui/componentes.jsx'
+import { fecha, haceCuanto, nombrePropio, partesNombre } from './ui/formato.js'
+import { useResumenModeracion } from './ui/useResumenModeracion.js'
 
 const VISTAS = [
   { valor: 'pendientes', texto: 'Pendientes' },
   { valor: 'procesadas', texto: 'Historial' },
 ]
+const IconoRevisar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
+  </svg>
+)
+const DIA_MS = 86400000
 
 // HU-22: «Solicitudes de verificación» del administrador. Las pendientes, de la más antigua a la
 // más reciente (CA-22.1); las ya resueltas quedan en el historial (CA-22.4)
 export default function Verificaciones() {
-  // La vista va en la dirección para que «volver» desde una solicitud regrese a la misma
+  // La vista y el resultado van en la dirección para que «volver» desde una solicitud regrese igual
   const [parametros, setParametros] = useSearchParams()
   const vista = parametros.get('vista') === 'procesadas' ? 'procesadas' : 'pendientes'
-  // Se guarda junto con la vista que se pidió: al cambiar de vista, lo anterior deja de mostrarse
+  const resultado = vista === 'procesadas' ? parametros.get('resultado') ?? '' : ''
+  const resumen = useResumenModeracion()
   const [cargado, setCargado] = useState({ vista: null, solicitudes: null, error: '' })
+  const [ahora] = useState(() => Date.now())
 
   useEffect(() => {
     api(`/verificacion/solicitudes?estado=${vista}`)
@@ -24,7 +35,14 @@ export default function Verificaciones() {
       .catch((err) => setCargado({ vista, solicitudes: null, error: err.message }))
   }, [vista])
 
-  const { solicitudes, error } = cargado.vista === vista ? cargado : { solicitudes: null, error: '' }
+  const { solicitudes: todas, error } = cargado.vista === vista ? cargado : { solicitudes: null, error: '' }
+  // En el historial, «Aprobadas» o «Rechazadas» filtran aquí mismo
+  const solicitudes = todas && resultado ? todas.filter((s) => s.estado === resultado) : todas
+  const ir = (nuevaVista, nuevoResultado = '') => setParametros(
+    nuevaVista === 'pendientes' ? {} : { vista: nuevaVista, ...(nuevoResultado && { resultado: nuevoResultado }) },
+    { replace: true },
+  )
+  const v = resumen?.verificaciones
 
   return (
     <PaginaAdmin>
@@ -33,62 +51,103 @@ export default function Verificaciones() {
         acciones={
           <div className="a-segmentos" role="group" aria-label="Qué solicitudes ver">
             {VISTAS.map(({ valor, texto }) => (
-              <button key={valor} type="button" aria-pressed={vista === valor}
-                onClick={() => setParametros(valor === 'pendientes' ? {} : { vista: valor }, { replace: true })}>
-                {texto}
-              </button>
+              <button key={valor} type="button" aria-pressed={vista === valor} onClick={() => ir(valor)}>{texto}</button>
             ))}
           </div>
         } />
 
+      {resumen !== false && (
+        <div className="a-kpis" role="group" aria-label="Filtros rápidos">
+          <TarjetaKpi etiqueta="Esperan revisión" icono={ICONOS_ESTADO.reloj} tono="espera" valor={v?.pendientes ?? '…'}
+            elegida={vista === 'pendientes'} alElegir={() => ir('pendientes')} />
+          <TarjetaKpi etiqueta={`Aprobadas (${resumen?.dias ?? 30} días)`} icono={ICONOS_ESTADO.check} tono="ok" valor={v?.aprobadas ?? '…'}
+            elegida={vista === 'procesadas' && resultado === 'aprobada'} alElegir={() => ir('procesadas', 'aprobada')} />
+          <TarjetaKpi etiqueta={`Rechazadas (${resumen?.dias ?? 30} días)`} icono={ICONOS_ESTADO.x} tono="error" valor={v?.rechazadas ?? '…'}
+            elegida={vista === 'procesadas' && resultado === 'rechazada'} alElegir={() => ir('procesadas', 'rechazada')} />
+        </div>
+      )}
+
+      {resultado && (
+        <div className="a-filtros-activos solos">
+          <span className="a-filtros-titulo">Filtro activo</span>
+          <button type="button" className="a-filtro-chip" onClick={() => ir('procesadas')}
+            aria-label={`Quitar filtro ${ESTADOS_SOLICITUD[resultado]}`}>
+            Resultado: {ESTADOS_SOLICITUD[resultado]} <span aria-hidden="true">×</span>
+          </button>
+        </div>
+      )}
+
       {error && <p className="alerta" role="alert">{error}</p>}
-      {!solicitudes && !error && <p className="cargando">Cargando…</p>}
+      {!solicitudes && !error && <div className="a-cargando" role="status" aria-label="Cargando solicitudes"><span /><span /><span /></div>}
 
       {solicitudes?.length === 0 && (
         vista === 'pendientes'
           ? <EstadoVacio titulo="¡Todo al día!" texto="No hay solicitudes de verificación esperando revisión." />
-          : <EstadoVacio ilustracion="buscar" titulo="Sin historial todavía" texto="Aún no se ha procesado ninguna solicitud." />
+          : <EstadoVacio ilustracion="buscar" titulo={resultado ? 'Nada con ese resultado' : 'Sin historial todavía'}
+              texto={resultado ? 'Prueba con el otro resultado o mira todo el historial.' : 'Aún no se ha procesado ninguna solicitud.'} />
       )}
 
       {solicitudes?.length > 0 && (
-        <TablaAdmin etiqueta={vista === 'pendientes' ? 'Solicitudes pendientes' : 'Historial de solicitudes'}>
+        <div className="a-listado">
+          <p className="a-conteo" role="status">
+            {solicitudes.length} {solicitudes.length === 1 ? 'solicitud' : 'solicitudes'}
+            {vista === 'pendientes' ? ', de la más antigua a la más reciente' : ''}
+          </p>
+          <TablaAdmin etiqueta={vista === 'pendientes' ? 'Solicitudes pendientes' : 'Historial de solicitudes'}>
             <thead>
               <tr>
-                <th scope="col">N.º</th>
                 <th scope="col">Estudiante</th>
                 <th scope="col">Institución</th>
                 <th scope="col">Comprobante</th>
-                <th scope="col">{vista === 'pendientes' ? 'Enviada' : 'Revisada'}</th>
+                <th scope="col">{vista === 'pendientes' ? 'Esperando' : 'Revisada'}</th>
                 {vista === 'procesadas' && <th scope="col">Resultado</th>}
                 <th scope="col"><span className="visualmente-oculto">Acciones</span></th>
               </tr>
             </thead>
-            <tbody>
-              {solicitudes.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.codigo}</td>
-                  <td>
-                    <strong>{s.nombre}</strong>
-                    <span className="a-tabla-sub">{s.correo}</span>
-                  </td>
-                  <td>{s.institucion_nombre ?? 'Sin indicar'}</td>
-                  <td>
-                    {textoTipo(s.tipo_comprobante)}
-                    <span className="a-tabla-sub">{textoSituacion(s.situacion)}</span>
-                  </td>
-                  <td>{fechaCorta.format(new Date(vista === 'pendientes' ? s.fecha_solicitud : s.fecha_revision))}</td>
-                  {vista === 'procesadas' && (
-                    <td><ChipEstado tipo="solicitud" valor={s.estado}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</ChipEstado></td>
-                  )}
-                  <td>
-                    <Link to={`/admin/verificaciones/${s.id}`} state={{ vista }} className={`a-boton${vista === 'pendientes' ? ' primario' : ''}`}>
-                      {vista === 'pendientes' ? 'Revisar' : 'Ver'}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="a-tabla-tarjetas">
+              {solicitudes.map((s) => {
+                const { nombre, apellido } = partesNombre(s.nombre)
+                // Más de 3 días esperando: se marca para atenderla primero
+                const demorada = vista === 'pendientes' && ahora - new Date(s.fecha_solicitud).getTime() > 3 * DIA_MS
+                return (
+                  <tr key={s.id} data-abierto={vista === 'pendientes' || undefined}>
+                    <td data-etiqueta="Estudiante">
+                      <span className="a-persona">
+                        <Avatar nombre={nombre} apellido={apellido} foto={s.foto_url} tamano={40} />
+                        <span>
+                          <strong>{nombrePropio(s.nombre)}</strong>
+                          <span className="a-tabla-sub">{s.correo} · N.º {s.codigo}</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td data-etiqueta="Institución">{s.institucion_nombre ?? 'Sin indicar'}</td>
+                    <td data-etiqueta="Comprobante">
+                      {textoTipo(s.tipo_comprobante)}
+                      <span className="a-tabla-sub">{textoSituacion(s.situacion)}</span>
+                    </td>
+                    <td data-etiqueta={vista === 'pendientes' ? 'Esperando' : 'Revisada'}>
+                      {vista === 'pendientes' ? (
+                        <>
+                          <span className={demorada ? 'a-espera demorada' : 'a-espera'}>{haceCuanto(s.fecha_solicitud, ahora)}</span>
+                          <span className="a-tabla-sub">Enviada el {fecha.format(new Date(s.fecha_solicitud))}</span>
+                        </>
+                      ) : fecha.format(new Date(s.fecha_revision))}
+                    </td>
+                    {vista === 'procesadas' && (
+                      <td data-etiqueta="Resultado"><ChipEstado tipo="solicitud" valor={s.estado}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</ChipEstado></td>
+                    )}
+                    <td>
+                      <Link to={`/admin/verificaciones/${s.id}`} state={{ vista }} className={`a-boton${vista === 'pendientes' ? ' primario' : ''}`}
+                        aria-label={`${vista === 'pendientes' ? 'Revisar' : 'Ver'} la solicitud de ${nombrePropio(s.nombre)}`}>
+                        {vista === 'pendientes' && <IconoRevisar />} {vista === 'pendientes' ? 'Revisar' : 'Ver'}
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
-        </TablaAdmin>
+          </TablaAdmin>
+        </div>
       )}
     </PaginaAdmin>
   )

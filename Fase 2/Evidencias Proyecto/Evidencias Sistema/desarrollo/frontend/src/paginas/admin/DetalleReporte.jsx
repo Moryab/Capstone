@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { useAvisoBreve } from '../../componentes/AvisoBreve.jsx'
 import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
+import { useResumenAdmin } from '../../marco/ResumenAdmin.jsx'
 import { formatearPesos } from '../../publicaciones.js'
 import {
   ACCIONES_PERFIL, ACCIONES_PUBLICACION, MAX_JUSTIFICACION, textoAccion, textoEstadoReporte, textoMotivo,
@@ -11,7 +13,8 @@ import {
 import { fechaCorta, fechaHora } from '../verificacion/datos.js'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
-import { PaginaAdmin } from './ui/componentes.jsx'
+import { ChipEstado, PaginaAdmin } from './ui/componentes.jsx'
+import { CampoDesplegable } from './ui/Desplegable.jsx'
 
 function Dato({ etiqueta, children }) {
   return (
@@ -61,9 +64,9 @@ function FormularioAccion({ reporte, alTerminar }) {
   const [confirmando, setConfirmando] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
-  const cambiar = (e) => {
-    setDatos({ ...datos, [e.target.name]: e.target.value })
-    setErrores({ ...errores, [e.target.name]: undefined })
+  const cambiar = (nombre, valor) => {
+    setDatos({ ...datos, [nombre]: valor })
+    setErrores({ ...errores, [nombre]: undefined })
   }
 
   const revisar = (e) => {
@@ -92,16 +95,20 @@ function FormularioAccion({ reporte, alTerminar }) {
 
   const elegida = opciones.find((o) => o.valor === datos.accion)?.texto
   return (
-    <form onSubmit={revisar} noValidate className="reporte-accion">
-      <h2>Acción sobre el reporte</h2>
-      <Campo etiqueta="Acción" nombre="accion" value={datos.accion} onChange={cambiar} error={errores.accion}
-        opciones={opciones} required />
+    <form onSubmit={revisar} noValidate className="a-decision">
+      <h2>Tu decisión</h2>
+      <p>Elige qué hacer con lo reportado y explica por qué. Antes de aplicarla te pediremos confirmar.</p>
+      <div className="a-campo-con-error">
+        <CampoDesplegable etiqueta="Acción" valor={datos.accion} alCambiar={(v) => cambiar('accion', v)}
+          opciones={[{ valor: '', texto: 'Elige una acción' }, ...opciones]} />
+        {errores.accion && <p className="campo-error">{errores.accion}</p>}
+      </div>
       <Campo etiqueta="Justificación" nombre="justificacion" multilinea rows={3} value={datos.justificacion}
-        onChange={cambiar} error={errores.justificacion} maxLength={MAX_JUSTIFICACION} required
+        onChange={(e) => cambiar('justificacion', e.target.value)} error={errores.justificacion} maxLength={MAX_JUSTIFICACION} required
         ayuda={`La persona afectada verá este motivo. ${datos.justificacion.length}/${MAX_JUSTIFICACION} caracteres`} />
       {mensaje && <p className="alerta" role="alert">{mensaje}</p>}
-      <div className="acciones">
-        <button type="submit" className="boton peligro">Aplicar acción</button>
+      <div className="a-decision-acciones">
+        <button type="submit" className="a-boton primario">Revisar y aplicar</button>
       </div>
       <Confirmar abierto={confirmando} titulo={`¿${elegida}?`} ocupado={enviando}
         mensaje="La acción quedará registrada con tu nombre y el reporte pasará a «resuelto»."
@@ -120,6 +127,8 @@ export default function DetalleReporte() {
   const [cargado, setCargado] = useState({ id: null, reporte: null, error: '' })
   const [mensaje, setMensaje] = useState({ id: null, tipo: '', texto: '' })
   const [tomando, setTomando] = useState(false)
+  const { avisar } = useAvisoBreve()
+  const { recargarResumen } = useResumenAdmin()
 
   const cargar = useCallback(
     () =>
@@ -139,11 +148,11 @@ export default function DetalleReporte() {
     return (
       <PaginaAdmin className="a-detalle"><div className="a-panel">
         <h1>{error}</h1>
-        <Link to={volver} className="boton">Volver a los reportes</Link>
+        <Link to={volver} className="a-boton">Volver a los reportes</Link>
       </div></PaginaAdmin>
     )
   }
-  if (!reporte) return <p className="cargando">Cargando…</p>
+  if (!reporte) return <PaginaAdmin className="a-detalle"><div className="a-panel"><p className="cargando">Cargando…</p></div></PaginaAdmin>
 
   const tomar = async () => {
     setTomando(true)
@@ -151,6 +160,8 @@ export default function DetalleReporte() {
     try {
       const respuesta = await api(`/reportes/${id}/tomar`, { metodo: 'POST' })
       setMensaje({ id, tipo: 'exito', texto: `${respuesta.mensaje}.` })
+      avisar(respuesta.mensaje)
+      recargarResumen()
     } catch (err) {
       // 409 si otro administrador lo tomó primero: al recargar se ve quién
       setMensaje({ id, tipo: 'alerta', texto: err.message })
@@ -163,16 +174,18 @@ export default function DetalleReporte() {
   const alTerminar = async (texto) => {
     await cargar()
     setMensaje({ id, tipo: 'exito', texto })
+    avisar(texto.replace(/\.$/, ''))
+    recargarResumen() // los contadores de la barra lateral bajan al instante
   }
 
   return (
     <PaginaAdmin className="a-detalle">
       <div className="a-panel">
-      <Link to={volver} className="admin-volver">← Volver a los reportes</Link>
+      <Link to={volver} className="a-volver">← Volver a los reportes</Link>
       <h1>Reporte N.º {reporte.codigo}</h1>
-      <p className="subtitulo">
-        {textoTipoReporte(reporte.tipo_elemento)} · {fechaHora.format(new Date(reporte.fecha_reporte))} ·{' '}
-        <span className={`etiqueta-estado ${reporte.estado}`}>{textoEstadoReporte(reporte.estado)}</span>
+      <p className="a-detalle-cabeza">
+        <ChipEstado tipo="reporte" valor={reporte.estado}>{textoEstadoReporte(reporte.estado)}</ChipEstado>
+        <span>{textoTipoReporte(reporte.tipo_elemento)} · recibido el {fechaHora.format(new Date(reporte.fecha_reporte))}</span>
       </p>
 
       {mensaje.id === id && mensaje.texto && (
@@ -215,7 +228,7 @@ export default function DetalleReporte() {
               <li key={o.id}>
                 <Link to={`/admin/reportes/${o.id}`} state={{ volver }}>N.º {o.codigo}</Link>
                 <span>{textoMotivo(o.motivo)}</span>
-                <span className={`etiqueta-estado ${o.estado}`}>{textoEstadoReporte(o.estado)}</span>
+                <ChipEstado tipo="reporte" valor={o.estado}>{textoEstadoReporte(o.estado)}</ChipEstado>
                 <time dateTime={o.fecha_reporte}>{fechaCorta.format(new Date(o.fecha_reporte))}</time>
               </li>
             ))}
@@ -224,17 +237,21 @@ export default function DetalleReporte() {
       </section>
 
       {reporte.estado === 'pendiente' && (
-        <div className="acciones">
-          <button type="button" className="boton" onClick={tomar} disabled={tomando}>
-            {tomando ? 'Tomando…' : 'Tomar para revisión'}
-          </button>
-        </div>
+        <section className="a-decision" aria-labelledby="titulo-tomar">
+          <h2 id="titulo-tomar">Tu decisión</h2>
+          <p>Toma el reporte para revisarlo: así ningún otro administrador lo procesa al mismo tiempo. Después podrás elegir qué hacer.</p>
+          <div className="a-decision-acciones">
+            <button type="button" className="a-boton primario" onClick={tomar} disabled={tomando}>
+              {tomando ? 'Tomando…' : 'Tomar para revisión'}
+            </button>
+          </div>
+        </section>
       )}
 
       {reporte.estado === 'en_revision' && <FormularioAccion reporte={reporte} alTerminar={alTerminar} />}
 
       {reporte.accion && (
-        <section aria-labelledby="titulo-resultado" className="reporte-accion">
+        <section aria-labelledby="titulo-resultado" className="a-decision">
           <h2 id="titulo-resultado">Resultado</h2>
           <dl className="verificacion-detalle">
             <Dato etiqueta="Acción">{textoAccion(reporte.accion.accion)}</Dato>

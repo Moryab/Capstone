@@ -1,12 +1,35 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
-import { fechaCorta } from '../verificacion/datos.js'
+import Avatar from '../../componentes/Avatar.jsx'
 import { ESTADOS_CUENTA, ESTADOS_VERIFICACION, textoCuenta, textoVerificacion } from './datos.js'
 import Paginacion from './Paginacion.jsx'
 import './reportes.css'
+import Buscador from './ui/Buscador.jsx'
+import {
+  BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, ICONOS_ESTADO, PaginaAdmin, TablaAdmin, TarjetaKpi,
+} from './ui/componentes.jsx'
 import { CampoDesplegable } from './ui/Desplegable.jsx'
-import { BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, PaginaAdmin, TablaAdmin } from './ui/componentes.jsx'
+import { fecha, nombrePropio, partesNombre } from './ui/formato.js'
+
+const IconoGestionar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" />
+  </svg>
+)
+const IconoPersonas = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" />
+  </svg>
+)
+
+// Filtros rápidos del resumen: cada tarjeta deja solo ese filtro
+const RAPIDOS = [
+  { clave: 'total', etiqueta: 'Estudiantes', filtro: {}, icono: <IconoPersonas />, tono: 'acento' },
+  { clave: 'verificados', etiqueta: 'Verificados', filtro: { verificacion: 'verificado' }, icono: ICONOS_ESTADO.check, tono: 'ok' },
+  { clave: 'pendientes', etiqueta: 'Por verificar', filtro: { verificacion: 'pendiente' }, icono: ICONOS_ESTADO.reloj, tono: 'espera' },
+  { clave: 'suspendidos', etiqueta: 'Suspendidos', filtro: { cuenta: 'suspendida' }, icono: ICONOS_ESTADO.prohibido, tono: 'error' },
+]
 
 // HU-28: «Usuarios» del administrador. El buscador, los filtros y la página van en la dirección
 // para que «volver» desde una ficha regrese al mismo listado
@@ -14,8 +37,7 @@ export default function Usuarios() {
   const [parametros, setParametros] = useSearchParams()
   const aviso = useLocation().state?.aviso // al volver de eliminar una cuenta desde su ficha
   const consulta = parametros.toString()
-  const [texto, setTexto] = useState(parametros.get('buscar') ?? '')
-  // Se guarda junto con la consulta pedida: al cambiar, lo anterior deja de mostrarse
+  // Se guarda junto con la consulta pedida: al cambiar, lo anterior se ve atenuado hasta que llega
   const [cargado, setCargado] = useState({ consulta: null, datos: null, error: '' })
 
   useEffect(() => {
@@ -24,19 +46,16 @@ export default function Usuarios() {
       .catch((err) => setCargado({ consulta, datos: null, error: err.message }))
   }, [consulta])
 
-  const { datos, error } = cargado.consulta === consulta ? cargado : { datos: null, error: '' }
+  const { datos, error } = cargado
+  const actualizando = cargado.consulta !== consulta
 
   // Cambiar el buscador o un filtro vuelve a la primera página
   const aplicar = (cambios) => {
     const nuevos = new URLSearchParams(parametros)
     nuevos.delete('pagina')
-    Object.entries(cambios).forEach(([clave, valor]) => {
-      if (valor) nuevos.set(clave, valor)
-      else nuevos.delete(clave)
-    })
+    Object.entries(cambios).forEach(([clave, valor]) => (valor ? nuevos.set(clave, valor) : nuevos.delete(clave)))
     setParametros(nuevos, { replace: true })
   }
-
   const irAPagina = (pagina) => {
     const nuevos = new URLSearchParams(parametros)
     if (pagina > 1) nuevos.set('pagina', String(pagina))
@@ -44,83 +63,100 @@ export default function Usuarios() {
     setParametros(nuevos)
   }
 
-  const buscar = (e) => {
-    e.preventDefault()
-    aplicar({ buscar: texto.trim() })
+  const buscar = parametros.get('buscar') ?? ''
+  const verificacion = parametros.get('verificacion') ?? ''
+  const cuenta = parametros.get('cuenta') ?? ''
+  const activos = [
+    buscar && { clave: 'buscar', texto: `Búsqueda: «${buscar}»`, quitar: () => aplicar({ buscar: '' }) },
+    verificacion && { clave: 'verificacion', texto: `Verificación: ${textoVerificacion(verificacion)}`, quitar: () => aplicar({ verificacion: '' }) },
+    cuenta && { clave: 'cuenta', texto: `Cuenta: ${textoCuenta(cuenta)}`, quitar: () => aplicar({ cuenta: '' }) },
+  ].filter(Boolean)
+  // La tarjeta queda marcada cuando sus filtros son exactamente los aplicados
+  const elegido = (r) => {
+    const aplicados = { ...(verificacion && { verificacion }), ...(cuenta && { cuenta }) }
+    return JSON.stringify(aplicados) === JSON.stringify(r.filtro)
   }
-
-  const hayCriterios = ['buscar', 'verificacion', 'cuenta'].some((clave) => parametros.get(clave))
 
   return (
     <PaginaAdmin>
       <EncabezadoAdmin grupo="Gestión" titulo="Usuarios" descripcion="Estudiantes registrados en RoomMatch." />
       {aviso && <p className="exito" role="status">{aviso}</p>}
 
-      <BarraFiltros etiqueta="Buscar y filtrar">
-      <form className="a-filtros-controles" onSubmit={buscar} role="search">
-        <label className="a-buscador">
-          Nombre o correo
-          <span>
-            <input type="search" value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={100}
-              placeholder="Buscar…" />
-            <button type="submit" className="a-boton">Buscar</button>
-          </span>
-        </label>
-        <CampoDesplegable etiqueta="Verificación" valor={parametros.get('verificacion') ?? ''}
+      {/* Resumen que también filtra: un clic deja solo ese grupo */}
+      <div className="a-kpis" role="group" aria-label="Filtros rápidos">
+        {RAPIDOS.map((r) => (
+          <TarjetaKpi key={r.clave} etiqueta={r.etiqueta} icono={r.icono} tono={r.tono}
+            valor={datos?.resumen ? datos.resumen[r.clave] : '…'} elegida={elegido(r)}
+            alElegir={() => aplicar({ verificacion: '', cuenta: '', ...r.filtro })} />
+        ))}
+      </div>
+
+      <BarraFiltros etiqueta="Buscar y filtrar usuarios" activos={activos}
+        alLimpiar={() => aplicar({ buscar: '', verificacion: '', cuenta: '' })}>
+        <Buscador etiqueta="Nombre o correo" valor={buscar} alBuscar={(v) => aplicar({ buscar: v })}
+          placeholder="Ej.: Lucas o lucas@duocuc.cl" />
+        <CampoDesplegable etiqueta="Verificación" valor={verificacion}
           alCambiar={(v) => aplicar({ verificacion: v })} opciones={[{ valor: '', texto: 'Todas' }, ...ESTADOS_VERIFICACION]} />
-        <CampoDesplegable etiqueta="Cuenta" valor={parametros.get('cuenta') ?? ''}
+        <CampoDesplegable etiqueta="Cuenta" valor={cuenta}
           alCambiar={(v) => aplicar({ cuenta: v })} opciones={[{ valor: '', texto: 'Todas' }, ...ESTADOS_CUENTA]} />
-      </form>
       </BarraFiltros>
 
       {error && <p className="alerta" role="alert">{error}</p>}
-      {!datos && !error && <p className="cargando">Cargando…</p>}
+      {!datos && !error && <div className="a-cargando" role="status" aria-label="Cargando usuarios"><span /><span /><span /></div>}
 
       {datos?.resultados.length === 0 && (
-        hayCriterios
-          ? <EstadoVacio ilustracion="buscar" titulo="Ningún usuario coincide" texto="Prueba con otro nombre, correo o filtro." />
+        activos.length
+          ? <EstadoVacio ilustracion="buscar" titulo="Ningún usuario coincide" texto="Prueba con otro nombre, correo o filtro."
+              accion={<button type="button" className="a-boton" onClick={() => aplicar({ buscar: '', verificacion: '', cuenta: '' })}>Quitar filtros</button>} />
           : <EstadoVacio ilustracion="buscar" titulo="Aún no hay estudiantes" texto="Cuando alguien se registre, aparecerá aquí." />
       )}
 
       {datos?.resultados.length > 0 && (
-        <>
-          <p className="revision-sub" role="status">
-            {datos.total} {datos.total === 1 ? 'usuario' : 'usuarios'}
+        <div className="a-listado" data-actualizando={actualizando || undefined} aria-busy={actualizando}>
+          <p className="a-conteo" role="status">
+            {datos.total} {datos.total === 1 ? 'usuario' : 'usuarios'}{activos.length ? ' con estos filtros' : ''}
           </p>
           <TablaAdmin etiqueta="Usuarios">
-              <thead>
-                <tr>
-                  <th scope="col">Nombre</th>
-                  <th scope="col">Correo</th>
-                  <th scope="col">Verificación</th>
-                  <th scope="col">Cuenta</th>
-                  <th scope="col">Registro</th>
-                  <th scope="col"><span className="visualmente-oculto">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {datos.resultados.map((u) => (
-                  <tr key={u.id}>
-                    <td><strong>{u.nombre}</strong></td>
-                    <td>{u.correo}</td>
-                    <td>
-                      <ChipEstado tipo="verificacion" valor={u.verificacion_estado}>
-                        {textoVerificacion(u.verificacion_estado)}
-                      </ChipEstado>
+            <thead>
+              <tr>
+                <th scope="col">Usuario</th>
+                <th scope="col">Verificación</th>
+                <th scope="col">Cuenta</th>
+                <th scope="col">Registro</th>
+                <th scope="col"><span className="visualmente-oculto">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody className="a-tabla-tarjetas">
+              {datos.resultados.map((u) => {
+                const { nombre, apellido } = partesNombre(u.nombre)
+                return (
+                  <tr key={u.id} data-id={u.id}>
+                    <td data-etiqueta="Usuario">
+                      <span className="a-persona">
+                        <Avatar nombre={nombre} apellido={apellido} foto={u.foto_url} tamano={40} />
+                        <span>
+                          <strong>{nombrePropio(u.nombre)}</strong>
+                          <span className="a-tabla-sub">{u.correo}</span>
+                        </span>
+                      </span>
                     </td>
-                    <td><ChipEstado tipo="cuenta" valor={u.estado_cuenta}>{textoCuenta(u.estado_cuenta)}</ChipEstado></td>
-                    <td>{fechaCorta.format(new Date(u.fecha_registro))}</td>
+                    <td data-etiqueta="Verificación">
+                      <ChipEstado tipo="verificacion" valor={u.verificacion_estado}>{textoVerificacion(u.verificacion_estado)}</ChipEstado>
+                    </td>
+                    <td data-etiqueta="Cuenta"><ChipEstado tipo="cuenta" valor={u.estado_cuenta}>{textoCuenta(u.estado_cuenta)}</ChipEstado></td>
+                    <td data-etiqueta="Registro">{fecha.format(new Date(u.fecha_registro))}</td>
                     <td>
-                      <Link to={`/admin/usuarios/${u.id}`} state={{ volver: `/admin/usuarios?${consulta}` }}
-                        className="a-boton">
-                        Ver
+                      <Link to={`/admin/usuarios/${u.id}`} state={{ volver: `/admin/usuarios?${consulta}` }} className="a-boton"
+                        aria-label={`Gestionar a ${nombrePropio(u.nombre)}`}>
+                        <IconoGestionar /> Gestionar
                       </Link>
                     </td>
                   </tr>
-                ))}
-              </tbody>
+                )
+              })}
+            </tbody>
           </TablaAdmin>
-        </>
+        </div>
       )}
 
       {datos && <Paginacion datos={datos} irAPagina={irAPagina} etiqueta="Páginas de usuarios" />}

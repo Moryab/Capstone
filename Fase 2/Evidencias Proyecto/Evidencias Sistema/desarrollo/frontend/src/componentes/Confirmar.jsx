@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-// Ventana modal de confirmación. Usa <dialog>, que ya maneja el foco y la tecla Escape
+// Ventana modal de confirmación. tono: 'peligro' (por defecto) o '' para una acción positiva. Usa <dialog>, que ya maneja el foco y la tecla Escape
 export default function Confirmar({
-  abierto, titulo, mensaje, textoConfirmar, textoOcupado = 'Procesando…', onConfirmar, onCancelar, ocupado,
+  abierto, titulo, mensaje, textoConfirmar, textoOcupado = 'Procesando…', onConfirmar, onCancelar, ocupado, tono = 'peligro',
 }) {
   const dialogo = useRef(null)
 
@@ -22,7 +22,7 @@ export default function Confirmar({
         <button type="button" className="boton secundario" onClick={onCancelar} disabled={ocupado}>
           Cancelar
         </button>
-        <button type="button" className="boton peligro" onClick={onConfirmar} disabled={ocupado}>
+        <button type="button" className={`boton ${tono}`} onClick={onConfirmar} disabled={ocupado}>
           {ocupado ? textoOcupado : textoConfirmar}
         </button>
       </div>

@@ -92,7 +92,7 @@ export default function Desplegable({
   }
 
   return (
-    <div ref={raiz} className={`a-desplegable ${variante} ${className}`.trim()} data-abierto={abierto || undefined}>
+    <div ref={raiz} className={`a-desplegable a-desplegable-${variante} ${className}`.trim()} data-abierto={abierto || undefined}>
       <button ref={boton} type="button" className="a-desplegable-boton" aria-haspopup="listbox" aria-expanded={abierto}
         aria-controls={abierto ? `${id}-lista` : undefined}
         aria-label={idEtiqueta ? undefined : `${etiqueta}: ${elegido?.texto ?? ''}`}

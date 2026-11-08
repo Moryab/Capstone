@@ -263,7 +263,7 @@ async def listar_solicitudes(
         u["_id"]: u
         async for u in db.usuarios.find(
             {"_id": {"$in": [s["usuario_id"] for s in solicitudes]}},
-            {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1},
+            {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "perfil.foto_url": 1},
         )
     }
     instituciones = await nombres_instituciones({s["institucion_id"] for s in solicitudes})
@@ -284,6 +284,7 @@ async def listar_solicitudes(
             estado=s["estado"],
             fecha_solicitud=s["fecha_solicitud"],
             fecha_revision=s.get("fecha_revision"),
+            foto_url=u.get("perfil", {}).get("foto_url"),
         ))
     return filas
 

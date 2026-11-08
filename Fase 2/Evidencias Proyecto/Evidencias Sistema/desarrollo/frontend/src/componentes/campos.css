@@ -1,0 +1,81 @@
+/* Fecha de nacimiento en tres partes y opciones con forma de botón (FechaNacimiento.jsx).
+   Usan los colores del formulario (--campo, --borde, --primario) */
+
+/* Son <fieldset>, pero se ven como un campo más (no como las secciones con borde de los formularios) */
+fieldset.campo.campo-fecha, fieldset.campo.campo-opciones { min-width: 0; margin: 0 0 12px; padding: 0; border: 0; border-radius: 0; }
+fieldset.campo-fecha > legend, fieldset.campo-opciones > legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.campo-fecha-partes { display: grid; grid-template-columns: 76px minmax(0, 1fr) 96px; align-items: end; gap: 8px; max-width: 440px; }
+.campo-fecha-parte { display: grid; gap: 4px; min-width: 0; font-size: 1rem; font-weight: 400; }
+.campo-fecha-parte > span { font-size: 0.74rem; font-weight: 600; color: var(--texto-suave); }
+.campo-fecha-parte input { height: 48px; padding-block: 0; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.campo-fecha-edad { margin: 6px 0 0; font-size: 0.82rem; font-weight: 600; color: var(--primario); }
+
+/* El desplegable del mes con los colores del formulario (usa los tokens --a-* del componente) */
+.campo-fecha {
+  --a-curva: cubic-bezier(0.23, 1, 0.32, 1);
+  --a-sup: #ffffff;
+  --a-sup-2: var(--campo);
+  --a-borde: var(--borde);
+  --a-borde-fuerte: #b8c6d2;
+  --a-titulo: var(--texto);
+  --a-texto: var(--texto);
+  --a-suave: var(--texto-suave);
+  --a-acento: var(--primario);
+  --a-tinte: #e2f2ef;
+  --a-hover: #eef5f6;
+}
+/* Tema oscuro (editar perfil): la lista y su opción resaltada con los colores oscuros */
+html.tema-oscuro .campo-fecha {
+  --a-sup: #0d1b2e;
+  --a-borde-fuerte: #2c4661;
+  --a-tinte: rgb(45 212 191 / 0.16);
+  --a-hover: #16293f;
+}
+.campo-fecha .a-desplegable { width: 100%; }
+.campo-fecha .a-desplegable-boton {
+  min-width: 0;
+  min-height: 0;
+  height: 48px;
+  padding: 0 12px 0 15px;
+  font: inherit;
+  background: var(--campo);
+  border-radius: 8px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.campo-fecha .a-desplegable-boton:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+.campo-fecha .a-desplegable-lista { max-height: 260px; }
+
+/* Opciones con forma de botón: una sola fila, la elegida en el color de la marca */
+.campo-opciones-lista { display: flex; flex-wrap: wrap; gap: 8px; max-width: 440px; }
+.campo-opcion { position: relative; flex: 1 1 0; min-width: max-content; cursor: pointer; }
+.campo-opcion input { position: absolute; inset: 0; z-index: 1; margin: 0; opacity: 0; cursor: pointer; }
+.campo-opcion span {
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--texto);
+  background: var(--campo);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.campo-opcion:hover span { border-color: var(--primario); }
+.campo-opcion:active span { transform: scale(0.97); }
+html.tema-oscuro .campo-opcion input:checked + span { color: #06101d; }
+.campo-opcion input:checked + span { color: #fff; background: var(--primario); border-color: var(--primario); box-shadow: 0 6px 14px -8px var(--primario); }
+.campo-opcion input:focus-visible + span { outline: 2px solid var(--primario); outline-offset: 2px; }
+.campo-opcion input[aria-invalid='true'] + span { border-color: var(--error); }
+
+@media (max-width: 400px) {
+  .campo-fecha-partes { grid-template-columns: 64px minmax(0, 1fr) 84px; }
+}

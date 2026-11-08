@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Campo from '../componentes/Campo.jsx'
+import FechaNacimiento, { OpcionesBoton } from '../componentes/FechaNacimiento.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { describirFaltantes, GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
@@ -56,6 +57,12 @@ export default function EditarPerfil() {
     }
     setDatos(nuevos)
     setErrores({ ...errores, [name]: undefined, ...(name === 'institucion_id' && { sede: undefined }) })
+  }
+
+  // Para los campos que no son un <input> (fecha en partes y género)
+  const cambiarValor = (nombre, valor) => {
+    setDatos((d) => ({ ...d, [nombre]: valor }))
+    setErrores((e) => ({ ...e, [nombre]: undefined }))
   }
 
   const enviar = async (e) => {
@@ -121,12 +128,11 @@ export default function EditarPerfil() {
             <Campo etiqueta="Apellido materno" nombre="ap_materno" value={datos.ap_materno}
               onChange={cambiar} error={errores.ap_materno} maxLength={60} required />
           </div>
-          <div className="fila">
-            <Campo etiqueta="Fecha de nacimiento" nombre="fecha_nac" type="date" value={datos.fecha_nac}
-              onChange={cambiar} error={errores.fecha_nac} autoComplete="bday" required />
-            <Campo etiqueta="Género" nombre="genero" value={datos.genero} onChange={cambiar}
-              error={errores.genero} opciones={GENEROS} required />
-          </div>
+          {/* Mismo diseño que en el registro: fecha en día, mes y año, y género como opciones visibles */}
+          <FechaNacimiento valor={datos.fecha_nac} error={errores.fecha_nac}
+            alCambiar={(v) => cambiarValor('fecha_nac', v)} />
+          <OpcionesBoton etiqueta="Género" nombre="genero" valor={datos.genero} opciones={GENEROS}
+            error={errores.genero} alCambiar={(v) => cambiarValor('genero', v)} />
           <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
             onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
             autoComplete="tel" required />

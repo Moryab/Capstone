@@ -72,6 +72,32 @@ async def resumen(_admin: dict = Depends(solo_admin)):
     }
 
 
+@router.get("/moderacion/resumen")
+async def resumen_moderacion(
+    dias: int = Query(default=30, ge=1, le=365),
+    tipo: Literal["usuario", "publicacion"] | None = None,
+    _admin: dict = Depends(solo_admin),
+):
+    """Cifras de arriba de «Reportes» y «Verificaciones»: lo que espera revisión y lo resuelto en
+    los últimos `dias` días. Con `tipo`, las de reportes cuentan solo perfiles o publicaciones."""
+    desde = datetime.now(ZONA) - timedelta(days=dias)
+    de_tipo = {"tipo_elemento": tipo} if tipo else {}
+    return {
+        "dias": dias,
+        "reportes": {
+            "pendientes": await db.reportes.count_documents({**de_tipo, "estado": "pendiente"}),
+            "en_revision": await db.reportes.count_documents({**de_tipo, "estado": "en_revision"}),
+            "resueltos": await db.reportes.count_documents({**de_tipo, "estado": "resuelto", "fecha_resolucion": {"$gte": desde}}),
+            "total": await db.reportes.count_documents(de_tipo),
+        },
+        "verificaciones": {
+            "pendientes": await db.solicitudes_verificacion.count_documents({"estado": {"$in": POR_REVISAR}}),
+            "aprobadas": await db.solicitudes_verificacion.count_documents({"estado": "aprobada", "fecha_revision": {"$gte": desde}}),
+            "rechazadas": await db.solicitudes_verificacion.count_documents({"estado": "rechazada", "fecha_revision": {"$gte": desde}}),
+        },
+    }
+
+
 def filtro_busqueda(texto: str, campos: tuple[str, ...]) -> list[dict]:
     """Cada palabra debe aparecer en alguno de los campos: así «ana pérez» encuentra a quien tiene
     el nombre y el apellido en campos distintos. Se escapa para que el texto no se lea como regex."""
@@ -105,16 +131,25 @@ async def listar_usuarios(
     cursor = (
         db.usuarios.find(consulta, {
             "nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "verificacion.estado": 1,
-            "estado_cuenta": 1, "fecha_registro": 1,
+            "estado_cuenta": 1, "fecha_registro": 1, "perfil.foto_url": 1,
         })
         .sort([("fecha_registro", -1), ("_id", -1)])
         .skip((pagina - 1) * TAMANO_PAGINA)
         .limit(TAMANO_PAGINA)
     )
+    # Resumen de todos los estudiantes (sin filtros): sirve también como filtro rápido
+    estudiantes = {"rol": "estudiante"}
+    resumen = {
+        "total": await db.usuarios.count_documents(estudiantes),
+        "verificados": await db.usuarios.count_documents({**estudiantes, "verificacion.estado": "verificado"}),
+        "pendientes": await db.usuarios.count_documents({**estudiantes, "verificacion.estado": "pendiente"}),
+        "suspendidos": await db.usuarios.count_documents({**estudiantes, "estado_cuenta": "suspendida"}),
+    }
     return {
         "total": total,
         "pagina": pagina,
         "paginas": max(1, -(-total // TAMANO_PAGINA)),
+        "resumen": resumen,
         "resultados": [
             UsuarioFilaOut(
                 id=str(u["_id"]),
@@ -123,6 +158,7 @@ async def listar_usuarios(
                 verificacion_estado=u.get("verificacion", {}).get("estado", "no_verificado"),
                 estado_cuenta=u["estado_cuenta"],
                 fecha_registro=u["fecha_registro"],
+                foto_url=u.get("perfil", {}).get("foto_url"),
             )
             async for u in cursor
         ],
@@ -208,6 +244,7 @@ async def listar_publicaciones(
     estado: EstadoPublicacion | None = None,
     comuna: str | None = None,
     orden: Literal["recientes", "reportes"] = "recientes",
+    reportadas: bool = False,
     pagina: int = Query(default=1, ge=1),
     _admin: dict = Depends(solo_admin),
 ):
@@ -216,6 +253,8 @@ async def listar_publicaciones(
     consulta: dict = {}
     if estado:
         consulta["estado"] = estado
+    if reportadas:  # solo las que recibieron algún reporte (filtro rápido «Con reportes»)
+        consulta["cantidad_reportes"] = {"$gt": 0}
     if comuna:
         try:
             consulta["ubicacion.comuna_id"] = ObjectId(comuna)
@@ -235,33 +274,52 @@ async def listar_publicaciones(
     filas = await (
         db.publicaciones.find(consulta, {
             "titulo": 1, "oferente_id": 1, "costo_mensual": 1, "ubicacion.comuna_nombre": 1, "estado": 1,
-            "fecha_publicacion": 1, "cantidad_reportes": 1,
+            "fecha_publicacion": 1, "cantidad_reportes": 1, "fotos": 1, "tipo": 1, "fecha_ultima_modificacion": 1,
         })
         .sort([(primero, -1), ("fecha_publicacion", -1), ("_id", -1)])
         .skip((pagina - 1) * TAMANO_PAGINA)
         .limit(TAMANO_PAGINA)
     ).to_list()
 
-    nombres = {
-        u["_id"]: nombre_completo(u)
+    oferentes = {
+        u["_id"]: u
         async for u in db.usuarios.find(
-            {"_id": {"$in": [p["oferente_id"] for p in filas]}}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1}
+            {"_id": {"$in": [p["oferente_id"] for p in filas]}},
+            {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "perfil.foto_url": 1},
         )
+    }
+
+    def foto_principal(p: dict) -> str | None:
+        fotos = p.get("fotos", [])
+        return next((f["url"] for f in fotos if f.get("es_principal")), fotos[0]["url"] if fotos else None)
+
+    # Resumen de todas las publicaciones (sin filtros): también sirve como filtro rápido
+    resumen = {
+        "total": await db.publicaciones.count_documents({}),
+        "activas": await db.publicaciones.count_documents({"estado": "activa"}),
+        "con_reportes": await db.publicaciones.count_documents({"cantidad_reportes": {"$gt": 0}, "estado": {"$ne": "eliminada"}}),
+        "ocultas": await db.publicaciones.count_documents({"estado": "suspendida"}),
     }
     return {
         "total": total,
         "pagina": pagina,
         "paginas": max(1, -(-total // TAMANO_PAGINA)),
+        "resumen": resumen,
         "resultados": [
             PublicacionFilaOut(
                 id=str(p["_id"]),
                 titulo=p["titulo"],
-                oferente=nombres.get(p["oferente_id"]),
+                oferente=nombre_completo(oferentes[p["oferente_id"]]) if p["oferente_id"] in oferentes else None,
                 costo_mensual=p["costo_mensual"],
                 comuna=p["ubicacion"].get("comuna_nombre"),
                 estado=p["estado"],
                 fecha_publicacion=p["fecha_publicacion"],
                 cantidad_reportes=p.get("cantidad_reportes", 0),
+                foto_url=foto_principal(p),
+                tipo=p.get("tipo"),
+                oferente_id=str(p["oferente_id"]) if p["oferente_id"] in oferentes else None,
+                oferente_foto=oferentes.get(p["oferente_id"], {}).get("perfil", {}).get("foto_url"),
+                fecha_ultima_modificacion=p.get("fecha_ultima_modificacion"),
             )
             for p in filas
         ],

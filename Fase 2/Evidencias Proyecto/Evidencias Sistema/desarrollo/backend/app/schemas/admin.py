@@ -18,6 +18,7 @@ class UsuarioFilaOut(BaseModel):
     verificacion_estado: str
     estado_cuenta: str
     fecha_registro: datetime
+    foto_url: str | None = None  # foto de perfil, para el avatar del listado
 
 
 class PublicacionFilaOut(BaseModel):
@@ -31,6 +32,12 @@ class PublicacionFilaOut(BaseModel):
     estado: str
     fecha_publicacion: datetime
     cantidad_reportes: int
+    # Para la grilla de moderación: foto principal, tipo y quién publica
+    foto_url: str | None = None
+    tipo: str | None = None
+    oferente_id: str | None = None
+    oferente_foto: str | None = None
+    fecha_ultima_modificacion: datetime | None = None
 
 
 class SuspensionOut(BaseModel):
