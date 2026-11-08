@@ -6,12 +6,11 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Component, useEffect, useId, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import { guardarLocal, leerLocal } from '../../almacenamiento.js'
 import { useAvisoBreve } from '../../componentes/AvisoBreve.jsx'
 import { useSesion } from '../../sesion/SesionContext.jsx'
-import { textoEstadoReporte, textoMotivo } from '../../reportes.js'
 import { RAZONES, textoDe } from '../evaluacion/SelectorRazones.jsx'
 import { consultaDe, descargarCsv, pedir, slug, useEstadisticas } from './estadisticas/datos.js'
 import Hero from './estadisticas/Hero.jsx'
@@ -23,8 +22,15 @@ import {
   CORTO_TARJETA, esPeriodo, PERIODOS, PERIODOS_TARJETA, rangoDe, sufijoArchivo, textoPeriodo,
 } from './estadisticas/periodos.js'
 import './estadisticas.css'
+import { useCifraAnimada, useIndicador } from './ui/animaciones.js'
 import { EstadoVacio, PaginaAdmin } from './ui/componentes.jsx'
 import Desplegable, { CampoDesplegable } from './ui/Desplegable.jsx'
+
+// Cifra grande de una tarjeta: cuenta hasta su valor y, al cambiar un filtro, del anterior al nuevo
+function Cifra({ valor }) {
+  const ref = useCifraAnimada(valor)
+  return <p ref={ref} className="g-cifra" data-valor={valor}>{valor}</p>
+}
 
 const MOTIVOS = [
   { valor: 'incompatibilidad', texto: 'Incompatibilidad' },
@@ -39,40 +45,6 @@ const motivosDe = (d) => d.motivos_fin.map((f) => ({ etiqueta: textoDe(MOTIVOS, 
 const filasRanking = (titulo, filas) => {
   const total = filas.reduce((s, f) => s + f.cantidad, 0)
   return [[titulo, 'Cantidad', 'Porcentaje'], ...filas.map((f) => [f.etiqueta, f.cantidad, pct((100 * f.cantidad) / total)])]
-}
-
-const ESTADOS_REPORTE_PANEL = ['pendiente', 'en_revision', 'resuelto']
-
-// Reportes del período: total, de perfiles frente a publicaciones, su estado y los motivos más comunes
-function Reportes({ r }) {
-  const parte = (n) => (r.total ? n / r.total : 0)
-  const motivos = r.por_motivo.slice(0, 5)
-  return (
-    <div className="m-reportes">
-      <div className="m-reportes-total">
-        <p className="g-cifra" data-valor={r.total}>{r.total}</p>
-        <p className="g-detalle">reportes en el período</p>
-        <div className="m-reparto" role="img" aria-label={`${r.perfiles} de perfiles y ${r.publicaciones} de publicaciones`}>
-          <span className="perfil" style={{ flexGrow: r.perfiles || 0.0001 }} />
-          <span className="publicacion" style={{ flexGrow: r.publicaciones || 0.0001 }} />
-        </div>
-        <ul className="m-reparto-leyenda">
-          <li><span className="g-muestra perfil" aria-hidden="true" />Perfiles <b>{r.perfiles}</b> <small>{pct(100 * parte(r.perfiles))}</small></li>
-          <li><span className="g-muestra publicacion" aria-hidden="true" />Publicaciones <b>{r.publicaciones}</b> <small>{pct(100 * parte(r.publicaciones))}</small></li>
-        </ul>
-      </div>
-      <dl className="m-reportes-estados">
-        {ESTADOS_REPORTE_PANEL.map((e) => (
-          <div key={e} data-estado={e}><dt>{textoEstadoReporte(e)}</dt><dd>{r.por_estado[e]}</dd></div>
-        ))}
-        <Link to="/admin/reportes" className="a-boton">Ir a reportes <span aria-hidden="true">→</span></Link>
-      </dl>
-      <div className="m-reportes-motivos">
-        <h3>Motivos más reportados</h3>
-        <Ranking filas={motivos.map((m) => ({ etiqueta: `${textoMotivo(m.motivo)} · ${m.tipo === 'usuario' ? 'perfil' : 'publicación'}`, cantidad: m.cantidad }))} />
-      </div>
-    </div>
-  )
 }
 
 function TablaDatos({ titulo, columnas, filas }) {
@@ -105,7 +77,7 @@ const MODULOS = {
     textoVacio: 'No hay convivencias evaluadas ni propuestas en este período.',
     ver: (d) => (
       <div className="m-kpi">
-        <p className="g-cifra" data-valor={d.resumen.evaluadas}>{d.resumen.evaluadas}</p>
+        <Cifra valor={d.resumen.evaluadas} />
         <p className="g-detalle"><b className="m-exito">{d.resumen.exitosas} exitosas</b> · <b className="m-fracaso">{d.resumen.no_exitosas} no exitosas</b></p>
         {/* Embudo: de las propuestas, cuántas se confirmaron y cuántas terminaron */}
         <dl className="m-embudo">
@@ -189,21 +161,6 @@ const MODULOS = {
     ),
     csv: (d) => [['Mes', 'Exitosos', 'No exitosos'], ...d.por_mes.map((m) => [m.mes, m.exitosos, m.no_exitosos])],
   },
-  reportes: {
-    titulo: 'Reportes recibidos',
-    descripcion: 'Perfiles y publicaciones que reportaron los estudiantes',
-    ancho: 'completo',
-    vacio: (d) => d.reportes.total === 0,
-    textoVacio: 'No se recibieron reportes. ¡Buena señal!',
-    ver: (d) => <Reportes r={d.reportes} />,
-    csv: (d) => [
-      ['Indicador', 'Valor'], ['Reportes recibidos', d.reportes.total], ['De perfiles', d.reportes.perfiles],
-      ['De publicaciones', d.reportes.publicaciones],
-      ...ESTADOS_REPORTE_PANEL.map((e) => [textoEstadoReporte(e), d.reportes.por_estado[e]]),
-      [], ['Tipo', 'Motivo', 'Cantidad'],
-      ...d.reportes.por_motivo.map((m) => [m.tipo === 'usuario' ? 'Perfil' : 'Publicación', textoMotivo(m.motivo), m.cantidad]),
-    ],
-  },
   razones: {
     titulo: 'Razones de incompatibilidad',
     ancho: 'mitad',
@@ -252,10 +209,15 @@ const esVacio = (modulo, datos) => {
 const VistaModulo = ({ modulo, datos, extra }) => modulo.ver(datos, extra)
 
 class LimiteTarjeta extends Component {
-  state = { error: null }
+  state = { error: null, reinicio: this.props.reinicio }
 
   static getDerivedStateFromError(error) {
     return { error }
+  }
+
+  // Con otros datos se vuelve a intentar, sin desmontar el gráfico: así puede animar el cambio
+  static getDerivedStateFromProps(props, state) {
+    return props.reinicio !== state.reinicio ? { error: null, reinicio: props.reinicio } : null
   }
 
   render() {
@@ -286,7 +248,7 @@ function Tarjeta({ id, editando, global, propio, alCambiarPropio, alAmpliarGloba
   const vacio = Boolean(datos) && esVacio(modulo, datos)
 
   return (
-    <section ref={setNodeRef} className="m-tarjeta" data-modulo={id} data-ancho={modulo.ancho} data-destacada={modulo.destacada}
+    <section ref={setNodeRef} className="m-tarjeta" data-animar="tarjeta" data-cargando={(!datos && !error) || undefined} data-modulo={id} data-ancho={modulo.ancho} data-destacada={modulo.destacada}
       data-editando={editando || undefined}
       data-arrastrando={isDragging || undefined} aria-labelledby={idTitulo} aria-busy={cargando}
       style={{ transform: CSS.Translate.toString(transform), transition }}>
@@ -340,7 +302,7 @@ function Tarjeta({ id, editando, global, propio, alCambiarPropio, alAmpliarGloba
             )} />
         )}
         {datos && !vacio && (
-          <LimiteTarjeta key={consulta}>
+          <LimiteTarjeta reinicio={consulta}>
             <VistaModulo modulo={modulo} datos={datos} extra={extra} />
           </LimiteTarjeta>
         )}
@@ -376,6 +338,7 @@ export default function Estadisticas() {
   const global = { periodo, desde: desdeUrl, hasta: hastaUrl }
   const ciudad = params.get('ciudad') ?? ''
   const [calendarioAbierto, setCalendarioAbierto] = useState(false)
+  const segmentosPeriodo = useIndicador(`${periodo}-${calendarioAbierto}`)
   const [comunas, setComunas] = useState([])
   const [activas, setActivas] = useState(SERIES_LINEAS.map((s) => s.clave))
   const [orden, setOrden] = useState(() => ordenValido(leerLocal(claveOrden, ORDEN_INICIAL)))
@@ -493,11 +456,11 @@ export default function Estadisticas() {
           </div>
         </section>
       ) : (
-        <section className="a-filtros m-filtros" aria-label="Filtros del panel">
+        <section className="a-filtros m-filtros" aria-label="Filtros del panel" data-animar="tarjeta">
           <div className="a-filtros-controles">
             <div className="m-filtro m-filtro-periodo">
               <span className="m-filtro-titulo" id="m-titulo-periodo">Período</span>
-              <div className="a-segmentos" role="group" aria-labelledby="m-titulo-periodo">
+              <div ref={segmentosPeriodo} className="a-segmentos" role="group" aria-labelledby="m-titulo-periodo">
                 {PERIODOS.map((p) => (
                   <button key={p.valor} type="button" onClick={() => elegirPeriodo(p.valor)}
                     data-abre-calendario={p.valor === 'personalizado' || undefined}
@@ -519,8 +482,7 @@ export default function Estadisticas() {
           </div>
           {ciudad && (
             <p className="m-nota">
-              Con una ciudad, los registros nuevos siguen contando a todos los estudiantes y los reportes solo
-              incluyen publicaciones de esa ciudad (un perfil no tiene ciudad).
+              Con una ciudad, los registros nuevos siguen contando a todos los estudiantes.
             </p>
           )}
         </section>

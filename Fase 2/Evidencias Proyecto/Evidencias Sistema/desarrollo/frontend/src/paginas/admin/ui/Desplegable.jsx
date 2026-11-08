@@ -16,12 +16,15 @@ const Check = () => (
  * puede diseñar). Botón semitransparente y lista con efecto vidrio.
  * Accesible: botón con aria-haspopup="listbox" y lista role="listbox"; flechas, Inicio/Fin, Enter o
  * Espacio para elegir, Escape para cerrar y escribir una letra salta a la opción que empieza con ella.
- * `variante`: 'campo' (barras de filtros) o 'compacto' (cabecera de las tarjetas).
+ * `variante`: 'campo' (barras de filtros), 'compacto' (cabecera de las tarjetas) o 'cabecera' (título
+ * de una columna de tabla). `textoBoton` reemplaza el texto del botón (la opción elegida).
  */
 export default function Desplegable({
-  valor, opciones, alCambiar, etiqueta, idEtiqueta, variante = 'campo', alinear = 'izquierda', className = '',
+  valor, opciones, alCambiar, etiqueta, idEtiqueta, variante = 'campo', alinear = 'izquierda', className = '', textoBoton,
 }) {
   const [abierto, setAbierto] = useState(false)
+  // En una tabla con scroll la lista se recortaría: en la cabecera flota sobre la página (fixed)
+  const [posicion, setPosicion] = useState(null)
   const [activo, setActivo] = useState(0)
   const raiz = useRef(null)
   const boton = useRef(null)
@@ -33,6 +36,10 @@ export default function Desplegable({
   // Al abrir, la opción activa es la elegida y la lista recibe el foco
   const abrir = (indice = indiceElegido) => {
     setActivo(indice)
+    if (variante === 'cabecera') {
+      const caja = boton.current.getBoundingClientRect()
+      setPosicion({ top: caja.bottom + 6, left: Math.min(caja.left, window.innerWidth - 236) })
+    }
     setAbierto(true)
   }
   useEffect(() => {
@@ -46,6 +53,18 @@ export default function Desplegable({
     document.addEventListener('pointerdown', fuera)
     return () => document.removeEventListener('pointerdown', fuera)
   }, [abierto])
+
+  // Flotando, si la página o la tabla se desplazan la lista se cierra (quedaría desalineada)
+  useEffect(() => {
+    if (!abierto || variante !== 'cabecera') return undefined
+    const alDesplazar = (e) => !lista.current?.contains(e.target) && setAbierto(false)
+    window.addEventListener('scroll', alDesplazar, true)
+    window.addEventListener('resize', alDesplazar)
+    return () => {
+      window.removeEventListener('scroll', alDesplazar, true)
+      window.removeEventListener('resize', alDesplazar)
+    }
+  }, [abierto, variante])
 
   // La opción activa queda a la vista si la lista tiene scroll
   useEffect(() => {
@@ -98,11 +117,12 @@ export default function Desplegable({
         aria-label={idEtiqueta ? undefined : `${etiqueta}: ${elegido?.texto ?? ''}`}
         aria-labelledby={idEtiqueta ? `${idEtiqueta} ${id}-valor` : undefined}
         onClick={() => (abierto ? cerrar() : abrir())} onKeyDown={teclasBoton}>
-        <span id={`${id}-valor`} className="a-desplegable-valor">{elegido?.texto}</span>
+        <span id={`${id}-valor`} className="a-desplegable-valor">{textoBoton ?? elegido?.texto}</span>
         <Chevron />
       </button>
       {abierto && (
         <ul ref={lista} id={`${id}-lista`} role="listbox" tabIndex={-1} className="a-desplegable-lista" data-alinear={alinear}
+          style={variante === 'cabecera' && posicion ? { position: 'fixed', top: posicion.top, left: posicion.left, right: 'auto' } : undefined}
           aria-label={etiqueta} aria-activedescendant={`${id}-op-${activo}`} onKeyDown={teclasLista}>
           {opciones.map((o, i) => (
             <li key={o.valor} id={`${id}-op-${i}`} role="option" data-indice={i} aria-selected={o.valor === valor}
@@ -126,5 +146,18 @@ export function CampoDesplegable({ etiqueta, ...props }) {
       <span id={id} className="a-campo-etiqueta">{etiqueta}</span>
       <Desplegable etiqueta={etiqueta} idEtiqueta={id} {...props} />
     </div>
+  )
+}
+
+/**
+ * Filtro en el título de una columna. Con un filtro aplicado el título se pinta y aparece un punto que
+ * no ocupa espacio (así la columna no cambia de ancho); el valor elegido se ve en los chips de
+ * «Filtros activos» y el lector de pantalla lo oye: «Filtrar por rol: Oferente».
+ */
+export function FiltroColumna({ etiqueta, valor, opciones, alCambiar }) {
+  return (
+    <Desplegable variante="cabecera" etiqueta={`Filtrar por ${etiqueta.toLowerCase()}`} valor={valor}
+      opciones={opciones} alCambiar={alCambiar} className={valor ? 'filtrando' : ''}
+      textoBoton={<span className="a-filtro-columna-nombre">{etiqueta}</span>} />
   )
 }

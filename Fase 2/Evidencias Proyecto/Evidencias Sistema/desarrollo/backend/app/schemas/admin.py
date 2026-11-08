@@ -15,6 +15,9 @@ class UsuarioFilaOut(BaseModel):
     id: str
     nombre: str
     correo: str
+    rut: str | None = None  # guardado como 12345678-K
+    modo: str | None = None  # rol del estudiante: buscador u oferente (None si aún no elige)
+    genero: str | None = None
     verificacion_estado: str
     estado_cuenta: str
     fecha_registro: datetime
@@ -58,6 +61,7 @@ class UsuarioPerfilOut(BaseModel):
 
     id: str
     rut: str | None = None
+    modo: str | None = None  # buscador u oferente
     nombre: str
     ap_paterno: str | None = None
     nombre_completo: str

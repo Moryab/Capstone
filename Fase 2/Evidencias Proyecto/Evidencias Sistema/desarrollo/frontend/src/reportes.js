@@ -54,6 +54,7 @@ const ACCIONES_REGISTRADAS = [
   { valor: 'reactivar_usuario', texto: 'Cuenta reactivada' },
   { valor: 'eliminar_usuario', texto: 'Cuenta eliminada' },
   { valor: 'reactivar_publicacion', texto: 'Publicación restaurada' },
+  { valor: 'cambiar_rol', texto: 'Rol cambiado' },
 ]
 
 // HU-30: mismos valores que el tipo `MotivoIncumplimiento` del backend (CA-30.3)
@@ -72,4 +73,16 @@ export const textoTipoReporte = (valor) => textoDe(TIPOS_REPORTE, valor)
 export const textoEstadoReporte = (valor) => textoDe(ESTADOS_REPORTE, valor)
 export const textoIncumplimiento = (valor) => textoDe(MOTIVOS_INCUMPLIMIENTO, valor)
 export const textoAccion = (valor) => textoDe(ACCIONES_REGISTRADAS, valor)
+
+// Qué se decidió en un reporte resuelto. «Desestimar» deja el reporte resuelto «sin acción»
+// (no se usa el estado «descartado»), así cada reporte cerrado dice cómo terminó
+const RESOLUCIONES = [
+  { valor: 'sin_accion', texto: 'Desestimado' },
+  { valor: 'advertencia', texto: 'Advertencia' },
+  { valor: 'cuenta_suspendida', texto: 'Cuenta suspendida' },
+  { valor: 'verificacion_revocada', texto: 'Verificación quitada' },
+  { valor: 'publicacion_suspendida', texto: 'Publicación ocultada' },
+  { valor: 'publicacion_eliminada', texto: 'Publicación eliminada' },
+]
+export const textoResolucion = (valor) => textoDe(RESOLUCIONES, valor)
 export const textoMotivo = (valor) => textoDe([...MOTIVOS_PERFIL, ...MOTIVOS_PUBLICACION], valor)

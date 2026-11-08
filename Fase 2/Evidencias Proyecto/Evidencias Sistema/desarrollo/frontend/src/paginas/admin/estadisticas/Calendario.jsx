@@ -54,9 +54,10 @@ const Flecha = ({ izquierda }) => (
  * Arriba, «Desde» y «Hasta»: el que se está eligiendo queda resaltado y se puede cambiar con un
  * clic. A la izquierda, atajos (este mes, año pasado…); el mes y el año se eligen con desplegables
  * para llegar rápido a fechas antiguas. No se pueden elegir días futuros.
+ * Con `permitirVacio`, «Limpiar» y luego «Aplicar» quita el filtro (alAplicar('', '')).
  * Teclado: flechas entre días, Re Pág / Av Pág para cambiar de mes, Enter para elegir y Escape cierra.
  */
-export default function Calendario({ desde, hasta, alAplicar, alCancelar }) {
+export default function Calendario({ desde, hasta, alAplicar, alCancelar, permitirVacio = false }) {
   const [hoy] = useState(() => iso(new Date()))
   const [inicio, setInicio] = useState(desde)
   const [fin, setFin] = useState(hasta)
@@ -215,7 +216,7 @@ export default function Calendario({ desde, hasta, alAplicar, alCancelar }) {
         <div className="c-acciones">
           <button type="button" className="a-boton" onClick={alCancelar}>Cancelar</button>
           {/* Con solo «Desde», el período es ese día */}
-          <button type="button" className="a-boton primario" disabled={!inicio} onClick={() => alAplicar(inicio, fin || inicio)}>
+          <button type="button" className="a-boton primario" disabled={!inicio && !permitirVacio} onClick={() => alAplicar(inicio, fin || inicio)}>
             Aplicar
           </button>
         </div>

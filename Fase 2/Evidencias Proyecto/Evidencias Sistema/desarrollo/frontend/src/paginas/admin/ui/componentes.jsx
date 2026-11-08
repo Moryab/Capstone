@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { mayusculaInicial } from '../../../inicio/utilidades.js'
 import { useResumenAdmin } from '../../../marco/ResumenAdmin.jsx'
 import { useSesion } from '../../../sesion/SesionContext.jsx'
 import './admin.css'
+import { useCifraAnimada, useLatido } from './animaciones.js'
 
 /*
  * Piezas compartidas del panel de administración, para que las cinco páginas se vean iguales:
@@ -66,15 +68,31 @@ const ESTADOS = {
  * de color, para no confundirse con la verificación cuando van en la misma fila.
  */
 export function ChipEstado({ tipo, valor, children }) {
+  // Si el estado cambia en pantalla (al aprobar, tomar un reporte…), el chip late una vez
+  const ref = useLatido(valor, { escala: 0.85 })
   if (tipo === 'cuenta') {
     const tono = { activa: 'ok', suspendida: 'error', eliminada: 'neutro' }[valor] ?? 'neutro'
-    return <span className="a-punto" data-tono={tono}><span aria-hidden="true" />{children}</span>
+    return <span ref={ref} className="a-punto" data-tono={tono}><span aria-hidden="true" />{children}</span>
   }
   const [tono, icono] = ESTADOS[tipo]?.[valor] ?? ['neutro', 'vacio']
-  return <span className="a-chip" data-tono={tono}>{ICONOS_ESTADO[icono]}{children}</span>
+  return <span ref={ref} className="a-chip" data-tono={tono}>{ICONOS_ESTADO[icono]}{children}</span>
+}
+
+const ICONOS_ROL = {
+  buscador: <Svg><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></Svg>,
+  oferente: <Svg><path d="M4 11l8-6.5 8 6.5V20H4z" /><path d="M10 20v-5h4v5" /></Svg>,
+}
+/** Rol del estudiante: buscador (busca alojamiento) u oferente (lo ofrece), con ícono y texto */
+export function EtiquetaRol({ modo }) {
+  return (
+    <span className="a-rol" data-modo={modo ?? 'ninguno'}>
+      {ICONOS_ROL[modo]}{modo === 'buscador' ? 'Buscador' : modo === 'oferente' ? 'Oferente' : 'Sin elegir'}
+    </span>
+  )
 }
 
 // Contenedor de cada página del admin: usa todo el ancho que deja la barra lateral
+// La entrada al cambiar de pestaña la hace el marco (transicion.js) con los bloques `data-animar`
 export function PaginaAdmin({ children, className = '' }) {
   return <main className={`a-pagina ${className}`.trim()}>{children}</main>
 }
@@ -107,7 +125,7 @@ export function EncabezadoAdmin({ grupo, titulo, descripcion, acciones, saludo =
   const { usuario } = useSesion()
   const { resumen } = useResumenAdmin()
   return (
-    <header className="a-encabezado">
+    <header className="a-encabezado" data-animar="titulo">
       <div className="a-encabezado-texto">
         {volver}
         {grupo && <p className="a-ojo">{grupo}</p>}
@@ -122,15 +140,17 @@ export function EncabezadoAdmin({ grupo, titulo, descripcion, acciones, saludo =
 
 /**
  * Barra de filtros: los controles van en `children`. `activos` son los filtros aplicados, que se
- * muestran como chips con «×» para quitarlos de a uno.
+ * muestran como chips con «×» para quitarlos de a uno. La fila de chips está siempre (sin filtros
+ * dice «Ninguno»): así, al aplicar el primero, la tabla de abajo no se desplaza.
  */
-export function BarraFiltros({ children, activos = [], alLimpiar, etiqueta = 'Filtros' }) {
+export function BarraFiltros({ children, activos = [], alLimpiar, etiqueta = 'Filtros', className = '', mostrarActivos = true }) {
   return (
-    <section className="a-filtros" aria-label={etiqueta}>
+    <section className={`a-filtros ${className}`.trim()} aria-label={etiqueta} data-animar="tarjeta">
       <div className="a-filtros-controles">{children}</div>
-      {activos.length > 0 && (
+      {mostrarActivos && (
         <div className="a-filtros-activos">
           <span className="a-filtros-titulo">Filtros activos</span>
+          {activos.length === 0 && <span className="a-filtros-ninguno">Ninguno</span>}
           <ul>
             {activos.map((f) => (
               <li key={f.clave}>
@@ -150,10 +170,17 @@ export function BarraFiltros({ children, activos = [], alLimpiar, etiqueta = 'Fi
 }
 
 // Tabla con encabezado fijo al hacer scroll. `etiqueta` describe la tabla para el lector de pantalla
-export function TablaAdmin({ etiqueta, children }) {
+/**
+ * `columnas`: ancho de cada columna ('20%', '150px' o null para «lo que sobre»). Con columnas fijas
+ * la tabla no se reacomoda al filtrar o al cambiar de página: cada columna queda siempre en su lugar.
+ */
+export function TablaAdmin({ etiqueta, columnas, children }) {
   return (
     <div className="a-tabla-zona">
-      <table className="a-tabla" aria-label={etiqueta}>{children}</table>
+      <table className="a-tabla" aria-label={etiqueta} data-fija={columnas ? '' : undefined}>
+        {columnas && <colgroup>{columnas.map((ancho, i) => <col key={i} style={ancho ? { width: ancho } : undefined} />)}</colgroup>}
+        {children}
+      </table>
     </div>
   )
 }
@@ -197,7 +224,7 @@ const ILUSTRACIONES = {
 /** Estado vacío cuidado: ilustración suave, título, explicación y, si sirve, una acción */
 export function EstadoVacio({ ilustracion = 'aldia', titulo, texto, accion, compacto = false }) {
   return (
-    <div className={`a-vacio${compacto ? ' compacto' : ''}`}>
+    <div className={`a-vacio${compacto ? ' compacto' : ''}`} data-animar="tarjeta">
       <div className="a-vacio-ilustracion">{ILUSTRACIONES[ilustracion]}</div>
       <h2>{titulo}</h2>
       {texto && <p>{texto}</p>}
@@ -210,7 +237,11 @@ export function EstadoVacio({ ilustracion = 'aldia', titulo, texto, accion, comp
  * Tarjeta KPI: cifra grande con etiqueta pequeña y, si hay, una variación («+12 %»). Con `alElegir`
  * funciona como filtro rápido (botón con estado presionado).
  */
+const numeroCl = new Intl.NumberFormat('es-CL')
+
 export function TarjetaKpi({ etiqueta, valor, detalle, variacion, icono, tono = 'acento', alElegir, elegida = false }) {
+  const cifra = useCifraAnimada(valor, (n) => numeroCl.format(Math.round(n))) // cuenta hasta el valor, y entre valores al filtrar
+  const cargando = typeof valor !== 'number' // mientras no llega, la tarjeta es silueta
   const contenido = (
     <>
       <span className="a-kpi-cabeza">
@@ -218,16 +249,41 @@ export function TarjetaKpi({ etiqueta, valor, detalle, variacion, icono, tono = 
         <span className="a-kpi-etiqueta">{etiqueta}</span>
         {variacion && <span className="a-kpi-variacion" data-signo={variacion.startsWith('-') ? 'menos' : 'mas'}>{variacion}</span>}
       </span>
-      <span className="a-kpi-valor" data-valor={typeof valor === 'number' ? valor : undefined}>{valor}</span>
+      <span ref={cifra} className="a-kpi-valor" data-valor={typeof valor === 'number' ? valor : undefined}>{cargando ? '0' : numeroCl.format(valor)}</span>
       {detalle && <span className="a-kpi-detalle">{detalle}</span>}
     </>
   )
   if (alElegir) {
     return (
-      <button type="button" className="a-kpi" data-tono={tono} aria-pressed={elegida} onClick={alElegir}>
+      <button type="button" className="a-kpi" data-tono={tono} aria-pressed={elegida} onClick={alElegir}
+        data-animar="tarjeta" data-cargando={cargando || undefined}>
         {contenido}
       </button>
     )
   }
-  return <div className="a-kpi" data-tono={tono}>{contenido}</div>
+  return <div className="a-kpi" data-tono={tono} data-animar="tarjeta" data-cargando={cargando || undefined}>{contenido}</div>
+}
+
+/**
+ * Filas de silueta mientras la tabla carga: misma altura que las reales, así nada salta al llegar
+ * los datos. La transición de entrada las muestra borrosas (es el estado de carga, sin spinner).
+ */
+export function FilasSilueta({ columnas, filas = 5 }) {
+  return Array.from({ length: filas }, (_, f) => (
+    <tr key={f} className="a-fila-silueta" aria-hidden="true">
+      {Array.from({ length: columnas }, (_, c) => (
+        <td key={c}>{c === 0 ? <span className="a-silueta-persona"><span /><span /></span> : <span className="a-silueta-linea" />}</td>
+      ))}
+    </tr>
+  ))
+}
+
+/** Foto que aparece con un fundido cuando termina de cargar (nunca de golpe ni rota) */
+export function ImagenSuave({ alt = '', className = '', alFallar, ...props }) {
+  const [cargada, setCargada] = useState(false)
+  return (
+    <img {...props} alt={alt} className={`a-imagen-suave ${className}`.trim()} data-cargada={cargada || undefined}
+      ref={(img) => { if (img?.complete && img.naturalWidth && !cargada) setCargada(true) }}
+      onLoad={() => setCargada(true)} onError={alFallar} />
+  )
 }

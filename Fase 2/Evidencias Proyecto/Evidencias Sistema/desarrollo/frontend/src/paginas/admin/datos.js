@@ -27,7 +27,15 @@ export const ESTADOS_PUBLICACION = [
   { valor: 'eliminada', texto: 'Eliminada' },
 ]
 
+// Rol del estudiante (modos.py del backend). «sin_rol» es solo para filtrar: aún no elige
+export const MODOS = [
+  { valor: 'buscador', texto: 'Buscador' },
+  { valor: 'oferente', texto: 'Oferente' },
+]
+export const FILTRO_MODOS = [...MODOS, { valor: 'sin_rol', texto: 'Sin elegir' }]
+
 const textoDe = (lista, valor) => lista.find((o) => o.valor === valor)?.texto ?? valor
 export const textoVerificacion = (valor) => textoDe(ESTADOS_VERIFICACION, valor)
 export const textoCuenta = (valor) => textoDe(ESTADOS_CUENTA, valor)
+export const textoModo = (valor) => (valor ? textoDe(FILTRO_MODOS, valor) : 'Sin elegir')
 export const textoPublicacion = (valor) => textoDe(ESTADOS_PUBLICACION, valor)

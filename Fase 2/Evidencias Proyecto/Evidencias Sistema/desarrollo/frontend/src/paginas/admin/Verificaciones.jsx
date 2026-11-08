@@ -3,8 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { ESTADOS_SOLICITUD, textoSituacion, textoTipo } from '../verificacion/datos.js'
-import { ChipEstado, EncabezadoAdmin, EstadoVacio, ICONOS_ESTADO, PaginaAdmin, TablaAdmin, TarjetaKpi } from './ui/componentes.jsx'
+import { ChipEstado, EncabezadoAdmin, EstadoVacio, FilasSilueta, ICONOS_ESTADO, PaginaAdmin, TablaAdmin, TarjetaKpi } from './ui/componentes.jsx'
 import { fecha, haceCuanto, nombrePropio, partesNombre } from './ui/formato.js'
+import { useIndicador } from './ui/animaciones.js'
 import { useResumenModeracion } from './ui/useResumenModeracion.js'
 
 const VISTAS = [
@@ -43,13 +44,14 @@ export default function Verificaciones() {
     { replace: true },
   )
   const v = resumen?.verificaciones
+  const segmentos = useIndicador(vista)
 
   return (
     <PaginaAdmin>
       <EncabezadoAdmin grupo="Moderación" titulo="Solicitudes de verificación"
         descripcion="Revisa los comprobantes que enviaron los estudiantes para acreditar su condición."
         acciones={
-          <div className="a-segmentos" role="group" aria-label="Qué solicitudes ver">
+          <div ref={segmentos} className="a-segmentos" role="group" aria-label="Qué solicitudes ver">
             {VISTAS.map(({ valor, texto }) => (
               <button key={valor} type="button" aria-pressed={vista === valor} onClick={() => ir(valor)}>{texto}</button>
             ))}
@@ -67,18 +69,20 @@ export default function Verificaciones() {
         </div>
       )}
 
-      {resultado && (
-        <div className="a-filtros-activos solos">
+      {/* En el historial la fila está siempre, para que el listado no se mueva al filtrar */}
+      {vista === 'procesadas' && (
+        <div className="a-filtros-activos solos" data-animar="tarjeta">
           <span className="a-filtros-titulo">Filtro activo</span>
-          <button type="button" className="a-filtro-chip" onClick={() => ir('procesadas')}
-            aria-label={`Quitar filtro ${ESTADOS_SOLICITUD[resultado]}`}>
-            Resultado: {ESTADOS_SOLICITUD[resultado]} <span aria-hidden="true">×</span>
-          </button>
+          {resultado ? (
+            <button type="button" className="a-filtro-chip" onClick={() => ir('procesadas')}
+              aria-label={`Quitar filtro ${ESTADOS_SOLICITUD[resultado]}`}>
+              Resultado: {ESTADOS_SOLICITUD[resultado]} <span aria-hidden="true">×</span>
+            </button>
+          ) : <span className="a-filtros-ninguno">Ninguno · usa «Aprobadas» o «Rechazadas» para filtrar</span>}
         </div>
       )}
 
       {error && <p className="alerta" role="alert">{error}</p>}
-      {!solicitudes && !error && <div className="a-cargando" role="status" aria-label="Cargando solicitudes"><span /><span /><span /></div>}
 
       {solicitudes?.length === 0 && (
         vista === 'pendientes'
@@ -87,13 +91,16 @@ export default function Verificaciones() {
               texto={resultado ? 'Prueba con el otro resultado o mira todo el historial.' : 'Aún no se ha procesado ninguna solicitud.'} />
       )}
 
-      {solicitudes?.length > 0 && (
-        <div className="a-listado">
+      {/* Mientras carga, la tabla ya está en su lugar con filas de silueta (no hay spinner) */}
+      {!error && (!solicitudes || solicitudes.length > 0) && (
+        <div className="a-listado" data-animar="tabla" data-cargando={!solicitudes || undefined} aria-busy={!solicitudes}>
           <p className="a-conteo" role="status">
-            {solicitudes.length} {solicitudes.length === 1 ? 'solicitud' : 'solicitudes'}
-            {vista === 'pendientes' ? ', de la más antigua a la más reciente' : ''}
+            {solicitudes
+              ? `${solicitudes.length} ${solicitudes.length === 1 ? 'solicitud' : 'solicitudes'}${vista === 'pendientes' ? ', de la más antigua a la más reciente' : ''}`
+              : 'Cargando solicitudes…'}
           </p>
-          <TablaAdmin etiqueta={vista === 'pendientes' ? 'Solicitudes pendientes' : 'Historial de solicitudes'}>
+          <TablaAdmin etiqueta={vista === 'pendientes' ? 'Solicitudes pendientes' : 'Historial de solicitudes'}
+            columnas={vista === 'pendientes' ? ['30%', '16%', '22%', '17%', null] : ['28%', '14%', '20%', '13%', '13%', null]}>
             <thead>
               <tr>
                 <th scope="col">Estudiante</th>
@@ -105,7 +112,8 @@ export default function Verificaciones() {
               </tr>
             </thead>
             <tbody className="a-tabla-tarjetas">
-              {solicitudes.map((s) => {
+              {!solicitudes && <FilasSilueta columnas={vista === 'pendientes' ? 5 : 6} filas={4} />}
+              {solicitudes?.map((s) => {
                 const { nombre, apellido } = partesNombre(s.nombre)
                 // Más de 3 días esperando: se marca para atenderla primero
                 const demorada = vista === 'pendientes' && ahora - new Date(s.fecha_solicitud).getTime() > 3 * DIA_MS

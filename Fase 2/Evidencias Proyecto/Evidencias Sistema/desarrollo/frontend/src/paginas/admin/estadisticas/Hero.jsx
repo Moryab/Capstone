@@ -163,7 +163,7 @@ export default function Hero({ acciones }) {
   const pendientes = resumen ? POR_REVISAR.reduce((t, p) => t + (resumen[p.clave] ?? 0), 0) : 0
 
   return (
-    <header className="h-hero" data-momento={momento}>
+    <header className="h-hero" data-momento={momento} data-animar="titulo">
       <div className="h-texto">
         <p className="h-fecha">{fecha}</p>
         <h1>{SALUDOS[momento]}, {mayusculaInicial(usuario.nombre)}</h1>

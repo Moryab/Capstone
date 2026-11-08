@@ -1565,3 +1565,8 @@ p.compat-oferente { font-size: 0.85rem; }
 @keyframes pv-latir { 50% { opacity: 0.55; } }
 @media (max-width: 980px) { .pv-esq-cuerpo { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .pv-esqueleto > span, .pv-esq-cuerpo span { animation: none; } }
+
+/* Fotos que aparecen con un fundido al terminar de cargar (Avatar e ImagenSuave del admin) */
+img.avatar, img.a-imagen-suave { transition: opacity 260ms ease; }
+img.avatar:not([data-cargada]), img.a-imagen-suave:not([data-cargada]) { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { img.avatar, img.a-imagen-suave { transition-duration: 150ms; } }

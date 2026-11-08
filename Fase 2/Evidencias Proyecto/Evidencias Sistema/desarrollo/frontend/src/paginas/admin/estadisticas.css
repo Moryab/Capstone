@@ -804,3 +804,14 @@ html.tema-oscuro .es-admin .c-mes td button[data-elegido]:hover:not(:disabled) {
   .g-barra, .g-serie, .m-cuerpo { transition: none; }
   .g-tooltip, .m-esqueleto { animation: none; }
 }
+
+/* ---------- Entrada de los gráficos ----------
+   Al aparecer, las barras crecen desde la base y los rellenos desde la izquierda; después, al
+   cambiar un filtro, la misma transición lleva del valor anterior al nuevo */
+@media (prefers-reduced-motion: no-preference) {
+  .g-meta-valor, .g-ranking-pista span { transition: transform 600ms var(--a-curva); }
+  @starting-style {
+    .g-barra { transform: scaleY(0); }
+    .g-meta-valor, .g-ranking-pista span { transform: scaleX(0); }
+  }
+}

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { mayusculaInicial } from '../../../inicio/utilidades.js'
 import { gsap, prefiereSinMovimiento } from '../../../landing/animaciones.js'
+import { alEnfocar } from '../ui/animaciones.js'
 
 // Tres tonos de la misma familia teal de la marca: distinguen las series sin sugerir «mejor o peor»
 export const SERIES_SEMANA = [
@@ -31,10 +32,18 @@ export default function Semana({ actividad }) {
 
   useLayoutEffect(() => {
     if (!actividad.length || prefiereSinMovimiento()) return undefined
-    const ctx = gsap.context(() => {
-      gsap.from('.s-barra', { scaleY: 0, duration: 0.7, ease: 'power3.out', stagger: 0.06, delay: 0.15, clearProps: 'transform' })
-    }, grafico)
-    return () => ctx.revert()
+    // Esperan en cero y crecen cuando la tarjeta se enfoca (transición de entrada del admin)
+    const barras = grafico.current.querySelectorAll('.s-barra')
+    gsap.set(barras, { scaleY: 0 })
+    let tween = null
+    const dejarDeEsperar = alEnfocar(grafico.current, () => {
+      tween = gsap.to(barras, { scaleY: 1, duration: 0.7, ease: 'power3.out', stagger: 0.06, delay: 0.12, clearProps: 'transform' })
+    })
+    return () => {
+      dejarDeEsperar()
+      tween?.kill()
+      gsap.set(barras, { clearProps: 'transform' })
+    }
   }, [actividad.length])
 
   return (

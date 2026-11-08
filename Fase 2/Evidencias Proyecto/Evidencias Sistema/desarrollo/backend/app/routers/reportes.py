@@ -6,6 +6,8 @@ Depends(solo_admin) (app/deps.py) y los avisos al usuario se envían con app.not
 
 from datetime import datetime, timezone
 
+from typing import Literal
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -111,28 +113,33 @@ async def reportar_publicacion(
 
 
 async def nombres_reportados(reportes: list[dict]) -> dict:
-    """El nombre de cada perfil y el título de cada publicación de la lista, por su id."""
+    """De cada elemento de la lista, por su id: el nombre y el correo del perfil, o el título y el
+    N.º de la publicación, para identificarlo sin abrir el reporte. El RUT no se muestra aquí: es un
+    dato sensible y queda solo en la ficha del usuario."""
     def ids(tipo: str) -> list[ObjectId]:
         return [r["elemento_reportado_id"] for r in reportes if r["tipo_elemento"] == tipo]
 
-    nombres = {
-        u["_id"]: nombre_completo(u)
+    datos = {
+        u["_id"]: {"reportado": nombre_completo(u), "reportado_correo": u.get("correo")}
         async for u in db.usuarios.find(
-            {"_id": {"$in": ids("usuario")}}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1}
+            {"_id": {"$in": ids("usuario")}}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1}
         )
     }
-    async for p in db.publicaciones.find({"_id": {"$in": ids("publicacion")}}, {"titulo": 1}):
-        nombres[p["_id"]] = p["titulo"]
-    return nombres
+    async for p in db.publicaciones.find({"_id": {"$in": ids("publicacion")}}, {"titulo": 1, "codigo": 1}):
+        datos[p["_id"]] = {"reportado": p["titulo"], "publicacion_codigo": p.get("codigo")}
+    return datos
 
 
 @router.get("", response_model=list[ReporteFilaOut])
 async def listar_reportes(
-    estado: EstadoReporte | None = None, tipo: TipoElemento | None = None, _admin: dict = Depends(solo_admin)
+    estado: EstadoReporte | Literal["sin_resolver"] | None = None,
+    tipo: TipoElemento | None = None,
+    _admin: dict = Depends(solo_admin),
 ):
-    """CA-26.1: primero los pendientes, de los más antiguos a los más recientes; después el resto."""
+    """CA-26.1: primero los pendientes, de los más antiguos a los más recientes; después el resto.
+    «sin_resolver» junta los pendientes y los que están en revisión."""
     filtro = {
-        **({"estado": estado} if estado else {}),
+        **({"estado": {"$in": ["pendiente", "en_revision"]}} if estado == "sin_resolver" else {"estado": estado} if estado else {}),
         **({"tipo_elemento": tipo} if tipo else {}),
     }
     reportes = [
@@ -144,16 +151,26 @@ async def listar_reportes(
             {"$limit": 500},
         ])
     ]
-    nombres = await nombres_reportados(reportes)
+    reportados = await nombres_reportados(reportes)
+    # CA-26.3: quién lo tomó, para que dos administradores no revisen el mismo
+    revisores = {
+        a["_id"]: nombre_completo(a)
+        async for a in db.usuarios.find(
+            {"_id": {"$in": list({r["admin_revisor_id"] for r in reportes if r.get("admin_revisor_id")})}},
+            {"nombre": 1, "ap_paterno": 1, "ap_materno": 1},
+        )
+    }
     return [
         ReporteFilaOut(
             id=str(r["_id"]),
             codigo=r["codigo"],
             tipo_elemento=r["tipo_elemento"],
-            reportado=nombres.get(r["elemento_reportado_id"]),
+            **reportados.get(r["elemento_reportado_id"], {}),
             motivo=r["motivo"],
             estado=r["estado"],
             fecha_reporte=r["fecha_reporte"],
+            revisado_por=revisores.get(r.get("admin_revisor_id")),
+            resolucion=r.get("resolucion"),
         )
         for r in reportes
     ]

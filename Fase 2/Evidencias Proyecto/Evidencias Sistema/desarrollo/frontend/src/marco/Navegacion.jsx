@@ -7,7 +7,14 @@ import {
   IconoMatch, IconoMensajes, IconoPersonas, IconoSalir, IconoTuerca, IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
+import { useIndicador, useLatido } from '../paginas/admin/ui/animaciones.js'
 import { useResumenAdmin } from './ResumenAdmin.jsx'
+
+// Contador de pendientes: late una vez cuando cambia (por ejemplo, al resolver un reporte)
+function ContadorNav({ n }) {
+  const ref = useLatido(n, { escala: 1.35 })
+  return <span ref={ref} className="a-nav-contador" aria-label={`${n} por revisar`}>{n > 99 ? '99+' : n}</span>
+}
 
 // Opciones de la barra. `a` es la ruta y `movil` el texto corto de la barra inferior (sin él, la
 // opción no va en el celular). `oferente`: solo la ve quien ofrece un espacio
@@ -90,6 +97,8 @@ export default function Navegacion({
   usuario, cerrarSesion, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, mensajesSinLeer = 0, pathname,
 }) {
   const admin = usuario.rol === 'administrador'
+  // Admin: el fondo de la opción actual se desliza a la nueva en vez de saltar
+  const gruposAdmin = useIndicador(`${pathname}-${contraida}`, '.i-nav-item[aria-current="page"]')
   // En el admin, la ficha de un usuario o de un reporte también marca su sección; una conversación marca «Mensajes»
   const actual = (ruta) => (
     pathname === ruta || ((admin || ruta === '/mensajes') && ruta !== '/admin' && pathname.startsWith(`${ruta}/`))
@@ -131,7 +140,7 @@ export default function Navegacion({
   const contadorDe = (clave) => {
     const n = cifra(clave)
     if (!n) return null
-    return <span className="a-nav-contador" aria-label={`${n} por revisar`}>{n > 99 ? '99+' : n}</span>
+    return <ContadorNav n={n} />
   }
 
   const opcionLateral = ({ a, texto, Icono, contador: clave, mensajes }) => (
@@ -164,7 +173,7 @@ export default function Navegacion({
 
         <nav aria-label="Principal">
           {admin ? (
-            <div className="a-nav-grupos">
+            <div ref={gruposAdmin} className="a-nav-grupos">
               {GRUPOS_ADMIN.map((g) => (
                 <div key={g.titulo}>
                   <p className="a-nav-grupo-titulo" id={`nav-${g.titulo}`}>{g.titulo}</p>

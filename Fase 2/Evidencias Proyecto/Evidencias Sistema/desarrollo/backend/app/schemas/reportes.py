@@ -47,6 +47,10 @@ class ReporteFilaOut(BaseModel):
     codigo: int
     tipo_elemento: str
     reportado: str | None = None  # nombre o título; None si ya no existe
+    reportado_correo: str | None = None  # perfil reportado: su correo (el RUT queda en su ficha)
+    publicacion_codigo: int | None = None  # publicación reportada: su N.º
+    revisado_por: str | None = None  # CA-26.3: administrador que lo tomó (o lo resolvió)
+    resolucion: str | None = None  # resuelto: qué se decidió (advertencia, sin_accion…)
     motivo: str
     estado: str
     fecha_reporte: datetime
