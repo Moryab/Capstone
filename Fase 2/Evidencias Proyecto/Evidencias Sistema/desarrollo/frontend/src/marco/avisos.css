@@ -35,6 +35,9 @@
 @media (max-width: 899px) {
   .i-movil-avisos { display: inline-flex; }
 }
+/* Mensajes, a la izquierda de la campana en la barra superior del celular */
+.i-movil-mensajes + .i-movil-avisos { margin-left: 4px; }
+.i-movil-mensajes[aria-current='page'] { color: var(--i-acento); }
 
 .avisos-todas {
   justify-self: end;
