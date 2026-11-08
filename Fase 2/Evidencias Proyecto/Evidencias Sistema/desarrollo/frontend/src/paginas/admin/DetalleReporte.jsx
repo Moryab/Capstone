@@ -11,6 +11,7 @@ import {
 import { fechaCorta, fechaHora } from '../verificacion/datos.js'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
+import { PaginaAdmin } from './ui/componentes.jsx'
 
 function Dato({ etiqueta, children }) {
   return (
@@ -136,10 +137,10 @@ export default function DetalleReporte() {
 
   if (error) {
     return (
-      <main className="tarjeta">
+      <PaginaAdmin className="a-detalle"><div className="a-panel">
         <h1>{error}</h1>
         <Link to={volver} className="boton">Volver a los reportes</Link>
-      </main>
+      </div></PaginaAdmin>
     )
   }
   if (!reporte) return <p className="cargando">Cargando…</p>
@@ -165,7 +166,8 @@ export default function DetalleReporte() {
   }
 
   return (
-    <main className="tarjeta pagina-admin">
+    <PaginaAdmin className="a-detalle">
+      <div className="a-panel">
       <Link to={volver} className="admin-volver">← Volver a los reportes</Link>
       <h1>Reporte N.º {reporte.codigo}</h1>
       <p className="subtitulo">
@@ -246,6 +248,7 @@ export default function DetalleReporte() {
       {reporte.resolucion === 'cuenta_suspendida' && reporte.elemento?.estado === 'suspendida' && (
         <ReactivarCuenta usuarioId={reporte.elemento.id} alTerminar={alTerminar} />
       )}
-    </main>
+    </div>
+    </PaginaAdmin>
   )
 }

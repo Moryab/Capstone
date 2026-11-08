@@ -6,6 +6,8 @@ import {
 } from '../../reportes.js'
 import { fechaCorta } from '../verificacion/datos.js'
 import './reportes.css'
+import { CampoDesplegable } from './ui/Desplegable.jsx'
+import { BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, PaginaAdmin, TablaAdmin } from './ui/componentes.jsx'
 
 // HU-26: «Reportes» del administrador. Los filtros van en la dirección para que «volver» desde un
 // reporte regrese al mismo listado
@@ -23,47 +25,36 @@ export default function Reportes() {
 
   const { reportes, error } = cargado.consulta === consulta ? cargado : { reportes: null, error: '' }
 
-  const filtrar = (e) => {
+  const filtrar = (nombre, valor) => {
     const nuevos = new URLSearchParams(parametros)
-    if (e.target.value) nuevos.set(e.target.name, e.target.value)
-    else nuevos.delete(e.target.name)
+    if (valor) nuevos.set(nombre, valor)
+    else nuevos.delete(nombre)
     setParametros(nuevos, { replace: true })
   }
 
   return (
-    <main className="tarjeta pagina-admin">
-      <h1>Reportes</h1>
-      <p className="subtitulo">Revisa los perfiles y las publicaciones que reportaron los usuarios.</p>
+    <PaginaAdmin>
+      <EncabezadoAdmin grupo="Moderación" titulo="Reportes"
+        descripcion="Revisa los perfiles y las publicaciones que reportaron los usuarios." />
 
-      <div className="admin-filtros">
-        <label>
-          Estado
-          <select name="estado" value={parametros.get('estado') ?? ''} onChange={filtrar}>
-            <option value="">Todos</option>
-            {ESTADOS_REPORTE.map(({ valor, texto }) => <option key={valor} value={valor}>{texto}</option>)}
-          </select>
-        </label>
-        <label>
-          Tipo
-          <select name="tipo" value={parametros.get('tipo') ?? ''} onChange={filtrar}>
-            <option value="">Todos</option>
-            {TIPOS_REPORTE.map(({ valor, texto }) => <option key={valor} value={valor}>{texto}</option>)}
-          </select>
-        </label>
-      </div>
+      <BarraFiltros etiqueta="Filtrar reportes">
+        <CampoDesplegable etiqueta="Estado" valor={parametros.get('estado') ?? ''} alCambiar={(v) => filtrar('estado', v)}
+          opciones={[{ valor: '', texto: 'Todos' }, ...ESTADOS_REPORTE]} />
+        <CampoDesplegable etiqueta="Tipo" valor={parametros.get('tipo') ?? ''} alCambiar={(v) => filtrar('tipo', v)}
+          opciones={[{ valor: '', texto: 'Todos' }, ...TIPOS_REPORTE]} />
+      </BarraFiltros>
 
       {error && <p className="alerta" role="alert">{error}</p>}
       {!reportes && !error && <p className="cargando">Cargando…</p>}
 
       {reportes?.length === 0 && (
-        <p className="admin-vacio">
-          {consulta ? 'Ningún reporte coincide con estos filtros.' : 'No hay reportes por revisar'}
-        </p>
+        consulta
+          ? <EstadoVacio ilustracion="buscar" titulo="Ningún reporte coincide" texto="Prueba con otro estado o tipo." />
+          : <EstadoVacio titulo="¡Todo al día!" texto="No hay reportes por revisar. Cuando alguien reporte un perfil o una publicación, aparecerá aquí." />
       )}
 
       {reportes?.length > 0 && (
-        <div className="admin-tabla-contenedor">
-          <table className="admin-tabla">
+        <TablaAdmin etiqueta="Reportes">
             <thead>
               <tr>
                 <th scope="col">N.º</th>
@@ -83,19 +74,18 @@ export default function Reportes() {
                   <td>{r.reportado ?? <em>Ya no existe</em>}</td>
                   <td>{textoMotivo(r.motivo)}</td>
                   <td>{fechaCorta.format(new Date(r.fecha_reporte))}</td>
-                  <td><span className={`etiqueta-estado ${r.estado}`}>{textoEstadoReporte(r.estado)}</span></td>
+                  <td><ChipEstado tipo="reporte" valor={r.estado}>{textoEstadoReporte(r.estado)}</ChipEstado></td>
                   <td>
                     <Link to={`/admin/reportes/${r.id}`} state={{ volver: `/admin/reportes?${consulta}` }}
-                      className="boton-tarjeta">
+                      className="a-boton">
                       Revisar
                     </Link>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+        </TablaAdmin>
       )}
-    </main>
+    </PaginaAdmin>
   )
 }

@@ -5,7 +5,10 @@ Depends(solo_admin) (app/deps.py) y los avisos al usuario se envían con app.not
 """
 
 import re
+from collections import Counter
+from datetime import datetime, time, timedelta
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -14,7 +17,7 @@ from fastapi.responses import JSONResponse
 
 from app.db import db
 from app.deps import solo_admin
-from app.routers.verificacion import nombre_completo
+from app.routers.verificacion import POR_REVISAR, nombre_completo
 from app.schemas.admin import (
     EliminacionOut, EstadoCuenta, EstadoPublicacion, EstadoVerificacion, PublicacionFilaOut, PublicacionUsuarioOut,
     ReporteRecibidoOut, SolicitudUsuarioOut, SuspensionOut, UsuarioDetalleOut, UsuarioFilaOut, UsuarioPerfilOut,
@@ -23,6 +26,50 @@ from app.schemas.admin import (
 router = APIRouter(prefix="/api/admin", tags=["Administración"])
 
 TAMANO_PAGINA = 20
+REPORTES_ABIERTOS = ["pendiente", "en_revision"]
+ZONA = ZoneInfo("America/Santiago")
+DIAS_ACTIVIDAD = 7
+
+
+async def contar_por_dia(coleccion, campo: str, desde: datetime, filtro: dict | None = None) -> Counter:
+    """Cuántos documentos hay por día (hora de Chile) desde `desde`, según la fecha `campo`."""
+    dias = Counter()
+    async for doc in coleccion.find({campo: {"$gte": desde}, **(filtro or {})}, {campo: 1}):
+        fecha = doc[campo]
+        if fecha.tzinfo is None:  # Mongo devuelve UTC sin zona
+            fecha = fecha.replace(tzinfo=ZoneInfo("UTC"))
+        dias[fecha.astimezone(ZONA).date().isoformat()] += 1
+    return dias
+
+
+@router.get("/resumen")
+async def resumen(_admin: dict = Depends(solo_admin)):
+    """Lo que espera revisión (contadores de la barra lateral y saludo del panel) y la actividad de
+    los últimos 7 días: registros, publicaciones y reportes nuevos por día."""
+    hoy = datetime.now(ZONA).date()
+    dias = [hoy - timedelta(days=i) for i in range(DIAS_ACTIVIDAD - 1, -1, -1)]
+    desde = datetime.combine(dias[0], time.min, ZONA)
+    registros = await contar_por_dia(db.usuarios, "fecha_registro", desde, {"rol": "estudiante"})
+    publicaciones = await contar_por_dia(db.publicaciones, "fecha_publicacion", desde)
+    reportes = await contar_por_dia(db.reportes, "fecha_reporte", desde)
+    return {
+        "reportes_pendientes": await db.reportes.count_documents({"estado": {"$in": REPORTES_ABIERTOS}}),
+        # El mismo total, separado: el saludo del panel los muestra por tipo
+        "reportes_pendientes_perfiles": await db.reportes.count_documents(
+            {"estado": {"$in": REPORTES_ABIERTOS}, "tipo_elemento": "usuario"}),
+        "reportes_pendientes_publicaciones": await db.reportes.count_documents(
+            {"estado": {"$in": REPORTES_ABIERTOS}, "tipo_elemento": "publicacion"}),
+        "verificaciones_pendientes": await db.solicitudes_verificacion.count_documents({"estado": {"$in": POR_REVISAR}}),
+        "actividad": [
+            {
+                "dia": d.isoformat(),
+                "registros": registros.get(d.isoformat(), 0),
+                "publicaciones": publicaciones.get(d.isoformat(), 0),
+                "reportes": reportes.get(d.isoformat(), 0),
+            }
+            for d in dias
+        ],
+    }
 
 
 def filtro_busqueda(texto: str, campos: tuple[str, ...]) -> list[dict]:

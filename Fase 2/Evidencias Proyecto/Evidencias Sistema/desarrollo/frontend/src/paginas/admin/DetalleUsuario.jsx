@@ -10,6 +10,7 @@ import { textoCuenta, textoPublicacion, textoVerificacion } from './datos.js'
 import AccionCuenta from './AccionCuenta.jsx'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
+import { PaginaAdmin } from './ui/componentes.jsx'
 
 function Dato({ etiqueta, children }) {
   return (
@@ -56,10 +57,10 @@ export default function DetalleUsuario() {
 
   if (error) {
     return (
-      <main className="tarjeta">
+      <PaginaAdmin className="a-detalle"><div className="a-panel">
         <h1>{error}</h1>
         <Link to={volver} className="boton">Volver a los usuarios</Link>
-      </main>
+      </div></PaginaAdmin>
     )
   }
   if (!datos) return <p className="cargando">Cargando…</p>
@@ -72,7 +73,8 @@ export default function DetalleUsuario() {
   const { perfil, publicaciones, reportes, solicitudes } = datos
 
   return (
-    <main className="tarjeta pagina-admin">
+    <PaginaAdmin className="a-detalle">
+      <div className="a-panel">
       <Link to={volver} className="admin-volver">← Volver a los usuarios</Link>
       <div className="revision-persona">
         <Avatar nombre={perfil.nombre} apellido={perfil.ap_paterno} foto={perfil.foto_url} tamano={56} />
@@ -183,6 +185,7 @@ export default function DetalleUsuario() {
         <AccionCuenta key={`eliminar-${id}`} accion="eliminar" usuarioId={perfil.id} nombre={perfil.nombre_completo}
           alTerminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
       )}
-    </main>
+    </div>
+    </PaginaAdmin>
   )
 }

@@ -6,6 +6,8 @@ import { fechaCorta } from '../verificacion/datos.js'
 import { ESTADOS_PUBLICACION, textoPublicacion } from './datos.js'
 import Paginacion from './Paginacion.jsx'
 import './reportes.css'
+import { CampoDesplegable } from './ui/Desplegable.jsx'
+import { BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, PaginaAdmin, TablaAdmin } from './ui/componentes.jsx'
 
 // HU-29: «Publicaciones» del administrador. Las eliminadas también aparecen (CA-29.4). El buscador,
 // los filtros, el orden y la página van en la dirección para que «volver» regrese al mismo listado
@@ -55,49 +57,37 @@ export default function Publicaciones() {
   const hayCriterios = ['buscar', 'estado', 'comuna'].some((clave) => parametros.get(clave))
 
   return (
-    <main className="tarjeta pagina-admin">
-      <h1>Publicaciones</h1>
-      <p className="subtitulo">Supervisa los alojamientos publicados, incluidos los ocultos y eliminados.</p>
+    <PaginaAdmin>
+      <EncabezadoAdmin grupo="Gestión" titulo="Publicaciones" descripcion="Supervisa los alojamientos publicados, incluidos los ocultos y eliminados." />
 
-      <form className="admin-filtros" onSubmit={buscar} role="search">
-        <label className="admin-buscador">
+      <BarraFiltros etiqueta="Buscar y filtrar">
+      <form className="a-filtros-controles" onSubmit={buscar} role="search">
+        <label className="a-buscador">
           Título u oferente
           <span>
             <input type="search" value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={100}
               placeholder="Buscar…" />
-            <button type="submit" className="boton secundario">Buscar</button>
+            <button type="submit" className="a-boton">Buscar</button>
           </span>
         </label>
-        <label>
-          Estado
-          <select value={parametros.get('estado') ?? ''} onChange={(e) => aplicar({ estado: e.target.value })}>
-            <option value="">Todos</option>
-            {ESTADOS_PUBLICACION.map(({ valor, texto: t }) => <option key={valor} value={valor}>{t}</option>)}
-          </select>
-        </label>
-        <label>
-          Comuna
-          <select value={parametros.get('comuna') ?? ''} onChange={(e) => aplicar({ comuna: e.target.value })}>
-            <option value="">Todas</option>
-            {comunas.map(({ id, nombre }) => <option key={id} value={id}>{nombre}</option>)}
-          </select>
-        </label>
-        <label>
-          Ordenar por
-          <select value={parametros.get('orden') ?? ''} onChange={(e) => aplicar({ orden: e.target.value })}>
-            <option value="">Más recientes</option>
-            <option value="reportes">Más reportes</option>
-          </select>
-        </label>
+        <CampoDesplegable etiqueta="Estado" valor={parametros.get('estado') ?? ''}
+          alCambiar={(v) => aplicar({ estado: v })} opciones={[{ valor: '', texto: 'Todos' }, ...ESTADOS_PUBLICACION]} />
+        <CampoDesplegable etiqueta="Comuna" valor={parametros.get('comuna') ?? ''}
+          alCambiar={(v) => aplicar({ comuna: v })}
+          opciones={[{ valor: '', texto: 'Todas' }, ...comunas.map(({ id, nombre }) => ({ valor: id, texto: nombre }))]} />
+        <CampoDesplegable etiqueta="Ordenar por" valor={parametros.get('orden') ?? ''}
+          alCambiar={(v) => aplicar({ orden: v })}
+          opciones={[{ valor: '', texto: 'Más recientes' }, { valor: 'reportes', texto: 'Más reportes' }]} />
       </form>
+      </BarraFiltros>
 
       {error && <p className="alerta" role="alert">{error}</p>}
       {!datos && !error && <p className="cargando">Cargando…</p>}
 
       {datos?.resultados.length === 0 && (
-        <p className="admin-vacio">
-          {hayCriterios ? 'Ninguna publicación coincide con la búsqueda.' : 'Aún no hay publicaciones.'}
-        </p>
+        hayCriterios
+          ? <EstadoVacio ilustracion="buscar" titulo="Ninguna publicación coincide" texto="Prueba con otro título, estado o comuna." />
+          : <EstadoVacio ilustracion="buscar" titulo="Aún no hay publicaciones" texto="Cuando un estudiante publique un alojamiento, aparecerá aquí." />
       )}
 
       {datos?.resultados.length > 0 && (
@@ -105,8 +95,7 @@ export default function Publicaciones() {
           <p className="revision-sub" role="status">
             {datos.total} {datos.total === 1 ? 'publicación' : 'publicaciones'}
           </p>
-          <div className="admin-tabla-contenedor">
-            <table className="admin-tabla">
+          <TablaAdmin etiqueta="Publicaciones">
               <thead>
                 <tr>
                   <th scope="col">Título</th>
@@ -126,24 +115,23 @@ export default function Publicaciones() {
                     <td>{p.oferente ?? <em>Ya no existe</em>}</td>
                     <td>{formatearPesos(p.costo_mensual)}</td>
                     <td>{p.comuna}</td>
-                    <td><span className={`etiqueta-estado ${p.estado}`}>{textoPublicacion(p.estado)}</span></td>
+                    <td><ChipEstado tipo="publicacion" valor={p.estado}>{textoPublicacion(p.estado)}</ChipEstado></td>
                     <td>{fechaCorta.format(new Date(p.fecha_publicacion))}</td>
                     <td>{p.cantidad_reportes}</td>
                     <td>
                       <Link to={`/admin/publicaciones/${p.id}`} state={{ volver: `/admin/publicaciones?${consulta}` }}
-                        className="boton-tarjeta">
+                        className="a-boton">
                         Ver
                       </Link>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+          </TablaAdmin>
         </>
       )}
 
       {datos && <Paginacion datos={datos} irAPagina={irAPagina} etiqueta="Páginas de publicaciones" />}
-    </main>
+    </PaginaAdmin>
   )
 }

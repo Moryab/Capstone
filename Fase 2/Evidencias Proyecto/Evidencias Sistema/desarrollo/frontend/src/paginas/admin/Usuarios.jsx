@@ -5,6 +5,8 @@ import { fechaCorta } from '../verificacion/datos.js'
 import { ESTADOS_CUENTA, ESTADOS_VERIFICACION, textoCuenta, textoVerificacion } from './datos.js'
 import Paginacion from './Paginacion.jsx'
 import './reportes.css'
+import { CampoDesplegable } from './ui/Desplegable.jsx'
+import { BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, PaginaAdmin, TablaAdmin } from './ui/componentes.jsx'
 
 // HU-28: «Usuarios» del administrador. El buscador, los filtros y la página van en la dirección
 // para que «volver» desde una ficha regrese al mismo listado
@@ -50,44 +52,34 @@ export default function Usuarios() {
   const hayCriterios = ['buscar', 'verificacion', 'cuenta'].some((clave) => parametros.get(clave))
 
   return (
-    <main className="tarjeta pagina-admin">
-      <h1>Usuarios</h1>
-      <p className="subtitulo">Estudiantes registrados en RoomMatch.</p>
+    <PaginaAdmin>
+      <EncabezadoAdmin grupo="Gestión" titulo="Usuarios" descripcion="Estudiantes registrados en RoomMatch." />
       {aviso && <p className="exito" role="status">{aviso}</p>}
 
-      <form className="admin-filtros" onSubmit={buscar} role="search">
-        <label className="admin-buscador">
+      <BarraFiltros etiqueta="Buscar y filtrar">
+      <form className="a-filtros-controles" onSubmit={buscar} role="search">
+        <label className="a-buscador">
           Nombre o correo
           <span>
             <input type="search" value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={100}
               placeholder="Buscar…" />
-            <button type="submit" className="boton secundario">Buscar</button>
+            <button type="submit" className="a-boton">Buscar</button>
           </span>
         </label>
-        <label>
-          Verificación
-          <select value={parametros.get('verificacion') ?? ''}
-            onChange={(e) => aplicar({ verificacion: e.target.value })}>
-            <option value="">Todas</option>
-            {ESTADOS_VERIFICACION.map(({ valor, texto: t }) => <option key={valor} value={valor}>{t}</option>)}
-          </select>
-        </label>
-        <label>
-          Cuenta
-          <select value={parametros.get('cuenta') ?? ''} onChange={(e) => aplicar({ cuenta: e.target.value })}>
-            <option value="">Todas</option>
-            {ESTADOS_CUENTA.map(({ valor, texto: t }) => <option key={valor} value={valor}>{t}</option>)}
-          </select>
-        </label>
+        <CampoDesplegable etiqueta="Verificación" valor={parametros.get('verificacion') ?? ''}
+          alCambiar={(v) => aplicar({ verificacion: v })} opciones={[{ valor: '', texto: 'Todas' }, ...ESTADOS_VERIFICACION]} />
+        <CampoDesplegable etiqueta="Cuenta" valor={parametros.get('cuenta') ?? ''}
+          alCambiar={(v) => aplicar({ cuenta: v })} opciones={[{ valor: '', texto: 'Todas' }, ...ESTADOS_CUENTA]} />
       </form>
+      </BarraFiltros>
 
       {error && <p className="alerta" role="alert">{error}</p>}
       {!datos && !error && <p className="cargando">Cargando…</p>}
 
       {datos?.resultados.length === 0 && (
-        <p className="admin-vacio">
-          {hayCriterios ? 'Ningún usuario coincide con la búsqueda.' : 'Aún no hay estudiantes registrados.'}
-        </p>
+        hayCriterios
+          ? <EstadoVacio ilustracion="buscar" titulo="Ningún usuario coincide" texto="Prueba con otro nombre, correo o filtro." />
+          : <EstadoVacio ilustracion="buscar" titulo="Aún no hay estudiantes" texto="Cuando alguien se registre, aparecerá aquí." />
       )}
 
       {datos?.resultados.length > 0 && (
@@ -95,8 +87,7 @@ export default function Usuarios() {
           <p className="revision-sub" role="status">
             {datos.total} {datos.total === 1 ? 'usuario' : 'usuarios'}
           </p>
-          <div className="admin-tabla-contenedor">
-            <table className="admin-tabla">
+          <TablaAdmin etiqueta="Usuarios">
               <thead>
                 <tr>
                   <th scope="col">Nombre</th>
@@ -113,27 +104,26 @@ export default function Usuarios() {
                     <td><strong>{u.nombre}</strong></td>
                     <td>{u.correo}</td>
                     <td>
-                      <span className={`etiqueta-estado ${u.verificacion_estado}`}>
+                      <ChipEstado tipo="verificacion" valor={u.verificacion_estado}>
                         {textoVerificacion(u.verificacion_estado)}
-                      </span>
+                      </ChipEstado>
                     </td>
-                    <td><span className={`etiqueta-estado ${u.estado_cuenta}`}>{textoCuenta(u.estado_cuenta)}</span></td>
+                    <td><ChipEstado tipo="cuenta" valor={u.estado_cuenta}>{textoCuenta(u.estado_cuenta)}</ChipEstado></td>
                     <td>{fechaCorta.format(new Date(u.fecha_registro))}</td>
                     <td>
                       <Link to={`/admin/usuarios/${u.id}`} state={{ volver: `/admin/usuarios?${consulta}` }}
-                        className="boton-tarjeta">
+                        className="a-boton">
                         Ver
                       </Link>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+          </TablaAdmin>
         </>
       )}
 
       {datos && <Paginacion datos={datos} irAPagina={irAPagina} etiqueta="Páginas de usuarios" />}
-    </main>
+    </PaginaAdmin>
   )
 }

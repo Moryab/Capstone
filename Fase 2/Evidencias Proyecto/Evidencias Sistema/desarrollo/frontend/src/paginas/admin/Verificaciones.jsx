@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import { ESTADOS_SOLICITUD, fechaCorta, textoSituacion, textoTipo } from '../verificacion/datos.js'
+import { ChipEstado, EncabezadoAdmin, EstadoVacio, PaginaAdmin, TablaAdmin } from './ui/componentes.jsx'
 
 const VISTAS = [
   { valor: 'pendientes', texto: 'Pendientes' },
@@ -25,36 +26,32 @@ export default function Verificaciones() {
 
   const { solicitudes, error } = cargado.vista === vista ? cargado : { solicitudes: null, error: '' }
 
-  const indice = VISTAS.findIndex((v) => v.valor === vista)
-
   return (
-    <main className="tarjeta pagina-admin">
-      <h1>Solicitudes de verificación</h1>
-      <p className="subtitulo">Revisa los comprobantes que enviaron los estudiantes para acreditar su condición.</p>
-
-      <div className="pestanas dos" style={{ '--pestana': indice }} role="group" aria-label="Qué solicitudes ver">
-        <span className="pestanas-indicador" aria-hidden="true" />
-        {VISTAS.map(({ valor, texto }) => (
-          <button key={valor} type="button" className={`pestana${vista === valor ? ' activa' : ''}`}
-            aria-pressed={vista === valor}
-            onClick={() => setParametros(valor === 'pendientes' ? {} : { vista: valor }, { replace: true })}>
-            {texto}
-          </button>
-        ))}
-      </div>
+    <PaginaAdmin>
+      <EncabezadoAdmin grupo="Moderación" titulo="Solicitudes de verificación"
+        descripcion="Revisa los comprobantes que enviaron los estudiantes para acreditar su condición."
+        acciones={
+          <div className="a-segmentos" role="group" aria-label="Qué solicitudes ver">
+            {VISTAS.map(({ valor, texto }) => (
+              <button key={valor} type="button" aria-pressed={vista === valor}
+                onClick={() => setParametros(valor === 'pendientes' ? {} : { vista: valor }, { replace: true })}>
+                {texto}
+              </button>
+            ))}
+          </div>
+        } />
 
       {error && <p className="alerta" role="alert">{error}</p>}
       {!solicitudes && !error && <p className="cargando">Cargando…</p>}
 
       {solicitudes?.length === 0 && (
-        <p className="admin-vacio">
-          {vista === 'pendientes' ? 'No hay solicitudes pendientes. ¡Todo al día!' : 'Aún no se ha procesado ninguna solicitud.'}
-        </p>
+        vista === 'pendientes'
+          ? <EstadoVacio titulo="¡Todo al día!" texto="No hay solicitudes de verificación esperando revisión." />
+          : <EstadoVacio ilustracion="buscar" titulo="Sin historial todavía" texto="Aún no se ha procesado ninguna solicitud." />
       )}
 
       {solicitudes?.length > 0 && (
-        <div className="admin-tabla-contenedor">
-          <table className="admin-tabla">
+        <TablaAdmin etiqueta={vista === 'pendientes' ? 'Solicitudes pendientes' : 'Historial de solicitudes'}>
             <thead>
               <tr>
                 <th scope="col">N.º</th>
@@ -72,28 +69,27 @@ export default function Verificaciones() {
                   <td>{s.codigo}</td>
                   <td>
                     <strong>{s.nombre}</strong>
-                    <span className="admin-tabla-sub">{s.correo}</span>
+                    <span className="a-tabla-sub">{s.correo}</span>
                   </td>
                   <td>{s.institucion_nombre ?? 'Sin indicar'}</td>
                   <td>
                     {textoTipo(s.tipo_comprobante)}
-                    <span className="admin-tabla-sub">{textoSituacion(s.situacion)}</span>
+                    <span className="a-tabla-sub">{textoSituacion(s.situacion)}</span>
                   </td>
                   <td>{fechaCorta.format(new Date(vista === 'pendientes' ? s.fecha_solicitud : s.fecha_revision))}</td>
                   {vista === 'procesadas' && (
-                    <td><span className={`etiqueta-estado ${s.estado}`}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</span></td>
+                    <td><ChipEstado tipo="solicitud" valor={s.estado}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</ChipEstado></td>
                   )}
                   <td>
-                    <Link to={`/admin/verificaciones/${s.id}`} state={{ vista }} className="boton-tarjeta">
+                    <Link to={`/admin/verificaciones/${s.id}`} state={{ vista }} className={`a-boton${vista === 'pendientes' ? ' primario' : ''}`}>
                       {vista === 'pendientes' ? 'Revisar' : 'Ver'}
                     </Link>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+        </TablaAdmin>
       )}
-    </main>
+    </PaginaAdmin>
   )
 }

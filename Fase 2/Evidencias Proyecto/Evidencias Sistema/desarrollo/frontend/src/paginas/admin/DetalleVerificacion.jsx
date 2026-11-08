@@ -4,6 +4,7 @@ import { api, apiArchivo } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import Campo from '../../componentes/Campo.jsx'
 import { ESTADOS_SOLICITUD, fechaHora, textoSituacion, textoTipo } from '../verificacion/datos.js'
+import { PaginaAdmin } from './ui/componentes.jsx'
 
 const MAX_MOTIVO = 300
 const POR_REVISAR = ['pendiente', 'en_revision']
@@ -113,7 +114,8 @@ export default function DetalleVerificacion() {
   const otraInstitucion = estudiante.institucion_nombre && estudiante.institucion_nombre !== solicitud.institucion_nombre
 
   return (
-    <main className="tarjeta pagina-admin">
+    <PaginaAdmin className="a-detalle">
+      <div className="a-panel">
       <Link to={volver} className="admin-volver">← Volver a las solicitudes</Link>
       <h1>Solicitud N.º {solicitud.codigo}</h1>
       <p className="subtitulo">
@@ -242,6 +244,7 @@ export default function DetalleVerificacion() {
           )}
         </section>
       )}
-    </main>
+    </div>
+    </PaginaAdmin>
   )
 }

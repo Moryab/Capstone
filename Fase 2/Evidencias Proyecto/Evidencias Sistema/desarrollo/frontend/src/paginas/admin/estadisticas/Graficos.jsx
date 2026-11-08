@@ -1,0 +1,236 @@
+import { useEffect, useId, useRef, useState } from 'react'
+
+/*
+ * Gráficos del panel en SVG/HTML propio. Las barras y rellenos se dibujan con transform (scaleX o
+ * scaleY) para que GSAP pueda animarlos sin recalcular el diseño. Todo tiene su versión en texto:
+ * tooltips accesibles con el teclado y «Ver como tabla».
+ */
+
+const numero = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 })
+export const pct = (valor) => (valor == null ? '—' : `${numero.format(valor)} %`)
+export const nombreMes = (clave, largo = false) => {
+  const [anio, mes] = clave.split('-').map(Number)
+  const texto = new Date(anio, mes - 1, 1).toLocaleDateString('es-CL', largo ? { month: 'long', year: 'numeric' } : { month: 'short', year: '2-digit' })
+  return largo ? texto.charAt(0).toUpperCase() + texto.slice(1) : texto
+}
+
+// Máximo «redondo» para el eje: 1, 2, 5, 10, 20, 50…
+function maximoEje(valor) {
+  if (valor <= 4) return Math.max(valor, 1)
+  const potencia = 10 ** Math.floor(Math.log10(valor))
+  const paso = [1, 2, 5, 10].find((p) => p * potencia >= valor)
+  return paso * potencia
+}
+const marcasEje = (maximo) => (maximo <= 4 ? Array.from({ length: maximo + 1 }, (_, i) => i) : [0, maximo / 2, maximo])
+
+// ---------- Meta (CA-20.1): el valor frente a la meta, con el estado escrito ----------
+export function Meta({ valor, meta, detalle }) {
+  const cumple = valor != null && valor >= meta
+  return (
+    <div className="g-meta">
+      <p className="g-cifra">{pct(valor)}</p>
+      <div className="g-meta-pista" role="img" aria-label={`${pct(valor)} frente a una meta de ${meta} %`}>
+        <span className="g-meta-valor" data-cumple={cumple} style={{ '--avance': Math.min(valor ?? 0, 100) / 100 }} />
+        <span className="g-meta-marca" style={{ left: `${meta}%` }}><span>Meta {meta} %</span></span>
+      </div>
+      <p className="g-meta-estado" data-cumple={cumple}>
+        <span aria-hidden="true">{cumple ? '▲' : '▼'}</span> {cumple ? 'Meta cumplida' : 'Bajo la meta'}
+        <span className="g-detalle"> · {detalle}</span>
+      </p>
+    </div>
+  )
+}
+
+// ---------- Barras por mes (CA-20.2), con tooltip al pasar el cursor o con el foco ----------
+const SERIES_BARRAS = [
+  { clave: 'exitosos', texto: 'Exitosos', clase: 'exitoso' },
+  { clave: 'no_exitosos', texto: 'No exitosos', clase: 'no-exitoso' },
+]
+
+export function BarrasMes({ meses }) {
+  const [activo, setActivo] = useState(null)
+  const maximo = maximoEje(Math.max(1, ...meses.flatMap((m) => [m.exitosos, m.no_exitosos])))
+  const resumen = (m) => `${nombreMes(m.mes, true)}: ${m.exitosos} exitosos, ${m.no_exitosos} no exitosos`
+
+  return (
+    <div className="g-barras-zona">
+      <ul className="g-leyenda">
+        {SERIES_BARRAS.map((s) => <li key={s.clave}><span className={`g-muestra ${s.clase}`} aria-hidden="true" /> {s.texto}</li>)}
+      </ul>
+      <div className="g-barras">
+        <div className="g-eje" aria-hidden="true">
+          {marcasEje(maximo).map((v) => <span key={v} style={{ bottom: `${(v / maximo) * 100}%` }}>{v}</span>)}
+        </div>
+        <ul className="g-columnas" aria-label="Resultado de los match por mes">
+          {meses.map((m, i) => (
+            <li key={m.mes} className="g-mes" tabIndex={0} aria-label={resumen(m)}
+              onPointerEnter={() => setActivo(i)} onPointerLeave={() => setActivo(null)}
+              onFocus={() => setActivo(i)} onBlur={() => setActivo(null)} data-activo={activo === i}>
+              <div className="g-mes-barras" aria-hidden="true">
+                {SERIES_BARRAS.map((s) => (
+                  <span key={s.clave} className={`g-barra ${s.clase}`} style={{ '--alto': m[s.clave] / maximo }} />
+                ))}
+              </div>
+              <span className="g-mes-nombre" aria-hidden="true">{nombreMes(m.mes)}</span>
+              {activo === i && (
+                <div className="g-tooltip" role="tooltip">
+                  <strong>{nombreMes(m.mes, true)}</strong>
+                  {SERIES_BARRAS.map((s) => (
+                    <span key={s.clave}><span className={`g-muestra ${s.clase}`} aria-hidden="true" />{s.texto}<b>{m[s.clave]}</b></span>
+                  ))}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+// ---------- Líneas: evolución mensual ----------
+export const SERIES_LINEAS = [
+  { clave: 'exitosos', texto: 'Match exitosos', clase: 'exitoso' },
+  { clave: 'no_exitosos', texto: 'Match no exitosos', clase: 'no-exitoso' },
+  { clave: 'registros', texto: 'Registros nuevos', clase: 'registros' },
+]
+const ALTO = 260
+const MARGEN = { izq: 36, der: 16, arriba: 14, abajo: 30 }
+
+/**
+ * Leyenda interactiva: al pasar el cursor (o con el foco) una serie se resalta y las demás quedan
+ * semitransparentes; al hacer clic se activa o desactiva, pero nunca quedan todas apagadas. Una
+ * línea vertical sigue al cursor (o a las flechas del teclado) con el detalle de todas las series.
+ */
+export function Lineas({ serie, activas, alCambiarActivas }) {
+  const zona = useRef(null)
+  const [ancho, setAncho] = useState(640)
+  const [resaltada, setResaltada] = useState(null)
+  const [indice, setIndice] = useState(null)
+  const [aviso, setAviso] = useState('')
+  const idAyuda = useId()
+
+  useEffect(() => {
+    const obs = new ResizeObserver(([e]) => setAncho(Math.max(280, Math.round(e.contentRect.width))))
+    obs.observe(zona.current)
+    return () => obs.disconnect()
+  }, [])
+
+  const visibles = SERIES_LINEAS.filter((s) => activas.includes(s.clave))
+  const maximo = maximoEje(Math.max(1, ...serie.flatMap((m) => visibles.map((s) => m[s.clave]))))
+  const interior = ancho - MARGEN.izq - MARGEN.der
+  const altoInterior = ALTO - MARGEN.arriba - MARGEN.abajo
+  const x = (i) => MARGEN.izq + (serie.length === 1 ? interior / 2 : (i * interior) / (serie.length - 1))
+  const y = (v) => MARGEN.arriba + altoInterior - (v / maximo) * altoInterior
+  const cada = Math.max(1, Math.ceil(serie.length / Math.max(2, Math.floor(interior / 70)))) // etiquetas sin encimarse
+
+  const alternar = (clave) => {
+    if (activas.includes(clave)) {
+      if (activas.length === 1) {
+        setAviso('Debe quedar al menos una serie visible')
+        return
+      }
+      alCambiarActivas(activas.filter((c) => c !== clave))
+    } else {
+      alCambiarActivas(SERIES_LINEAS.map((s) => s.clave).filter((c) => c === clave || activas.includes(c)))
+    }
+    setAviso('')
+  }
+
+  const moverA = (clientX) => {
+    const caja = zona.current.getBoundingClientRect()
+    const rel = clientX - caja.left - MARGEN.izq
+    const i = serie.length === 1 ? 0 : Math.round((rel / interior) * (serie.length - 1))
+    setIndice(Math.min(serie.length - 1, Math.max(0, i)))
+  }
+  const teclas = (e) => {
+    const destinos = { ArrowRight: (indice ?? -1) + 1, ArrowLeft: (indice ?? 1) - 1, Home: 0, End: serie.length - 1 }
+    if (e.key === 'Escape') return setIndice(null)
+    if (!(e.key in destinos)) return undefined
+    e.preventDefault()
+    return setIndice(Math.min(serie.length - 1, Math.max(0, destinos[e.key])))
+  }
+
+  const punto = indice != null ? serie[indice] : null
+  const izquierdaTooltip = indice != null ? Math.min(Math.max(x(indice), 90), ancho - 90) : 0
+
+  return (
+    <div className="g-lineas-zona" data-resaltada={resaltada ?? undefined}>
+      <ul className="g-leyenda interactiva" aria-label="Series del gráfico: clic para mostrar u ocultar">
+        {SERIES_LINEAS.map((s) => (
+          <li key={s.clave}>
+            <button type="button" aria-pressed={activas.includes(s.clave)} onClick={() => alternar(s.clave)}
+              onPointerEnter={() => setResaltada(s.clave)} onPointerLeave={() => setResaltada(null)}
+              onFocus={() => setResaltada(s.clave)} onBlur={() => setResaltada(null)}>
+              <span className={`g-muestra ${s.clase}`} aria-hidden="true" /> {s.texto}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="visualmente-oculto" aria-live="polite">{aviso}</p>
+
+      <div ref={zona} className="g-lineas" tabIndex={0} role="group"
+        aria-label="Evolución mensual" aria-describedby={idAyuda}
+        onPointerMove={(e) => moverA(e.clientX)} onPointerLeave={() => setIndice(null)}
+        onKeyDown={teclas} onFocus={() => indice == null && setIndice(serie.length - 1)} onBlur={() => setIndice(null)}>
+        <span id={idAyuda} className="visualmente-oculto">Usa las flechas izquierda y derecha para recorrer los meses.</span>
+        <svg width={ancho} height={ALTO} viewBox={`0 0 ${ancho} ${ALTO}`} aria-hidden="true">
+          {marcasEje(maximo).map((v) => (
+            <g key={v} className="g-rejilla">
+              <line x1={MARGEN.izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} />
+              <text x={MARGEN.izq - 8} y={y(v) + 4} textAnchor="end">{v}</text>
+            </g>
+          ))}
+          {/* Cada «cada» meses, y siempre el último; se salta el anterior si quedaría encima del último */}
+          {serie.map((m, i) => ((i % cada === 0 && serie.length - 1 - i >= cada) || i === serie.length - 1) && (
+            <text key={m.mes} className="g-eje-x" x={x(i)} y={ALTO - 8} textAnchor="middle">{nombreMes(m.mes)}</text>
+          ))}
+          {indice != null && <line className="g-guia" x1={x(indice)} x2={x(indice)} y1={MARGEN.arriba} y2={ALTO - MARGEN.abajo} />}
+          {visibles.map((s) => (
+            <g key={s.clave} className={`g-serie ${s.clase}`} data-serie={s.clave}>
+              <path className="g-trazo" d={serie.map((m, i) => `${i ? 'L' : 'M'}${x(i)},${y(m[s.clave])}`).join(' ')} />
+              {serie.map((m, i) => (
+                <circle key={m.mes} className="g-punto" cx={x(i)} cy={y(m[s.clave])} r={indice === i ? 5.5 : serie.length === 1 ? 4.5 : 0} />
+              ))}
+            </g>
+          ))}
+          {/* Zona invisible y gruesa sobre cada línea: al pasar el cursor por ella, se resalta
+              igual que desde la leyenda */}
+          {visibles.map((s) => (
+            <path key={s.clave} className="g-trazo-zona" d={serie.map((m, i) => `${i ? 'L' : 'M'}${x(i)},${y(m[s.clave])}`).join(' ')}
+              onPointerEnter={() => setResaltada(s.clave)} onPointerLeave={() => setResaltada(null)} />
+          ))}
+        </svg>
+        {punto && (
+          <div className="g-tooltip g-tooltip-lineas" style={{ left: izquierdaTooltip }} role="tooltip">
+            <strong>{nombreMes(punto.mes, true)}</strong>
+            {visibles.map((s) => (
+              <span key={s.clave}><span className={`g-muestra ${s.clase}`} aria-hidden="true" />{s.texto}<b>{punto[s.clave]}</b></span>
+            ))}
+          </div>
+        )}
+        <p className="visualmente-oculto" aria-live="polite">
+          {punto ? `${nombreMes(punto.mes, true)}: ${visibles.map((s) => `${s.texto} ${punto[s.clave]}`).join(', ')}` : ''}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ---------- Ranking (CA-20.3): de más a menos frecuente ----------
+export function Ranking({ filas }) {
+  const total = filas.reduce((s, f) => s + f.cantidad, 0)
+  const maximo = Math.max(1, ...filas.map((f) => f.cantidad))
+  return (
+    <ol className="g-ranking">
+      {filas.map((f, i) => (
+        <li key={f.etiqueta}>
+          <span className="g-ranking-posicion" aria-hidden="true">{i + 1}</span>
+          <span className="g-ranking-nombre">{f.etiqueta}</span>
+          <span className="g-ranking-valor">{f.cantidad} <small>({pct((100 * f.cantidad) / total)})</small></span>
+          <span className="g-ranking-pista" aria-hidden="true"><span style={{ '--avance': f.cantidad / maximo }} /></span>
+        </li>
+      ))}
+    </ol>
+  )
+}

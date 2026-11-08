@@ -7,6 +7,7 @@ import {
   IconoMatch, IconoPersonas, IconoSalir, IconoTuerca, IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
+import { useResumenAdmin } from './ResumenAdmin.jsx'
 
 // Opciones de la barra. `a` es la ruta y `movil` el texto corto de la barra inferior (sin él, la
 // opción no va en el celular). `oferente`: solo la ve quien ofrece un espacio
@@ -19,14 +20,26 @@ const OPCIONES_ESTUDIANTE = [
   { a: '/propuestas', texto: 'Propuestas de match', movil: 'Match', Icono: IconoMatch },
 ]
 
-// Panel de administración (EP-02, EP-06, EP-07 y HU-20)
-const OPCIONES_ADMIN = [
-  { a: '/admin', texto: 'Estadísticas', movil: 'Resumen', Icono: IconoGrafico },
-  { a: '/admin/reportes', texto: 'Reportes', movil: 'Reportes', Icono: IconoBandera },
-  { a: '/admin/verificaciones', texto: 'Verificaciones', movil: 'Verificar', Icono: IconoEscudo },
-  { a: '/admin/usuarios', texto: 'Usuarios', movil: 'Usuarios', Icono: IconoPersonas },
-  { a: '/admin/publicaciones', texto: 'Publicaciones', movil: 'Publicaciones', Icono: IconoLista },
+// Panel de administración (EP-02, EP-06, EP-07 y HU-20), agrupado por tarea. `contador` es la
+// cifra de GET /admin/resumen que se muestra junto a la opción (lo que espera revisión)
+const GRUPOS_ADMIN = [
+  { titulo: 'Resumen', opciones: [{ a: '/admin', texto: 'Estadísticas', movil: 'Resumen', Icono: IconoGrafico }] },
+  {
+    titulo: 'Moderación',
+    opciones: [
+      { a: '/admin/reportes', texto: 'Reportes', movil: 'Reportes', Icono: IconoBandera, contador: 'reportes_pendientes' },
+      { a: '/admin/verificaciones', texto: 'Verificaciones', movil: 'Verificar', Icono: IconoEscudo, contador: 'verificaciones_pendientes' },
+    ],
+  },
+  {
+    titulo: 'Gestión',
+    opciones: [
+      { a: '/admin/usuarios', texto: 'Usuarios', movil: 'Usuarios', Icono: IconoPersonas },
+      { a: '/admin/publicaciones', texto: 'Publicaciones', movil: 'Publicaciones', Icono: IconoLista },
+    ],
+  },
 ]
+const OPCIONES_ADMIN = GRUPOS_ADMIN.flatMap((g) => g.opciones)
 
 // Menú de la cuenta (ver perfil / cerrar sesión). Se cierra con Escape o al hacer clic afuera
 function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, className }) {
@@ -74,11 +87,14 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
 export default function Navegacion({
   usuario, cerrarSesion, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, pathname,
 }) {
-  const actual = (ruta) => (pathname === ruta ? 'page' : undefined)
+  const admin = usuario.rol === 'administrador'
+  // En el admin, la ficha de un usuario o de un reporte también marca su sección
+  const actual = (ruta) => (pathname === ruta || (admin && ruta !== '/admin' && pathname.startsWith(`${ruta}/`)) ? 'page' : undefined)
+  const { resumen } = useResumenAdmin()
+  const cifra = (clave) => (clave && resumen ? resumen[clave] : 0)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const idMenu = useId()
   const nombre = mayusculaInicial(usuario.nombre)
-  const admin = usuario.rol === 'administrador'
   // Quien busca dónde vivir no publica: «Mis publicaciones» solo la ve el oferente
   const opciones = admin
     ? OPCIONES_ADMIN
@@ -101,16 +117,23 @@ export default function Navegacion({
     </button>
   )
 
-  const opcionLateral = ({ a, texto, Icono }) => (
+  // Contador de pendientes de la opción (solo en el admin y cuando hay algo)
+  const contadorDe = (clave) => {
+    const n = cifra(clave)
+    if (!n) return null
+    return <span className="a-nav-contador" aria-label={`${n} por revisar`}>{n > 99 ? '99+' : n}</span>
+  }
+
+  const opcionLateral = ({ a, texto, Icono, contador: clave }) => (
     <li key={texto}>
-      <Link to={a} className="i-nav-item" aria-current={actual(a)} data-titulo={texto}>
-        <Icono /> <span className="i-nav-texto">{texto}</span>
+      <Link to={a} className="i-nav-item" aria-current={actual(a)} data-titulo={cifra(clave) ? `${texto} (${cifra(clave)})` : texto}>
+        <Icono /> <span className="i-nav-texto">{texto}</span>{contadorDe(clave)}
       </Link>
     </li>
   )
 
-  const opcionMovil = ({ a, movil, Icono }) => (
-    <Link key={movil} to={a} className="i-movil-item" aria-current={actual(a)}><Icono /><span>{movil}</span></Link>
+  const opcionMovil = ({ a, movil, Icono, contador: clave }) => (
+    <Link key={movil} to={a} className="i-movil-item" aria-current={actual(a)}><Icono /><span>{movil}</span>{contadorDe(clave)}</Link>
   )
   const enMovil = opciones.filter((o) => o.movil)
 
@@ -123,8 +146,25 @@ export default function Navegacion({
           ) : <Logo />}
         </div>
 
+        {admin && (
+          <span className="a-barra-insignia">
+            <IconoEscudo /> Administración
+          </span>
+        )}
+
         <nav aria-label="Principal">
-          <ul className="i-nav">{opciones.map(opcionLateral)}</ul>
+          {admin ? (
+            <div className="a-nav-grupos">
+              {GRUPOS_ADMIN.map((g) => (
+                <div key={g.titulo}>
+                  <p className="a-nav-grupo-titulo" id={`nav-${g.titulo}`}>{g.titulo}</p>
+                  <ul className="i-nav" aria-labelledby={`nav-${g.titulo}`}>{g.opciones.map(opcionLateral)}</ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ul className="i-nav">{opciones.map(opcionLateral)}</ul>
+          )}
         </nav>
 
         <div className="i-barra-pie">

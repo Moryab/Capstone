@@ -12,6 +12,7 @@ import {
 import { fechaCorta, fechaHora } from '../verificacion/datos.js'
 import { textoPublicacion } from './datos.js'
 import './reportes.css'
+import { PaginaAdmin } from './ui/componentes.jsx'
 
 const ACCIONES = [
   { valor: 'ocultar', texto: 'Ocultar la publicación' },
@@ -149,10 +150,10 @@ export default function DetallePublicacionAdmin() {
 
   if (error) {
     return (
-      <main className="tarjeta">
+      <PaginaAdmin className="a-detalle"><div className="a-panel">
         <h1>{error}</h1>
         <Link to={volver} className="boton">Volver a las publicaciones</Link>
-      </main>
+      </div></PaginaAdmin>
     )
   }
   if (!datos) return <p className="cargando">Cargando publicación…</p>
@@ -168,7 +169,7 @@ export default function DetallePublicacionAdmin() {
   const oculta = pub.estado === 'suspendida'
 
   return (
-    <main className="admin-publicacion">
+    <PaginaAdmin className="a-detalle admin-publicacion">
       <Link to={volver} className="volver">← Volver a las publicaciones</Link>
 
       {aviso.id === id && aviso.texto && <p className="exito" role="status">{aviso.texto}</p>}
@@ -240,6 +241,6 @@ export default function DetallePublicacionAdmin() {
           </ul>
         )}
       </section>
-    </main>
+    </PaginaAdmin>
   )
 }
