@@ -1,33 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 import { api } from '../api.js'
 import { formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
-import './mapa.css'
-
-// Centro del Gran Concepción, para cuando todavía no hay puntos
-const CENTRO_INICIAL = [-36.827, -73.0498]
-
-// La API entrega [longitud, latitud] (GeoJSON); Leaflet usa [latitud, longitud]
-const aLatLng = ([lng, lat]) => [lat, lng]
+import { aLatLng, CAPA_OSM, CENTRO_INICIAL, iconoTexto } from './mapaComun.js'
 
 const precioCorto = (monto) => (monto >= 1_000_000 ? `$${(monto / 1_000_000).toFixed(1)}M` : `$${Math.round(monto / 1000)}k`)
 
 // Íconos con texto en vez de la imagen de Leaflet: muestran el precio (o cuántos hay) sin abrir nada
-const iconoGrupo = (pubs) => L.divIcon({
-  className: 'mapa-marcador',
-  html: `<span class="mapa-burbuja${pubs.length > 1 ? ' grupo' : ''}">${pubs.length > 1 ? `${pubs.length} alojamientos` : precioCorto(pubs[0].costo_mensual)}</span>`,
-  iconSize: null,
-  iconAnchor: [0, 0],
-})
-const iconoSede = L.divIcon({
-  className: 'mapa-marcador',
-  html: '<span class="mapa-sede" aria-hidden="true">Tu sede</span>',
-  iconSize: null,
-  iconAnchor: [0, 0],
-})
+const iconoGrupo = (pubs) => iconoTexto(
+  `<span class="mapa-burbuja${pubs.length > 1 ? ' grupo' : ''}">${pubs.length > 1 ? `${pubs.length} alojamientos` : precioCorto(pubs[0].costo_mensual)}</span>`,
+)
+const iconoSede = iconoTexto('<span class="mapa-sede" aria-hidden="true">Tu sede</span>')
+
+// Qué tan cerca está cada punto de la ubicación real (lo calcula la API)
+const PRECISION = {
+  zona: 'Zona aproximada',
+  comuna: 'Centro de la comuna',
+  exacta: 'Punto exacto',
+}
 
 // Encuadra el mapa para que se vean todos los puntos y la sede cada vez que cambian los resultados
 function Encuadre({ puntos }) {
@@ -41,8 +32,8 @@ function Encuadre({ puntos }) {
 
 /**
  * Mapa de alojamientos: los mismos resultados que el listado (mismos filtros, en `consulta`), con la
- * sede del perfil y la distancia a ella. Por ahora cada publicación se ubica en el centro de su
- * comuna, así que varias comparten marcador; al tocarlo se listan todas.
+ * sede del perfil y la distancia a ella. Cada publicación aparece en su zona aproximada; las que no
+ * marcaron punto, en el centro de su comuna, y como varias lo comparten, al tocarlo se listan todas.
  */
 export default function MapaAlojamientos({ consulta, desde }) {
   const [resultado, setResultado] = useState({ consulta: null, datos: null, error: '' })
@@ -59,7 +50,7 @@ export default function MapaAlojamientos({ consulta, desde }) {
 
   const { datos, error } = resultado.consulta === consulta ? resultado : { datos: null, error: '' }
 
-  // Publicaciones agrupadas por punto: las de una misma comuna quedan juntas
+  // Publicaciones agrupadas por punto: las que están en el centro de una misma comuna quedan juntas
   const grupos = useMemo(() => {
     const porPunto = new Map()
     for (const p of datos?.puntos ?? []) {
@@ -79,10 +70,7 @@ export default function MapaAlojamientos({ consulta, desde }) {
   return (
     <div className="mapa-alojamientos">
       <MapContainer center={CENTRO_INICIAL} zoom={12} scrollWheelZoom className="mapa-lienzo">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer {...CAPA_OSM} />
         <Encuadre puntos={encuadre} />
         {datos?.sede && (
           <Marker position={aLatLng(datos.sede.coordenadas)} icon={iconoSede} title={`Tu sede: ${datos.sede.nombre}`}
@@ -99,8 +87,9 @@ export default function MapaAlojamientos({ consulta, desde }) {
             title={pubs.length > 1 ? `${pubs.length} alojamientos en ${pubs[0].comuna}` : pubs[0].titulo}>
             <Popup maxWidth={300}>
               <p className="mapa-popup-titulo">
-                {pubs[0].comuna}
+                {pubs.length > 1 ? pubs[0].comuna : `${pubs[0].comuna}, ${pubs[0].sector}`}
                 {pubs[0].distancia_km != null && <span> · a {pubs[0].distancia_km} km de tu sede</span>}
+                <span className="mapa-precision">{PRECISION[pubs[0].precision]}</span>
               </p>
               <ul className="mapa-popup-lista">
                 {pubs.map((p) => (
@@ -122,7 +111,8 @@ export default function MapaAlojamientos({ consulta, desde }) {
       <p className="mapa-nota">
         {!datos && 'Cargando el mapa…'}
         {datos && datos.mostrados < datos.total && `Se muestran los ${datos.mostrados} más recientes de ${datos.total}. `}
-        {datos && 'Las ubicaciones son aproximadas: cada alojamiento aparece en el centro de su comuna.'}
+        {datos && 'Las ubicaciones son aproximadas: cada alojamiento aparece en una zona de unos 300 m o, si no '
+          + 'marcó su punto, en el centro de su comuna. Las tuyas, en su punto exacto.'}
         {datos && !datos.sede && <> <Link to="/perfil/editar">Indica tu institución y sede</Link> para ver la distancia.</>}
       </p>
     </div>

@@ -458,7 +458,7 @@ async def ver_publicacion(publicacion_id: str, _admin: dict = Depends(solo_admin
         )
     }
     return PublicacionAdminOut(
-        publicacion=PublicacionOut.desde_doc(publicacion, es_propia=False, oferente=oferente),
+        publicacion=PublicacionOut.desde_doc(publicacion, es_propia=False, oferente=oferente, ver_punto=True),
         cantidad_reportes=publicacion.get("cantidad_reportes", 0),
         eliminada_por=publicacion.get("eliminada_por"),
         oculta_por_cuenta=await oculta_por_cuenta(publicacion),

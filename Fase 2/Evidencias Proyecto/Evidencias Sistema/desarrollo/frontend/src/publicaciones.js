@@ -74,6 +74,7 @@ export const FORMULARIO_VACIO = {
   'ubicacion.comuna_id': '',
   'ubicacion.sector': '',
   'ubicacion.direccion_referencia': '',
+  'ubicacion.punto': null, // { lat, lng } marcado en el mapa (opcional)
   ...Object.fromEntries(SERVICIOS.flatMap(({ clave }) => [
     [`gastos.${clave}.incluido`, ''],
     [`gastos.${clave}.monto_estimado`, ''],
@@ -101,6 +102,7 @@ export function aFormulario(pub) {
     'ubicacion.comuna_id': ubicacion.comuna_id,
     'ubicacion.sector': ubicacion.sector,
     'ubicacion.direccion_referencia': ubicacion.direccion_referencia ?? '',
+    'ubicacion.punto': ubicacion.punto ?? null,
     ...Object.fromEntries(SERVICIOS.flatMap(({ clave }) => [
       [`gastos.${clave}.incluido`, aSiNo(gastos[clave].incluido)],
       [`gastos.${clave}.monto_estimado`, gastos[clave].monto_estimado?.toString() ?? ''],
@@ -130,6 +132,7 @@ export function aPayload(f) {
       comuna_id: f['ubicacion.comuna_id'],
       sector: f['ubicacion.sector'],
       direccion_referencia: f['ubicacion.direccion_referencia'] || null,
+      punto: f['ubicacion.punto'],
     },
     gastos: Object.fromEntries(SERVICIOS.map(({ clave }) => [clave, {
       incluido: deSiNo(f[`gastos.${clave}.incluido`]),
