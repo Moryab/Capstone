@@ -58,6 +58,9 @@ export const formatearFecha = (iso) => fechaLarga.format(new Date(iso))
 // El nombre del archivo identifica cada foto en la API
 export const nombreFoto = (url) => url.split('/').pop()
 
+// «A 2,1 km de tu sede»: la distancia que calcula la API desde la zona del alojamiento
+export const textoDistancia = (km) => `A ${km.toLocaleString('es-CL')} km de tu sede`
+
 const aSiNo = (valor) => (valor == null ? '' : valor ? 'si' : 'no')
 const deSiNo = (valor) => (valor === '' ? null : valor === 'si')
 const aNumero = (valor) => (valor === '' ? null : Number(valor))

@@ -190,6 +190,8 @@ class PublicacionOut(BaseModel):
     fecha_ultima_modificacion: datetime | None = None  # CA-07.5
     oferente: OferenteOut | None = None
     es_propia: bool
+    # Distancia en línea recta desde la zona del alojamiento hasta la sede del perfil de quien mira
+    distancia_km: float | None = None
 
     @classmethod
     def desde_doc(

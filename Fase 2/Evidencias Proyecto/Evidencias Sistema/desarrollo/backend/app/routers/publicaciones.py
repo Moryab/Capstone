@@ -189,27 +189,54 @@ async def consulta_de_busqueda(filtros: FiltrosBusqueda, usuario: dict) -> dict 
 async def buscar_alojamientos(
     filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
 ):
-    """HU-09 a HU-12: alojamientos activos, del más reciente al más antiguo y de a 10 (CA-09.1)."""
+    """HU-09 a HU-12: alojamientos activos de a 10, del más reciente al más antiguo (CA-09.1) o,
+    con orden=cercania, del más cercano a la sede del perfil al más lejano."""
     consulta = await consulta_de_busqueda(filtros, usuario)
     if isinstance(consulta, JSONResponse):
         return consulta
+    sede = await sede_del_perfil(usuario)
+    if filtros.orden == "cercania" and not sede:
+        return datos_invalidos({"orden": "Indica tu institución y sede en tu perfil para ordenar por cercanía"})
 
     total = await db.publicaciones.count_documents(consulta)
-    cursor = (
-        db.publicaciones.find(consulta)
-        .sort([("fecha_publicacion", -1), ("_id", -1)])
-        .skip((filtros.pagina - 1) * TAMANO_PAGINA)
-        .limit(TAMANO_PAGINA)
-    )
+    saltar = (filtros.pagina - 1) * TAMANO_PAGINA
+    if filtros.orden == "cercania":
+        # $geoNear usa el índice de ubicacion.coordenadas: la zona pública, nunca el punto exacto
+        cursor = await db.publicaciones.aggregate([
+            {"$geoNear": {
+                "near": geojson(sede["coordenadas"]), "key": "ubicacion.coordenadas",
+                "distanceField": "distancia_m", "spherical": True, "query": consulta,
+            }},
+            # Las del centro de una misma comuna empatan: entre ellas, la más reciente primero
+            {"$sort": {"distancia_m": 1, "fecha_publicacion": -1, "_id": -1}},
+            {"$skip": saltar},
+            {"$limit": TAMANO_PAGINA},
+        ])
+    else:
+        cursor = (
+            db.publicaciones.find(consulta)
+            .sort([("fecha_publicacion", -1), ("_id", -1)])
+            .skip(saltar)
+            .limit(TAMANO_PAGINA)
+        )
     return {
         "total": total,
         "pagina": filtros.pagina,
         "paginas": max(1, -(-total // TAMANO_PAGINA)),
+        "orden": filtros.orden,
         "resultados": [
-            PublicacionOut.desde_doc(doc, es_propia=doc["oferente_id"] == usuario["_id"])
+            con_distancia(PublicacionOut.desde_doc(doc, es_propia=doc["oferente_id"] == usuario["_id"]), doc, sede)
             async for doc in cursor
         ],
     }
+
+
+def con_distancia(pub: PublicacionOut, doc: dict, sede: dict | None) -> PublicacionOut:
+    """La publicación con la distancia de su zona a la sede (sin sede, queda en None)."""
+    if not sede:
+        return pub
+    km = distancia_km(doc["ubicacion"]["coordenadas"]["coordinates"], sede["coordenadas"])
+    return pub.model_copy(update={"distancia_km": round(km, 1)})
 
 
 # El mapa trae todos los resultados de una vez (sin páginas), con este tope por si crecen mucho
@@ -327,7 +354,8 @@ async def detalle(publicacion_id: str, usuario: dict = Depends(usuario_actual)):
     # Una cuenta con acceso limitado no se les muestra a los demás, tampoco sus publicaciones
     if not es_propia and (not oferente or not esta_verificado(oferente)):
         raise NO_ENCONTRADA
-    return PublicacionOut.desde_doc(doc, es_propia=es_propia, oferente=oferente)
+    pub = PublicacionOut.desde_doc(doc, es_propia=es_propia, oferente=oferente)
+    return con_distancia(pub, doc, await sede_del_perfil(usuario))
 
 
 @router.put("/{publicacion_id}")

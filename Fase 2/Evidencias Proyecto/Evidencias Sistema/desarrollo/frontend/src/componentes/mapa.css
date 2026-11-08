@@ -37,7 +37,7 @@
 .mapa-propia { font-weight: 700; color: var(--primario); }
 
 /* Selector «Lista | Mapa» */
-.vista-selector { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 12px; background: var(--campo); border-radius: 999px; }
+.vista-selector { display: inline-flex; gap: 4px; padding: 4px; background: var(--campo); border-radius: 999px; }
 .vista-selector button {
   padding: 6px 16px;
   font: inherit;
@@ -68,3 +68,10 @@
   box-shadow: 0 4px 12px rgb(11 31 58 / 0.35);
   transform: rotate(-45deg);
 }
+
+/* Encima de los resultados: «Lista | Mapa» y «Ordenar por» */
+.resultados-controles { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.orden-selector { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; }
+.orden-selector label { font-weight: 600; color: var(--texto-suave); }
+.orden-selector select { padding: 6px 10px; font: inherit; border: 1px solid var(--borde); border-radius: 8px; background: var(--tarjeta); color: inherit; }
+.orden-ayuda { margin: -4px 0 12px; }

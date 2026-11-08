@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { api } from '../api.js'
-import { formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
+import { formatearPesos, textoDe, textoDistancia, TIPOS } from '../publicaciones.js'
 import { aLatLng, CAPA_OSM, CENTRO_INICIAL, iconoTexto } from './mapaComun.js'
 
 const precioCorto = (monto) => (monto >= 1_000_000 ? `$${(monto / 1_000_000).toFixed(1)}M` : `$${Math.round(monto / 1000)}k`)
@@ -88,7 +88,7 @@ export default function MapaAlojamientos({ consulta, desde }) {
             <Popup maxWidth={300}>
               <p className="mapa-popup-titulo">
                 {pubs.length > 1 ? pubs[0].comuna : `${pubs[0].comuna}, ${pubs[0].sector}`}
-                {pubs[0].distancia_km != null && <span> · a {pubs[0].distancia_km} km de tu sede</span>}
+                {pubs[0].distancia_km != null && <span> · {textoDistancia(pubs[0].distancia_km).toLowerCase()}</span>}
                 <span className="mapa-precision">{PRECISION[pubs[0].precision]}</span>
               </p>
               <ul className="mapa-popup-lista">

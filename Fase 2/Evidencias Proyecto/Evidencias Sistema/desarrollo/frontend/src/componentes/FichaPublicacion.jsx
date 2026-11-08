@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import {
-  CARACTERISTICAS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, REGLAS, SERVICIOS, textoDe, TIPOS,
+  CARACTERISTICAS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, REGLAS, SERVICIOS, textoDe, textoDistancia,
+  TIPOS,
 } from '../publicaciones.js'
 
 // Leaflet solo se descarga al abrir un detalle
@@ -44,6 +45,7 @@ export default function FichaPublicacion({ pub, children }) {
             {ubicacion.comuna_nombre}, {ubicacion.sector}
             {ubicacion.direccion_referencia && ` · ${ubicacion.direccion_referencia}`}
           </p>
+          {pub.distancia_km != null && <p className="publicacion-meta">{textoDistancia(pub.distancia_km)}</p>}
           <p className="publicacion-precio">{formatearPesos(pub.costo_mensual)} <span>/ mes</span></p>
           <ul className="detalle-datos">
             <li>{pub.cupos_disponibles} de {pub.cupos_totales} cupos disponibles</li>
