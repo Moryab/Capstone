@@ -6,7 +6,7 @@ Depends(solo_admin) (app/deps.py) y los avisos al usuario se envían con app.not
 
 import re
 from collections import Counter
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Literal
 from zoneinfo import ZoneInfo
 
@@ -17,6 +17,10 @@ from fastapi.responses import JSONResponse
 
 from app.db import db
 from app.deps import solo_admin
+from app.modos import CambioNoPermitido, Modo, cambiar_modo, resumen_cambio
+from app.notificaciones import notificar
+from app.routers.moderacion import registrar_accion
+from app.schemas.moderacion import JustificacionIn
 from app.routers.verificacion import POR_REVISAR, nombre_completo
 from app.schemas.admin import (
     EliminacionOut, EstadoCuenta, EstadoPublicacion, EstadoVerificacion, PublicacionFilaOut, PublicacionUsuarioOut,
@@ -72,6 +76,18 @@ async def resumen(_admin: dict = Depends(solo_admin)):
     }
 
 
+async def motivos_principales(tipo: str, cuantos: int = 3) -> list[dict]:
+    return [
+        {"motivo": m["_id"], "cantidad": m["cantidad"]}
+        async for m in await db.reportes.aggregate([
+            {"$match": {"tipo_elemento": tipo}},
+            {"$group": {"_id": "$motivo", "cantidad": {"$sum": 1}}},
+            {"$sort": {"cantidad": -1, "_id": 1}},
+            {"$limit": cuantos},
+        ])
+    ]
+
+
 @router.get("/moderacion/resumen")
 async def resumen_moderacion(
     dias: int = Query(default=30, ge=1, le=365),
@@ -89,6 +105,15 @@ async def resumen_moderacion(
             "en_revision": await db.reportes.count_documents({**de_tipo, "estado": "en_revision"}),
             "resueltos": await db.reportes.count_documents({**de_tipo, "estado": "resuelto", "fecha_resolucion": {"$gte": desde}}),
             "total": await db.reportes.count_documents(de_tipo),
+            "resueltos_total": await db.reportes.count_documents({**de_tipo, "estado": "resuelto"}),
+            # Para la barra perfiles / publicaciones: siempre de los dos tipos
+            "por_tipo": {t: await db.reportes.count_documents({"tipo_elemento": t}) for t in ("usuario", "publicacion")},
+            # Los 3 motivos más reportados de cada tipo
+            "motivos": {t: await motivos_principales(t) for t in ("usuario", "publicacion")},
+            # Desde cuándo espera el pendiente más antiguo (de los dos tipos), para avisar si se demora
+            "pendiente_mas_antiguo": (await db.reportes.find_one(
+                {"estado": "pendiente"}, {"fecha_reporte": 1}, sort=[("fecha_reporte", 1)]
+            ) or {}).get("fecha_reporte"),
         },
         "verificaciones": {
             "pendientes": await db.solicitudes_verificacion.count_documents({"estado": {"$in": POR_REVISAR}}),
@@ -98,13 +123,27 @@ async def resumen_moderacion(
     }
 
 
-def filtro_busqueda(texto: str, campos: tuple[str, ...]) -> list[dict]:
+def patron_rut(palabra: str) -> str | None:
+    """Si la palabra parece un RUT (o un trozo), el patrón que lo encuentra tal como se guarda
+    (12345678-K) aunque se escriba con puntos, sin guion o en minúscula: «12.345.678-k», «12345678k»
+    o «345678»."""
+    limpio = re.sub(r"[.\-]", "", palabra).upper()
+    if not re.fullmatch(r"\d{4,}[\dK]?", limpio):
+        return None
+    return "-?".join(re.escape(c) for c in limpio)
+
+
+def filtro_busqueda(texto: str, campos: tuple[str, ...], campo_rut: str | None = None) -> list[dict]:
     """Cada palabra debe aparecer en alguno de los campos: así «ana pérez» encuentra a quien tiene
-    el nombre y el apellido en campos distintos. Se escapa para que el texto no se lea como regex."""
-    return [
-        {"$or": [{campo: {"$regex": re.escape(palabra), "$options": "i"}} for campo in campos]}
-        for palabra in texto.split()
-    ]
+    el nombre y el apellido en campos distintos. Se escapa para que el texto no se lea como regex.
+    Con `campo_rut`, las palabras que parecen un RUT también se buscan ahí."""
+    condiciones = []
+    for palabra in texto.split():
+        opciones = [{campo: {"$regex": re.escape(palabra), "$options": "i"}} for campo in campos]
+        if campo_rut and (patron := patron_rut(palabra)):
+            opciones.append({campo_rut: {"$regex": patron}})
+        condiciones.append({"$or": opciones})
+    return condiciones
 
 
 @router.get("/usuarios")
@@ -112,6 +151,10 @@ async def listar_usuarios(
     buscar: str = Query(default="", max_length=100),
     verificacion: EstadoVerificacion | None = None,
     cuenta: EstadoCuenta | None = None,
+    genero: Literal["femenino", "masculino", "no_binario"] | None = None,
+    modo: Literal["buscador", "oferente", "sin_rol"] | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
     pagina: int = Query(default=1, ge=1),
     _admin: dict = Depends(solo_admin),
 ):
@@ -124,13 +167,27 @@ async def listar_usuarios(
         consulta["verificacion.estado"] = verificacion
     if cuenta:
         consulta["estado_cuenta"] = cuenta
-    if condiciones := filtro_busqueda(buscar, ("nombre", "ap_paterno", "ap_materno", "correo")):
+    if genero:
+        consulta["genero"] = genero
+    # Fecha de registro entre `desde` y `hasta`, ambos días completos en hora de Chile
+    if desde or hasta:
+        rango = {}
+        if desde:
+            rango["$gte"] = datetime.combine(desde, time.min, ZONA)
+        if hasta:
+            rango["$lt"] = datetime.combine(hasta + timedelta(days=1), time.min, ZONA)
+        consulta["fecha_registro"] = rango
+    if modo == "sin_rol":  # aún no elige si busca u ofrece alojamiento
+        consulta["modo"] = None
+    elif modo:
+        consulta["modo"] = modo
+    if condiciones := filtro_busqueda(buscar, ("nombre", "ap_paterno", "ap_materno", "correo"), campo_rut="rut"):
         consulta["$and"] = condiciones
 
     total = await db.usuarios.count_documents(consulta)
     cursor = (
         db.usuarios.find(consulta, {
-            "nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "verificacion.estado": 1,
+            "nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "rut": 1, "modo": 1, "genero": 1, "verificacion.estado": 1,
             "estado_cuenta": 1, "fecha_registro": 1, "perfil.foto_url": 1,
         })
         .sort([("fecha_registro", -1), ("_id", -1)])
@@ -155,6 +212,9 @@ async def listar_usuarios(
                 id=str(u["_id"]),
                 nombre=nombre_completo(u),
                 correo=u["correo"],
+                rut=u.get("rut"),
+                modo=u.get("modo"),
+                genero=u.get("genero"),
                 verificacion_estado=u.get("verificacion", {}).get("estado", "no_verificado"),
                 estado_cuenta=u["estado_cuenta"],
                 fecha_registro=u["fecha_registro"],
@@ -172,6 +232,7 @@ def perfil_de(usuario: dict, institucion: str | None) -> UsuarioPerfilOut:
     return UsuarioPerfilOut(
         id=str(usuario["_id"]),
         rut=usuario.get("rut"),
+        modo=usuario.get("modo"),
         nombre=usuario["nombre"],
         ap_paterno=usuario.get("ap_paterno"),
         nombre_completo=nombre_completo(usuario),
@@ -195,6 +256,73 @@ def perfil_de(usuario: dict, institucion: str | None) -> UsuarioPerfilOut:
         suspension=SuspensionOut(motivo=suspension.get("motivo"), fecha=suspension.get("fecha")) if suspension else None,
         eliminacion=EliminacionOut(**usuario["eliminacion"]) if usuario.get("eliminacion") else None,
     )
+
+
+class CambioRolIn(JustificacionIn):
+    """Cambio de rol hecho por un administrador: queda registrado con su justificación."""
+
+    modo: Modo
+
+
+TEXTO_MODO = {"buscador": "buscador", "oferente": "oferente"}
+
+
+async def estudiante_para_rol(usuario_id: str) -> dict:
+    try:
+        oid = ObjectId(usuario_id)
+    except InvalidId:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    usuario = await db.usuarios.find_one({"_id": oid})
+    if not usuario:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    if usuario["rol"] != "estudiante":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Solo los estudiantes tienen rol de buscador u oferente")
+    if usuario["estado_cuenta"] == "eliminada":
+        raise HTTPException(status.HTTP_409_CONFLICT, "La cuenta está eliminada")
+    return usuario
+
+
+@router.get("/usuarios/{usuario_id}/rol")
+async def ver_cambio_rol(usuario_id: str, _admin: dict = Depends(solo_admin)):
+    """Rol actual y lo que pasaría al cambiarlo (publicaciones que se pausan, propuestas que se
+    cierran), para explicárselo al administrador antes de confirmar. Misma lógica que usa el
+    estudiante al cambiarlo él mismo (modos.py)."""
+    return await resumen_cambio(await estudiante_para_rol(usuario_id))
+
+
+@router.put("/usuarios/{usuario_id}/rol")
+async def cambiar_rol(usuario_id: str, datos: CambioRolIn, admin: dict = Depends(solo_admin)):
+    """Cambia el rol buscador/oferente de un estudiante, por ejemplo si quedó en el equivocado. Con
+    una convivencia activa no se puede (igual que para el estudiante). Se registra como acción de
+    moderación y se le avisa al estudiante."""
+    usuario = await estudiante_para_rol(usuario_id)
+    anterior = usuario.get("modo")
+    if anterior == datos.modo:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"Ya tiene el rol de {TEXTO_MODO[datos.modo]}")
+    try:
+        resultado = await cambiar_modo(usuario, datos.modo)
+    except CambioNoPermitido:
+        raise HTTPException(status.HTTP_409_CONFLICT, "No se puede cambiar el rol mientras tenga una convivencia activa")
+
+    ahora = datetime.now(ZONA)
+    avisar = usuario["estado_cuenta"] == "activa"
+    await registrar_accion(
+        ObjectId(), "cambiar_rol", admin, ("usuario", usuario["_id"]), datos.justificacion,
+        (anterior, datos.modo), [], ahora, afectado_notificado=avisar,
+    )
+    detalle = ""
+    if resultado.get("publicaciones_pausadas"):
+        n = resultado["publicaciones_pausadas"]
+        detalle = f" {'Tu publicación quedó pausada' if n == 1 else f'Tus {n} publicaciones quedaron pausadas'}."
+    if avisar:
+        await notificar(
+            usuario["_id"], "accion_moderacion", "Tu rol en RoomMatch cambió",
+            f"Un administrador cambió tu rol a {TEXTO_MODO[datos.modo]}.{detalle} "
+            f"Motivo: {datos.justificacion.rstrip('.')}.",
+            ("usuario", usuario["_id"]),
+        )
+    nombre = " ".join(p.capitalize() for p in nombre_completo(usuario).split())
+    return {**resultado, "mensaje": f"{nombre} ahora es {TEXTO_MODO[datos.modo]}"}
 
 
 @router.get("/usuarios/{usuario_id}", response_model=UsuarioDetalleOut)

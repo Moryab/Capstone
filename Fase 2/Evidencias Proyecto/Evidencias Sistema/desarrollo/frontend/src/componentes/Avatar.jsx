@@ -10,11 +10,17 @@ const tonoDe = (texto = '') => [...texto].reduce((suma, letra) => suma + letra.c
  */
 export default function Avatar({ nombre, apellido, foto, tamano = 48, className = '' }) {
   const [fallo, setFallo] = useState(false)
+  const [cargada, setCargada] = useState(false)
   const medidas = { width: tamano, height: tamano }
   const clases = `avatar ${className}`.trim()
 
   if (foto && !fallo) {
-    return <img className={clases} src={foto} alt={`Foto de perfil de ${nombre}`} style={medidas} onError={() => setFallo(true)} />
+    // Aparece con un fundido cuando termina de cargar; si falla, quedan las iniciales
+    return (
+      <img className={clases} src={foto} alt={`Foto de perfil de ${nombre}`} style={medidas} data-cargada={cargada || undefined}
+        ref={(img) => { if (img?.complete && img.naturalWidth && !cargada) setCargada(true) }}
+        onLoad={() => setCargada(true)} onError={() => setFallo(true)} />
+    )
   }
 
   const iniciales = `${nombre?.[0] ?? ''}${apellido?.[0] ?? ''}`.toUpperCase()

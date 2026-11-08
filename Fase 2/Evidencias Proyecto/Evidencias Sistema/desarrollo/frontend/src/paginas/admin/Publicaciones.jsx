@@ -8,7 +8,7 @@ import Paginacion from './Paginacion.jsx'
 import './reportes.css'
 import Buscador from './ui/Buscador.jsx'
 import {
-  BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, ICONOS_ESTADO, PaginaAdmin, TarjetaKpi,
+  BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, ICONOS_ESTADO, ImagenSuave, PaginaAdmin, TarjetaKpi,
 } from './ui/componentes.jsx'
 import { CampoDesplegable } from './ui/Desplegable.jsx'
 import { fecha, nombrePropio, partesNombre } from './ui/formato.js'
@@ -49,6 +49,27 @@ const RAPIDOS = [
   { clave: 'ocultas', etiqueta: 'Ocultas', filtro: { estado: 'suspendida' }, icono: ICONOS_ESTADO.oculto, tono: 'violeta' },
 ]
 
+// Foto con fundido al cargar; sin foto, o si no carga, el dibujo de «sin foto» (nunca una imagen rota)
+function FotoPublicacion({ url }) {
+  const [fallo, setFallo] = useState(false)
+  return url && !fallo ? <ImagenSuave src={url} loading="lazy" alFallar={() => setFallo(true)} /> : <SinFoto />
+}
+
+// Tarjetas de silueta mientras carga: mismo tamaño que las reales (sin spinner)
+const SILUETAS = Array.from({ length: 6 }, (_, i) => i)
+function TarjetaSilueta() {
+  return (
+    <li className="a-pub a-pub-silueta" aria-hidden="true">
+      <div className="a-pub-foto" />
+      <div className="a-pub-cuerpo">
+        <span className="a-silueta-linea corta" />
+        <span className="a-silueta-linea" />
+        <span className="a-silueta-persona"><span /><span /></span>
+      </div>
+    </li>
+  )
+}
+
 /**
  * Tarjeta de moderación: lo que se destaca es lo que hay que revisar (estado, reportes, quién
  * publica y cuándo), no el precio, que va al final y en pequeño.
@@ -59,7 +80,7 @@ function TarjetaPublicacion({ p, volver }) {
   return (
     <li className="a-pub" data-estado={p.estado} data-reportada={p.cantidad_reportes > 0 || undefined}>
       <div className="a-pub-foto">
-        {p.foto_url ? <img src={p.foto_url} alt="" loading="lazy" /> : <SinFoto />}
+        <FotoPublicacion url={p.foto_url} />
         <span className="a-pub-estado"><ChipEstado tipo="publicacion" valor={p.estado}>{textoPublicacion(p.estado)}</ChipEstado></span>
         {p.cantidad_reportes > 0 && (
           <span className="a-pub-reportes"><IconoBandera /> {p.cantidad_reportes} {p.cantidad_reportes === 1 ? 'reporte' : 'reportes'}</span>
@@ -166,7 +187,7 @@ export default function Publicaciones() {
 
       <BarraFiltros etiqueta="Buscar y filtrar publicaciones" activos={activos} alLimpiar={limpiar}>
         <Buscador etiqueta="Título u oferente" valor={buscar} alBuscar={(v) => aplicar({ buscar: v })}
-          placeholder="Ej.: habitación o Pedro" />
+          placeholder="Buscar por título u oferente" />
         <CampoDesplegable etiqueta="Estado" valor={estado}
           alCambiar={(v) => aplicar({ estado: v })} opciones={[{ valor: '', texto: 'Todos' }, ...ESTADOS_PUBLICACION]} />
         <CampoDesplegable etiqueta="Comuna" valor={comuna} alCambiar={(v) => aplicar({ comuna: v })}
@@ -176,7 +197,6 @@ export default function Publicaciones() {
       </BarraFiltros>
 
       {error && <p className="alerta" role="alert">{error}</p>}
-      {!datos && !error && <div className="a-cargando tarjetas" role="status" aria-label="Cargando publicaciones"><span /><span /><span /><span /></div>}
 
       {datos?.resultados.length === 0 && (
         activos.length
@@ -185,13 +205,16 @@ export default function Publicaciones() {
           : <EstadoVacio ilustracion="buscar" titulo="Aún no hay publicaciones" texto="Cuando un estudiante publique un alojamiento, aparecerá aquí." />
       )}
 
-      {datos?.resultados.length > 0 && (
-        <div className="a-listado" data-actualizando={actualizando || undefined} aria-busy={actualizando}>
+      {/* Mientras carga, la grilla ya está en su lugar con tarjetas de silueta */}
+      {!error && (!datos || datos.resultados.length > 0) && (
+        <div className="a-listado" data-actualizando={actualizando || undefined} aria-busy={!datos || actualizando}
+          data-animar="grilla" data-cargando={!datos || undefined}>
           <p className="a-conteo" role="status">
-            {datos.total} {datos.total === 1 ? 'publicación' : 'publicaciones'}{activos.length ? ' con estos filtros' : ''}
+            {datos ? `${datos.total} ${datos.total === 1 ? 'publicación' : 'publicaciones'}${activos.length ? ' con estos filtros' : ''}` : 'Cargando publicaciones…'}
           </p>
           <ul className="a-pubs" aria-label="Publicaciones">
-            {datos.resultados.map((p) => <TarjetaPublicacion key={p.id} p={p} volver={volver} />)}
+            {datos ? datos.resultados.map((p) => <TarjetaPublicacion key={p.id} p={p} volver={volver} />)
+              : SILUETAS.map((i) => <TarjetaSilueta key={i} />)}
           </ul>
         </div>
       )}

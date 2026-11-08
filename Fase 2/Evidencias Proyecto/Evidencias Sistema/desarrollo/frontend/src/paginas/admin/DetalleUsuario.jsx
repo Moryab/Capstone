@@ -8,9 +8,11 @@ import { textoEstadoReporte, textoMotivo, textoTipoReporte } from '../../reporte
 import { ESTADOS_SOLICITUD, fechaCorta, fechaHora, textoTipo } from '../verificacion/datos.js'
 import { textoCuenta, textoPublicacion, textoVerificacion } from './datos.js'
 import AccionCuenta from './AccionCuenta.jsx'
+import CambiarRol from './CambiarRol.jsx'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './reportes.css'
-import { PaginaAdmin } from './ui/componentes.jsx'
+import { EtiquetaRol, PaginaAdmin } from './ui/componentes.jsx'
+import { nombrePropio, rut } from './ui/formato.js'
 
 function Dato({ etiqueta, children }) {
   return (
@@ -79,7 +81,7 @@ export default function DetalleUsuario() {
       <div className="revision-persona">
         <Avatar nombre={perfil.nombre} apellido={perfil.ap_paterno} foto={perfil.foto_url} tamano={56} />
         <div>
-          <h1 className="ficha-nombre">{perfil.nombre_completo}</h1>
+          <h1 className="ficha-nombre">{nombrePropio(perfil.nombre_completo)}</h1>
           <span className={`etiqueta-estado ${perfil.estado_cuenta}`}>{textoCuenta(perfil.estado_cuenta)}</span>{' '}
           <span className={`etiqueta-estado ${perfil.verificacion_estado}`}>{textoVerificacion(perfil.verificacion_estado)}</span>
         </div>
@@ -108,7 +110,8 @@ export default function DetalleUsuario() {
         <section aria-labelledby="titulo-personales">
           <h2 id="titulo-personales">Datos personales</h2>
           <dl className="verificacion-detalle">
-            <Dato etiqueta="RUT">{perfil.rut}</Dato>
+            <Dato etiqueta="Rol"><EtiquetaRol modo={perfil.modo} /></Dato>
+            <Dato etiqueta="RUT">{perfil.rut && rut(perfil.rut)}</Dato>
             <Dato etiqueta="Correo">{perfil.correo}</Dato>
             <Dato etiqueta="Teléfono">{perfil.telefono}</Dato>
             <Dato etiqueta="Nacimiento">
@@ -174,6 +177,10 @@ export default function DetalleUsuario() {
         ))}
       </Seccion>
 
+      {perfil.estado_cuenta !== 'eliminada' && (
+        <CambiarRol key={`rol-${id}`} usuarioId={perfil.id} nombre={nombrePropio(perfil.nombre_completo)} modo={perfil.modo}
+          alTerminar={alTerminar} />
+      )}
       {perfil.estado_cuenta === 'suspendida' && <ReactivarCuenta usuarioId={perfil.id} alTerminar={alTerminar} />}
       {/* Una cuenta eliminada también se puede suspender, para que no vuelva a registrarse */}
       {['activa', 'eliminada'].includes(perfil.estado_cuenta) && (

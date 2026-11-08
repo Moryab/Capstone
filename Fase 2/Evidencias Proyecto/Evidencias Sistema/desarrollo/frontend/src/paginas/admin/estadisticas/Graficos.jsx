@@ -1,4 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { gsap, prefiereSinMovimiento } from '../../../landing/animaciones.js'
+import { alEnfocar, useCifraAnimada } from '../ui/animaciones.js'
 
 /*
  * Gráficos del panel en SVG/HTML propio. Las barras y rellenos se dibujan con transform (scaleX o
@@ -26,9 +28,10 @@ const marcasEje = (maximo) => (maximo <= 4 ? Array.from({ length: maximo + 1 }, 
 // ---------- Meta (CA-20.1): el valor frente a la meta, con el estado escrito ----------
 export function Meta({ valor, meta, detalle }) {
   const cumple = valor != null && valor >= meta
+  const cifra = useCifraAnimada(valor, pct)
   return (
     <div className="g-meta">
-      <p className="g-cifra">{pct(valor)}</p>
+      <p ref={cifra} className="g-cifra">{pct(valor)}</p>
       <div className="g-meta-pista" role="img" aria-label={`${pct(valor)} frente a una meta de ${meta} %`}>
         <span className="g-meta-valor" data-cumple={cumple} style={{ '--avance': Math.min(valor ?? 0, 100) / 100 }} />
         <span className="g-meta-marca" style={{ left: `${meta}%` }}><span>Meta {meta} %</span></span>
@@ -68,7 +71,7 @@ export function BarrasMes({ meses }) {
               onFocus={() => setActivo(i)} onBlur={() => setActivo(null)} data-activo={activo === i}>
               <div className="g-mes-barras" aria-hidden="true">
                 {SERIES_BARRAS.map((s) => (
-                  <span key={s.clave} className={`g-barra ${s.clase}`} style={{ '--alto': m[s.clave] / maximo }} />
+                  <span key={s.clave} className={`g-barra ${s.clase}`} style={{ '--alto': m[s.clave] / maximo, '--i': i }} />
                 ))}
               </div>
               <span className="g-mes-nombre" aria-hidden="true">{nombreMes(m.mes)}</span>
@@ -109,6 +112,10 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
   const [indice, setIndice] = useState(null)
   const [aviso, setAviso] = useState('')
   const idAyuda = useId()
+  const idRecorte = `g-recorte-${useId().replace(/[^\w-]/g, '')}`
+  const lienzo = useRef(null)
+  const recorte = useRef(null)
+  const trazosPrevios = useRef({}) // forma de cada línea en el render anterior, para animar el cambio
 
   useEffect(() => {
     const obs = new ResizeObserver(([e]) => setAncho(Math.max(280, Math.round(e.contentRect.width))))
@@ -117,6 +124,69 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
   }, [])
 
   const visibles = SERIES_LINEAS.filter((s) => activas.includes(s.clave))
+  const firma = JSON.stringify(serie) + activas.join()
+
+  /*
+   * Al entrar, las líneas se dibujan de izquierda a derecha (un recorte que se abre). Al cambiar un
+   * filtro, cada línea pasa de su forma anterior a la nueva si tiene los mismos puntos; si cambió la
+   * cantidad de meses, se vuelve a dibujar. Una serie que se activa aparece con un fundido.
+   */
+  useLayoutEffect(() => {
+    const svg = lienzo.current
+    const rect = recorte.current
+    const leer = () => Object.fromEntries([...svg.querySelectorAll('.g-serie')].map((g) => [g.dataset.serie, g.querySelector('.g-trazo').getAttribute('d')]))
+    const anteriores = trazosPrevios.current
+    const nuevos = leer()
+    trazosPrevios.current = nuevos
+    if (prefiereSinMovimiento()) return undefined
+    const anchoTotal = () => svg.viewBox.baseVal.width
+    // Se anima la fracción visible y se aplica sobre el ancho del momento, por si cambia a la mitad
+    const dibujar = (duracion) => {
+      const avance = { v: 0 }
+      rect.setAttribute('width', 0)
+      return gsap.to(avance, { v: 1, duration: duracion, ease: 'power2.inOut', onUpdate: () => rect.setAttribute('width', avance.v * anchoTotal()) })
+    }
+    const animaciones = []
+    let dejarDeEsperar = () => {}
+    let esperando = false
+    if (Object.keys(anteriores).length === 0) {
+      // Recién llegada: oculta hasta que su tarjeta se enfoca y entonces se dibuja
+      rect.setAttribute('width', 0)
+      esperando = true
+      dejarDeEsperar = alEnfocar(svg, () => {
+        esperando = false
+        animaciones.push(dibujar(1.1))
+      })
+    } else {
+      const puntos = (d) => d.split(/[ML]/).length
+      let redibujar = false
+      svg.querySelectorAll('.g-serie').forEach((g) => {
+        const desde = anteriores[g.dataset.serie]
+        const hasta = nuevos[g.dataset.serie]
+        if (!desde) animaciones.push(gsap.from(g, { opacity: 0, duration: 0.3, clearProps: 'opacity' }))
+        else if (puntos(desde) !== puntos(hasta)) redibujar = true
+        else if (desde !== hasta) animaciones.push(gsap.fromTo(g.querySelector('.g-trazo'), { attr: { d: desde } }, { attr: { d: hasta }, duration: 0.5, ease: 'power3.inOut' }))
+      })
+      if (redibujar) animaciones.push(dibujar(0.8))
+    }
+    return () => {
+      // Cortadas antes de terminar (o el doble montaje de StrictMode): la próxima vez se parte igual
+      dejarDeEsperar()
+      if (esperando || animaciones.some((a) => a.progress() < 1)) trazosPrevios.current = anteriores
+      animaciones.forEach((a) => a.kill())
+      // Si se corta a la mitad, que nada quede recortado ni a medio camino
+      rect.setAttribute('width', anchoTotal())
+      svg.querySelectorAll('.g-serie .g-trazo').forEach((t) => { const d = nuevos[t.parentNode.dataset.serie]; if (d) t.setAttribute('d', d) })
+    }
+    // Solo cuando cambian los datos o las series visibles, no al redimensionar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firma])
+  // Al cambiar el ancho, la forma de referencia se actualiza sin animar
+  useLayoutEffect(() => {
+    const svg = lienzo.current
+    trazosPrevios.current = Object.fromEntries([...svg.querySelectorAll('.g-serie')].map((g) => [g.dataset.serie, g.querySelector('.g-trazo').getAttribute('d')]))
+    recorte.current?.setAttribute('width', ancho)
+  }, [ancho])
   const maximo = maximoEje(Math.max(1, ...serie.flatMap((m) => visibles.map((s) => m[s.clave]))))
   const interior = ancho - MARGEN.izq - MARGEN.der
   const altoInterior = ALTO - MARGEN.arriba - MARGEN.abajo
@@ -174,7 +244,8 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
         onPointerMove={(e) => moverA(e.clientX)} onPointerLeave={() => setIndice(null)}
         onKeyDown={teclas} onFocus={() => indice == null && setIndice(serie.length - 1)} onBlur={() => setIndice(null)}>
         <span id={idAyuda} className="visualmente-oculto">Usa las flechas izquierda y derecha para recorrer los meses.</span>
-        <svg width={ancho} height={ALTO} viewBox={`0 0 ${ancho} ${ALTO}`} aria-hidden="true">
+        <svg ref={lienzo} width={ancho} height={ALTO} viewBox={`0 0 ${ancho} ${ALTO}`} aria-hidden="true">
+          <defs><clipPath id={idRecorte}><rect ref={recorte} x="0" y="0" width={ancho} height={ALTO} /></clipPath></defs>
           {marcasEje(maximo).map((v) => (
             <g key={v} className="g-rejilla">
               <line x1={MARGEN.izq} x2={ancho - MARGEN.der} y1={y(v)} y2={y(v)} />
@@ -186,6 +257,7 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
             <text key={m.mes} className="g-eje-x" x={x(i)} y={ALTO - 8} textAnchor="middle">{nombreMes(m.mes)}</text>
           ))}
           {indice != null && <line className="g-guia" x1={x(indice)} x2={x(indice)} y1={MARGEN.arriba} y2={ALTO - MARGEN.abajo} />}
+          <g clipPath={`url(#${idRecorte})`}>
           {visibles.map((s) => (
             <g key={s.clave} className={`g-serie ${s.clase}`} data-serie={s.clave}>
               <path className="g-trazo" d={serie.map((m, i) => `${i ? 'L' : 'M'}${x(i)},${y(m[s.clave])}`).join(' ')} />
@@ -194,6 +266,7 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
               ))}
             </g>
           ))}
+          </g>
           {/* Zona invisible y gruesa sobre cada línea: al pasar el cursor por ella, se resalta
               igual que desde la leyenda */}
           {visibles.map((s) => (

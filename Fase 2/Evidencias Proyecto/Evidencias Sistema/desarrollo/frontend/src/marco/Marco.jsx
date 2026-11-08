@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { guardarLocal, leerLocal } from '../almacenamiento.js'
 import { api } from '../api.js'
 import '../inicio/inicio.css'
 import { AvisoBreveProvider } from '../componentes/AvisoBreve.jsx'
 import '../paginas/admin/ui/admin.css'
+import { useTransicionAdmin } from '../paginas/admin/ui/transicion.js'
 import { CambioRolProvider } from '../rol/CambioRol.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { useAplicarTema, useTema } from '../tema/contexto.js'
@@ -30,6 +31,9 @@ export default function Marco({ children }) {
   const [configAbierta, setConfigAbierta] = useState(false)
   const [avisosAbiertos, setAvisosAbiertos] = useState(false)
   const [noLeidas, setNoLeidas] = useState(0)
+  const contenido = useRef(null)
+  // Admin: al cambiar de pestaña, el contenido sale desenfocándose y el nuevo se enfoca (transicion.js)
+  useTransicionAdmin(contenido, pathname, admin)
 
   // Contador de la campana: al entrar, cada minuto y al leer avisos
   const revisarAvisos = useCallback(() => {
@@ -56,7 +60,7 @@ export default function Marco({ children }) {
       <Navegacion usuario={usuario} cerrarSesion={cerrarSesion} contraida={contraida} setContraida={setContraida} abrirConfig={() => setConfigAbierta(true)}
         abrirAvisos={() => setAvisosAbiertos(true)} noLeidas={noLeidas} pathname={pathname} />
 
-      <div id="contenido" className={`i-pagina${pathname === '/' ? ' es-inicio' : ''}`} tabIndex={-1}>
+      <div ref={contenido} id="contenido" className={`i-pagina${pathname === '/' ? ' es-inicio' : ''}`} tabIndex={-1}>
         {children ?? <Outlet />}
       </div>
 
