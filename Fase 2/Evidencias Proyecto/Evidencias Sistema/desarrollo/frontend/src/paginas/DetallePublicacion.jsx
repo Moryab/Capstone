@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
+import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import BotonReportar from '../componentes/BotonReportar.jsx'
 import { CompatibilidadOferente } from '../componentes/Compatibilidad.jsx'
 import FichaPublicacion from '../componentes/FichaPublicacion.jsx'
@@ -61,6 +62,17 @@ export default function DetallePublicacion() {
               <small>{pub.es_propia ? 'Tu perfil' : 'Ver perfil del oferente'}</small>
             </span>
           </Link>
+        )}
+        {/* Chat con quien publica: la conversación se abre con este alojamiento adjunto */}
+        {oferente && !pub.es_propia && (
+          <BotonMensaje usuarioId={oferente.id} nombre={oferente.nombre} texto="Enviar mensaje al oferente"
+            publicacion={{
+              id: pub.id,
+              titulo: pub.titulo,
+              costo_mensual: pub.costo_mensual,
+              comuna: pub.ubicacion.comuna_nombre,
+              foto_url: pub.fotos.find((f) => f.es_principal)?.url ?? null,
+            }} />
         )}
         {/* CA-15.3: compatibilidad con quien publica; en la propia publicación no aplica */}
         {oferente && !pub.es_propia && <CompatibilidadOferente oferente={oferente} />}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { api } from '../api.js'
+import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import BotonReportar from '../componentes/BotonReportar.jsx'
 import { useCompatibilidad } from '../componentes/Compatibilidad.jsx'
 import { useFondoCiudad } from '../fondo.js'
@@ -68,7 +69,12 @@ export default function PerfilUsuario() {
       {/* Desde «Posibles roomies» o un alojamiento se vuelve a esa misma página */}
       <Link to={state?.desde ?? '/'} className="volver">← Volver</Link>
       <PaginaPerfil perfil={perfil} modo="otro"
-        acciones={<BotonReportar tipo="perfil" id={id} nombre={perfil.nombre} />}
+        acciones={(
+          <>
+            <BotonMensaje usuarioId={id} nombre={perfil.nombre} />
+            <BotonReportar tipo="perfil" id={id} nombre={perfil.nombre} />
+          </>
+        )}
         principal={(
           <>
             {/* Primero quién es la persona; después, qué tan compatibles son */}

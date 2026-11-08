@@ -4,7 +4,7 @@ import Avatar from '../componentes/Avatar.jsx'
 import Logo, { IconoLogo } from '../componentes/Logo.jsx'
 import {
   IconoBandera, IconoCampana, IconoContraer, IconoEscudo, IconoGrafico, IconoInicio, IconoLista, IconoLupa,
-  IconoMatch, IconoPersonas, IconoSalir, IconoTuerca, IconoUsuario,
+  IconoMatch, IconoMensajes, IconoPersonas, IconoSalir, IconoTuerca, IconoUsuario,
 } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { useIndicador, useLatido } from '../paginas/admin/ui/animaciones.js'
@@ -25,6 +25,8 @@ const OPCIONES_ESTUDIANTE = [
   // No caben 7 botones en el celular: «Encontrar roomie» queda en el inicio
   { a: '/roomies', texto: 'Encontrar roomie', Icono: IconoPersonas },
   { a: '/propuestas', texto: 'Propuestas de match', movil: 'Match', Icono: IconoMatch },
+  // En el celular, «Mensajes» va arriba junto a la campana (abajo no caben más botones)
+  { a: '/mensajes', texto: 'Mensajes', Icono: IconoMensajes, mensajes: true },
 ]
 
 // Panel de administración (EP-02, EP-06, EP-07 y HU-20), agrupado por tarea. `contador` es la
@@ -92,13 +94,16 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
  * El perfil se abre desde la cuenta y publicar, desde el inicio o «Mis publicaciones».
  */
 export default function Navegacion({
-  usuario, cerrarSesion, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, pathname,
+  usuario, cerrarSesion, contraida, setContraida, abrirConfig, abrirAvisos, noLeidas, mensajesSinLeer = 0, pathname,
 }) {
   const admin = usuario.rol === 'administrador'
   // Admin: el fondo de la opción actual se desliza a la nueva en vez de saltar
   const gruposAdmin = useIndicador(`${pathname}-${contraida}`, '.i-nav-item[aria-current="page"]')
-  // En el admin, la ficha de un usuario o de un reporte también marca su sección
-  const actual = (ruta) => (pathname === ruta || (admin && ruta !== '/admin' && pathname.startsWith(`${ruta}/`)) ? 'page' : undefined)
+  // En el admin, la ficha de un usuario o de un reporte también marca su sección; una conversación marca «Mensajes»
+  const actual = (ruta) => (
+    pathname === ruta || ((admin || ruta === '/mensajes') && ruta !== '/admin' && pathname.startsWith(`${ruta}/`))
+      ? 'page' : undefined
+  )
   const { resumen } = useResumenAdmin()
   const cifra = (clave) => (clave && resumen ? resumen[clave] : 0)
   const [menuAbierto, setMenuAbierto] = useState(false)
@@ -111,6 +116,11 @@ export default function Navegacion({
 
   const contador = noLeidas > 0 && (
     <span className="i-contador" aria-label={`${noLeidas} sin leer`}>{noLeidas > 99 ? '99+' : noLeidas}</span>
+  )
+  const contadorMensajes = mensajesSinLeer > 0 && (
+    <span className="i-contador" aria-label={`${mensajesSinLeer} mensajes sin leer`}>
+      {mensajesSinLeer > 99 ? '99+' : mensajesSinLeer}
+    </span>
   )
 
   const botonCuenta = (clase, conTexto, controla) => (
@@ -133,10 +143,10 @@ export default function Navegacion({
     return <ContadorNav n={n} />
   }
 
-  const opcionLateral = ({ a, texto, Icono, contador: clave }) => (
+  const opcionLateral = ({ a, texto, Icono, contador: clave, mensajes }) => (
     <li key={texto}>
       <Link to={a} className="i-nav-item" aria-current={actual(a)} data-titulo={cifra(clave) ? `${texto} (${cifra(clave)})` : texto}>
-        <Icono /> <span className="i-nav-texto">{texto}</span>{contadorDe(clave)}
+        <Icono /> <span className="i-nav-texto">{texto}</span>{contadorDe(clave)}{mensajes && contadorMensajes}
       </Link>
     </li>
   )
@@ -199,6 +209,12 @@ export default function Navegacion({
       {/* Móvil: logo y campana arriba, y barra de navegación inferior */}
       <header className="i-barra-superior">
         <Logo />
+        {!admin && (
+          <Link to="/mensajes" className="i-movil-avisos i-movil-mensajes" aria-current={actual('/mensajes')}
+            aria-label={mensajesSinLeer ? `Mensajes, ${mensajesSinLeer} sin leer` : 'Mensajes'}>
+            <IconoMensajes /> {contadorMensajes}
+          </Link>
+        )}
         <button type="button" className="i-movil-avisos" onClick={abrirAvisos} aria-haspopup="dialog" aria-label="Avisos">
           <IconoCampana /> {contador}
         </button>

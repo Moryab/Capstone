@@ -16,6 +16,7 @@ import { ResumenAdminProvider } from './ResumenAdmin.jsx'
 
 const CLAVE_BARRA = 'rm_barra_contraida'
 const REVISAR_AVISOS_MS = 60000 // cada cuánto se consulta si hay avisos nuevos
+const REVISAR_MENSAJES_MS = 20000 // y si hay mensajes sin leer (la página de mensajes también lo pide al leer)
 
 /**
  * Marco común de las páginas con sesión: barra lateral (o barra inferior en móvil) y el panel de
@@ -45,6 +46,19 @@ export default function Marco({ children }) {
     return () => clearInterval(intervalo)
   }, [revisarAvisos])
 
+  // Contador de «Mensajes». El administrador no chatea
+  const [mensajesSinLeer, setMensajesSinLeer] = useState(0)
+  const revisarMensajes = useCallback(() => {
+    if (document.hidden) return
+    api('/conversaciones/no-leidas').then((r) => setMensajesSinLeer(r.no_leidas)).catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (admin) return undefined
+    revisarMensajes()
+    const intervalo = setInterval(revisarMensajes, REVISAR_MENSAJES_MS)
+    return () => clearInterval(intervalo)
+  }, [admin, revisarMensajes])
+
   const setContraida = (valor) => {
     setContraidaEstado(valor)
     guardarLocal(CLAVE_BARRA, valor)
@@ -58,10 +72,11 @@ export default function Marco({ children }) {
       <CambioRolProvider>
       <a href="#contenido" className="i-saltar">Saltar al contenido</a>
       <Navegacion usuario={usuario} cerrarSesion={cerrarSesion} contraida={contraida} setContraida={setContraida} abrirConfig={() => setConfigAbierta(true)}
-        abrirAvisos={() => setAvisosAbiertos(true)} noLeidas={noLeidas} pathname={pathname} />
+        abrirAvisos={() => setAvisosAbiertos(true)} noLeidas={noLeidas} mensajesSinLeer={mensajesSinLeer} pathname={pathname} />
 
       <div ref={contenido} id="contenido" className={`i-pagina${pathname === '/' ? ' es-inicio' : ''}`} tabIndex={-1}>
-        {children ?? <Outlet />}
+        {/* La página de mensajes avisa al leer, para que el contador baje enseguida */}
+        {children ?? <Outlet context={{ revisarMensajes }} />}
       </div>
 
       <Configuracion abierto={configAbierta} alCerrar={() => setConfigAbierta(false)}
