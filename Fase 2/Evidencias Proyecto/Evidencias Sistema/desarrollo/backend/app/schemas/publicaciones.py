@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
+from app.ubicacion import RADIO_ZONA_M
+
 TipoAlojamiento = Literal["habitacion", "departamento"]
 GeneroPreferido = Literal["femenino", "masculino", "indiferente"]
 
@@ -24,12 +26,21 @@ def texto_opcional(v: str | None) -> str | None:
     return (v or "").strip() or None
 
 
+class PuntoIn(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+
+
 class UbicacionIn(BaseModel):
-    """CA-06.2: comuna de la lista más el sector; la dirección de referencia es opcional."""
+    """CA-06.2: comuna de la lista más el sector; la dirección de referencia es opcional.
+
+    El punto en el mapa también es opcional: los demás solo ven una zona aproximada (ubicacion.py).
+    """
 
     comuna_id: str
     sector: str = Field(max_length=80)
     direccion_referencia: str | None = Field(default=None, max_length=150)
+    punto: PuntoIn | None = None
 
     @field_validator("comuna_id", "sector")
     @classmethod
@@ -144,6 +155,21 @@ class OferenteOut(BaseModel):
     verificado: bool
 
 
+def ubicacion_out(ubicacion: dict, ver_punto: bool) -> dict:
+    """`zona` es lo que ven todos: el círculo aproximado o, sin punto marcado, el centro de la comuna
+    (radio_m en None). `punto` es el exacto, solo para quien puede verlo."""
+    datos = {k: v for k, v in ubicacion.items() if k not in ("coordenadas", "punto_exacto")}
+    lng, lat = ubicacion["coordenadas"]["coordinates"]
+    exacto = ubicacion.get("punto_exacto")
+    return {
+        **datos,
+        "comuna_id": str(ubicacion["comuna_id"]),
+        "zona": {"lat": lat, "lng": lng, "radio_m": RADIO_ZONA_M if exacto else None},
+        "punto": {"lat": exacto["coordinates"][1], "lng": exacto["coordinates"][0]}
+        if exacto and ver_punto else None,
+    }
+
+
 class PublicacionOut(BaseModel):
     id: str
     codigo: int
@@ -164,11 +190,14 @@ class PublicacionOut(BaseModel):
     fecha_ultima_modificacion: datetime | None = None  # CA-07.5
     oferente: OferenteOut | None = None
     es_propia: bool
+    # Distancia en línea recta desde la zona del alojamiento hasta la sede del perfil de quien mira
+    distancia_km: float | None = None
 
     @classmethod
-    def desde_doc(cls, doc: dict, es_propia: bool, oferente: dict | None = None) -> "PublicacionOut":
-        ubicacion = {**doc["ubicacion"], "comuna_id": str(doc["ubicacion"]["comuna_id"])}
-        ubicacion.pop("coordenadas", None)
+    def desde_doc(
+        cls, doc: dict, es_propia: bool, oferente: dict | None = None, ver_punto: bool = False
+    ) -> "PublicacionOut":
+        """`ver_punto`: el punto exacto se entrega a su dueño y al administrador (ver_punto=True)."""
         return cls(
             id=str(doc["_id"]),
             codigo=doc["codigo"],
@@ -180,7 +209,7 @@ class PublicacionOut(BaseModel):
             costo_mensual=doc["costo_mensual"],
             genero_preferido=doc.get("genero_preferido") or "indiferente",
             estado=doc["estado"],
-            ubicacion=ubicacion,
+            ubicacion=ubicacion_out(doc["ubicacion"], es_propia or ver_punto),
             gastos=doc["gastos"],
             reglas=doc["reglas"],
             caracteristicas=doc.get("caracteristicas", {}),

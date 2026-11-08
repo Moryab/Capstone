@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import {
-  CARACTERISTICAS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, REGLAS, SERVICIOS, textoDe, TIPOS,
+  CARACTERISTICAS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, REGLAS, SERVICIOS, textoDe, textoDistancia,
+  TIPOS,
 } from '../publicaciones.js'
+
+// Leaflet solo se descarga al abrir un detalle
+const MapaUbicacion = lazy(() => import('./MapaUbicacion.jsx'))
 
 // Detalle de un alojamiento tal como lo ve un estudiante (CA-05.5). También lo usa el administrador
 // (CA-29.3). `children` va en el resumen: quién publicó y las acciones de cada vista
@@ -41,6 +45,7 @@ export default function FichaPublicacion({ pub, children }) {
             {ubicacion.comuna_nombre}, {ubicacion.sector}
             {ubicacion.direccion_referencia && ` · ${ubicacion.direccion_referencia}`}
           </p>
+          {pub.distancia_km != null && <p className="publicacion-meta">{textoDistancia(pub.distancia_km)}</p>}
           <p className="publicacion-precio">{formatearPesos(pub.costo_mensual)} <span>/ mes</span></p>
           <ul className="detalle-datos">
             <li>{pub.cupos_disponibles} de {pub.cupos_totales} cupos disponibles</li>
@@ -64,6 +69,13 @@ export default function FichaPublicacion({ pub, children }) {
         <section className="tarjeta">
           <h2>Descripción</h2>
           <p className="detalle-texto">{pub.descripcion}</p>
+        </section>
+
+        <section className="tarjeta">
+          <h2>Ubicación</h2>
+          <Suspense fallback={<p className="mapa-nota">Cargando el mapa…</p>}>
+            <MapaUbicacion ubicacion={ubicacion} esPropia={pub.es_propia} />
+          </Suspense>
         </section>
 
         <section className="tarjeta">
