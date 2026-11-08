@@ -42,6 +42,7 @@ const PaginaCuestionario = lazy(() => import('./cuestionario/PaginaCuestionario.
 const PestanaHabitos = lazy(() => import('./cuestionario/PestanaHabitos.jsx'))
 const PaginaRol = lazy(() => import('./rol/PaginaRol.jsx'))
 const MisPublicaciones = lazy(() => import('./publicaciones/MisPublicaciones.jsx'))
+const Mensajes = lazy(() => import('./paginas/mensajes/Mensajes.jsx'))
 
 // En «/»: quien no ha iniciado sesión ve la landing; quien sí, su página de inicio
 function Raiz() {
@@ -120,6 +121,9 @@ export default function App() {
           <Route path="/evaluacion/:matchId/terminar" element={<Terminar />} />
           {/* EP-02: verificación de estudiante (HU-21) */}
           <Route path="/verificacion" element={<Verificacion />} />
+          {/* Mensajes entre estudiantes (chat) */}
+          <Route path="/mensajes" element={<Suspense fallback={null}><Mensajes /></Suspense>} />
+          <Route path="/mensajes/:id" element={<Suspense fallback={null}><Mensajes /></Suspense>} />
         </Route>
         {/* Panel de administración: mismo marco, con las opciones del administrador */}
         <Route element={<RutaAdmin><Marco /></RutaAdmin>}>
