@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import InsigniaVerificacion from '../../componentes/InsigniaVerificacion.jsx'
@@ -34,8 +34,14 @@ const unir = (actuales, nuevos) => {
 
 /** Una conversación: los mensajes (los nuevos llegan solos cada pocos segundos) y el cuadro para escribir. */
 export default function Conversacion({ id, alCambiar }) {
+  const { pathname, state } = useLocation()
+  const navegar = useNavigate()
   const [estado, setEstado] = useState({ conv: null, mensajes: [], hayAnteriores: false, error: '' })
-  const [texto, setTexto] = useState('')
+  // Al llegar desde un alojamiento («Enviar mensaje al oferente»), el mensaje lo adjunta y se sugiere un texto
+  const [adjunto, setAdjunto] = useState(() => state?.publicacion ?? null)
+  const [texto, setTexto] = useState(() => (state?.publicacion
+    ? `Hola, me interesa tu publicación «${state.publicacion.titulo}». ¿Sigue disponible?`
+    : ''))
   const [enviando, setEnviando] = useState(false)
   const [errorEnvio, setErrorEnvio] = useState('')
   const [cargandoAnteriores, setCargandoAnteriores] = useState(false)
@@ -114,18 +120,29 @@ export default function Conversacion({ id, alCambiar }) {
     setEnviando(true)
     setErrorEnvio('')
     try {
-      const mensaje = await api(`/conversaciones/${id}/mensajes`, { metodo: 'POST', datos: { texto: limpio } })
+      const mensaje = await api(`/conversaciones/${id}/mensajes`, {
+        metodo: 'POST', datos: { texto: limpio, publicacion_id: adjunto?.id ?? null },
+      })
       scroll.current.modo = 'final'
       setEstado((est) => ({ ...est, mensajes: unir(est.mensajes, [mensaje]) }))
       setTexto('')
+      if (adjunto) quitarAdjunto()
       alCambiar()
     } catch (err) {
+      // La publicación ya no se puede adjuntar (por ejemplo, se pausó): se quita y el texto queda
+      if (err.errores?.publicacion_id) quitarAdjunto()
       // 409: la otra persona ya no está disponible (cuenta suspendida o eliminada)
       if (err.estado === 409) setEstado((est) => ({ ...est, conv: { ...est.conv, otro: { ...est.conv.otro, disponible: false } } }))
-      setErrorEnvio(err.errores?.texto ?? err.message)
+      setErrorEnvio(err.errores?.texto ?? err.errores?.publicacion_id ?? err.message)
     } finally {
       setEnviando(false)
     }
+  }
+
+  // Se adjunta solo al primer mensaje: también se borra de la navegación para que recargar no lo repita
+  const quitarAdjunto = () => {
+    setAdjunto(null)
+    navegar(pathname, { replace: true, state: null })
   }
 
   // Enter envía; Shift + Enter hace un salto de línea
@@ -186,6 +203,15 @@ export default function Conversacion({ id, alCambiar }) {
         </ol>
       </div>
 
+      {otro.disponible && adjunto && (
+        <div className="chat-adjuntando">
+          <span>Sobre: <strong>{adjunto.titulo}</strong></span>
+          <button type="button" className="enlace-boton" onClick={quitarAdjunto}
+            aria-label={`No adjuntar «${adjunto.titulo}» al mensaje`}>
+            Quitar
+          </button>
+        </div>
+      )}
       {otro.disponible ? (
         <form className="chat-escribir" onSubmit={enviar}>
           <label htmlFor="chat-texto" className="visualmente-oculto">Escribe un mensaje</label>

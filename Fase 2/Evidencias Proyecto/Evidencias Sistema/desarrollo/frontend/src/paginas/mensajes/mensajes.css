@@ -156,6 +156,22 @@ a.chat-nombre:hover { color: var(--primario); }
 .chat-no-disponible { margin: 0; padding: 14px 20px; color: var(--texto-suave); text-align: center; border-top: 1px solid var(--borde); }
 .chat-error { padding: 0 20px 10px; }
 
+/* Publicación que se adjuntará al próximo mensaje */
+.chat-adjuntando {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  background: var(--campo);
+  border-top: 1px solid var(--borde);
+}
+.chat-adjuntando span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-adjuntando strong { color: var(--texto); }
+.chat-adjuntando + .chat-escribir { border-top: 0; }
+
 /* ---------- Celular: la lista o la conversación, una a la vez ---------- */
 @media (max-width: 899px) {
   .chat {

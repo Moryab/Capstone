@@ -1,0 +1,3 @@
+/* Botón «Enviar mensaje» del detalle de un alojamiento y del perfil de otro estudiante */
+.boton-mensaje { display: inline-flex; gap: 8px; align-items: center; justify-content: center; }
+.boton-mensaje-ayuda { margin: 0; }
