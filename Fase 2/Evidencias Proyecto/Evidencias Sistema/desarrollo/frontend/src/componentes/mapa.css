@@ -1,0 +1,77 @@
+/* Mapa de alojamientos (Leaflet + OpenStreetMap) */
+.mapa-alojamientos { display: grid; gap: 8px; }
+.mapa-lienzo {
+  width: 100%;
+  height: min(70vh, 560px);
+  min-height: 360px;
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  z-index: 0; /* el mapa no debe quedar sobre la barra ni los menús */
+}
+.mapa-nota { margin: 0; font-size: 0.85rem; color: var(--texto-suave); }
+
+/* Marcadores: el contenedor de Leaflet no debe pintar su fondo blanco por defecto */
+.mapa-marcador { background: none; border: 0; }
+.mapa-burbuja, .mapa-sede {
+  display: inline-block;
+  transform: translate(-50%, -100%);
+  padding: 4px 10px;
+  font: 700 0.8rem 'Work Sans', system-ui, sans-serif;
+  white-space: nowrap;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgb(11 31 58 / 0.25);
+  cursor: pointer;
+}
+.mapa-burbuja { color: #fff; background: var(--primario); border: 2px solid #fff; }
+.mapa-burbuja.grupo { background: var(--marca); }
+.mapa-sede { color: var(--marca); background: #f2c94c; border: 2px solid #fff; }
+
+/* Ventana al tocar un marcador */
+.mapa-popup-titulo { margin: 0 0 8px; font-weight: 700; }
+.mapa-popup-titulo span { font-weight: 400; color: #475569; }
+.mapa-popup-lista { display: grid; gap: 8px; max-height: 260px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.mapa-popup-lista li { display: flex; gap: 8px; align-items: center; }
+.mapa-popup-lista img, .mapa-sin-foto { flex: none; width: 52px; height: 40px; object-fit: cover; background: #e2e8f0; border-radius: 6px; }
+.mapa-popup-lista div { display: grid; gap: 2px; font-size: 0.82rem; }
+.mapa-popup-lista a { font-weight: 700; color: var(--primario); }
+.mapa-propia { font-weight: 700; color: var(--primario); }
+
+/* Selector «Lista | Mapa» */
+.vista-selector { display: inline-flex; gap: 4px; padding: 4px; background: var(--campo); border-radius: 999px; }
+.vista-selector button {
+  padding: 6px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.vista-selector button[aria-pressed='true'] { color: #fff; background: var(--primario); }
+.vista-selector button:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+/* Mapas chicos: el selector del formulario y la ubicación en el detalle */
+.mapa-lienzo.mapa-chico { height: 280px; min-height: 0; }
+.selector-titulo { margin: 0; font-size: 0.85rem; font-weight: 600; }
+.selector-ubicacion .mapa-lienzo { cursor: crosshair; }
+.mapa-precision { display: block; font-size: 0.75rem; font-weight: 400; color: #475569; }
+
+/* Alfiler del punto exacto */
+.mapa-pin {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background: var(--marca);
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 4px 12px rgb(11 31 58 / 0.35);
+  transform: rotate(-45deg);
+}
+
+/* Encima de los resultados: «Lista | Mapa» y «Ordenar por» */
+.resultados-controles { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.orden-selector { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; }
+.orden-selector label { font-weight: 600; color: var(--texto-suave); }
+.orden-selector select { padding: 6px 10px; font: inherit; border: 1px solid var(--borde); border-radius: 8px; background: var(--tarjeta); color: inherit; }
+.orden-ayuda { margin: -4px 0 12px; }

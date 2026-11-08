@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from app.schemas.publicaciones import MAX_COSTO, TipoAlojamiento
@@ -33,10 +35,14 @@ class PreferenciasIn(Preferencias):
 
 
 class FiltrosBusqueda(Preferencias):
-    """Parámetros de GET /api/publicaciones. Las comunas se repiten: ?comunas=a&comunas=b."""
+    """Parámetros de GET /api/publicaciones. Las comunas se repiten: ?comunas=a&comunas=b.
+
+    `orden` no filtra: «reciente» (CA-09.1) o «cercania», de la más cercana a la sede del perfil.
+    """
 
     pagina: int = Field(default=1, ge=1)
     comunas: list[str] = []
+    orden: Literal["reciente", "cercania"] = "reciente"
 
 
 def filtro_preferencias(p: Preferencias) -> dict:

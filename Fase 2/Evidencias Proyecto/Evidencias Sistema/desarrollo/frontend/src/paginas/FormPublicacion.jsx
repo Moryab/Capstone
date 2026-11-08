@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
@@ -11,6 +11,9 @@ import {
   aFormulario, aPayload, CARACTERISTICAS, FORMULARIO_VACIO, GENEROS_PREFERIDOS, REGLAS, SERVICIOS,
   SI_NO, TIPOS,
 } from '../publicaciones.js'
+
+// Leaflet solo se descarga al abrir el formulario
+const SelectorUbicacion = lazy(() => import('../componentes/SelectorUbicacion.jsx'))
 
 const MAX_DESCRIPCION = 1000
 const MAX_REGLAS = 300
@@ -41,7 +44,9 @@ function Formulario() {
 
   useEffect(() => {
     api('/catalogos/publicacion')
-      .then(({ comunas: lista }) => setComunas(lista.map((c) => ({ valor: c.id, texto: c.nombre }))))
+      .then(({ comunas: lista }) => setComunas(lista.map((c) => ({
+        valor: c.id, texto: c.nombre, centro: [c.centro[1], c.centro[0]], // [lat, lng] para el mapa
+      }))))
       .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
     if (!editando) return
     api(`/publicaciones/${id}`)
@@ -89,10 +94,20 @@ function Formulario() {
     const { name, value, type, checked } = e.target
     setDatos({ ...datos, [name]: type === 'checkbox' ? checked : value })
     // Se limpia el error del campo y el del grupo que lo contiene (por ejemplo «gastos.luz»)
+    // Al cambiar la comuna también se limpia el del punto, que se revisa contra ella
     setErrores(Object.fromEntries(
-      Object.entries(errores).filter(([clave]) => clave !== name && !name.startsWith(`${clave}.`)),
+      Object.entries(errores).filter(([clave]) => clave !== name && !name.startsWith(`${clave}.`)
+        && !(name === 'ubicacion.comuna_id' && clave.startsWith('ubicacion.punto'))),
     ))
   }
+
+  const cambiarPunto = (punto) => {
+    setDatos((actual) => ({ ...actual, 'ubicacion.punto': punto }))
+    setErrores((actual) => Object.fromEntries(
+      Object.entries(actual).filter(([clave]) => !clave.startsWith('ubicacion.punto')),
+    ))
+  }
+  const centroComuna = comunas.find((c) => c.valor === datos['ubicacion.comuna_id'])?.centro ?? null
 
   // Props comunes de cada campo: valor, cambio y su mensaje de error
   const campo = (nombre) => ({ nombre, value: datos[nombre], onChange: cambiar, error: errores[nombre] })
@@ -190,6 +205,10 @@ function Formulario() {
           <Campo etiqueta="Dirección de referencia (opcional)" {...campo('ubicacion.direccion_referencia')}
             maxLength={150} placeholder="Por ejemplo: a dos cuadras del Campus"
             ayuda="No es necesario poner la dirección exacta." />
+          <Suspense fallback={<p className="campo-ayuda">Cargando el mapa…</p>}>
+            <SelectorUbicacion centro={centroComuna} punto={datos['ubicacion.punto']} onCambio={cambiarPunto}
+              error={errores['ubicacion.punto'] ?? errores['ubicacion.punto.lat'] ?? errores['ubicacion.punto.lng']} />
+          </Suspense>
         </fieldset>
 
         {/* CA-06.3: por cada servicio, si está incluido o cuánto cuesta al mes */}

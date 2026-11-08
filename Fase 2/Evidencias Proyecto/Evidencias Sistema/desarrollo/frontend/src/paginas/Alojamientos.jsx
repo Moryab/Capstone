@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 import Campo from '../componentes/Campo.jsx'
 import { IconoLupa, IconoUbicacion } from '../componentes/Iconos.jsx'
+import '../componentes/mapa.css'
 import {
   aPreferencias, aURL, desdePreferencias, desdeURL, EXTRAS_FILTRO, FILTROS_VACIOS, hayFiltros,
   OPCIONES_REGLA, REGLAS_FILTRO, sinPreferencias, soloCosto, validarCosto, ZONAS,
 } from '../busqueda.js'
-import { formatearPesos, GENEROS_PREFERIDOS, textoDe, TIPOS } from '../publicaciones.js'
+import { formatearPesos, GENEROS_PREFERIDOS, textoDe, textoDistancia, TIPOS } from '../publicaciones.js'
 
 const TIPOS_FILTRO = [{ valor: '', texto: 'Habitación o departamento' }, ...TIPOS]
+
+// El mapa (Leaflet) se descarga solo cuando se elige esa vista
+const MapaAlojamientos = lazy(() => import('../componentes/MapaAlojamientos.jsx'))
 
 // Lista desplegable con una opción «da lo mismo» con valor vacío (Campo la deja deshabilitada)
 function Selector({ etiqueta, nombre, value, onChange, opciones }) {
@@ -36,6 +40,7 @@ function TarjetaAlojamiento({ pub, desde }) {
         {/* El enlace cubre toda la tarjeta; `desde` permite volver al listado con los filtros */}
         <h2><Link to={`/alojamientos/${pub.id}`} state={{ desde }} className="alojamiento-enlace">{pub.titulo}</Link></h2>
         <p className="publicacion-meta"><IconoUbicacion /> {pub.ubicacion.comuna_nombre}, {pub.ubicacion.sector}</p>
+        {pub.distancia_km != null && <p className="publicacion-meta">{textoDistancia(pub.distancia_km)}</p>}
         <p className="publicacion-precio">{formatearPesos(pub.costo_mensual)} <span>/ mes</span></p>
         <ul className="alojamiento-etiquetas">
           <li>{pub.cupos_disponibles} {pub.cupos_disponibles === 1 ? 'cupo' : 'cupos'}</li>
@@ -52,11 +57,21 @@ function TarjetaAlojamiento({ pub, desde }) {
 export default function Alojamientos() {
   const [params, setParams] = useSearchParams()
   const { pathname, search } = useLocation()
-  const clave = params.toString()
+  // «vista=mapa» y «orden=cercania» van en la dirección para volver igual desde un detalle, pero no
+  // son filtros: no cuentan como filtro aplicado. El orden sí se envía a la API; la vista, no
+  const enMapa = params.get('vista') === 'mapa'
+  const porCercania = params.get('orden') === 'cercania'
+  const filtrosURL = new URLSearchParams(params)
+  filtrosURL.delete('vista')
+  filtrosURL.delete('orden')
+  const claveFiltros = filtrosURL.toString()
+  const consultaAPI = new URLSearchParams(filtrosURL)
+  if (porCercania) consultaAPI.set('orden', 'cercania')
+  const clave = consultaAPI.toString()
 
   const [opciones, setOpciones] = useState(null) // comunas con publicaciones e institución del perfil
   const [borrador, setBorrador] = useState(() => desdeURL(params))
-  const [claveBorrador, setClaveBorrador] = useState(clave)
+  const [claveBorrador, setClaveBorrador] = useState(claveFiltros)
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [resultado, setResultado] = useState({ clave: null, datos: null, error: '' })
@@ -64,8 +79,8 @@ export default function Alojamientos() {
   const listado = useRef(null)
 
   // Si la dirección cambia (atrás/adelante del navegador), el panel muestra los filtros aplicados
-  if (claveBorrador !== clave) {
-    setClaveBorrador(clave)
+  if (claveBorrador !== claveFiltros) {
+    setClaveBorrador(claveFiltros)
     setBorrador(desdeURL(params))
   }
 
@@ -103,9 +118,33 @@ export default function Alojamientos() {
     setBorrador({ ...borrador, comunas: marcar ? [...resto, ...ids] : resto })
   }
 
+  // Al aplicar o limpiar filtros (o cambiar de página) se mantienen la vista y el orden elegidos
   const ir = (nuevos) => {
-    setParams(nuevos)
+    const destino = new URLSearchParams(nuevos)
+    if (enMapa) destino.set('vista', 'mapa')
+    if (porCercania) destino.set('orden', 'cercania')
+    setParams(destino)
     listado.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }
+
+  const cambiarVista = (mapa) => {
+    const nuevos = new URLSearchParams(params)
+    if (mapa) {
+      nuevos.set('vista', 'mapa')
+      nuevos.delete('pagina') // el mapa muestra todos los resultados juntos
+    } else {
+      nuevos.delete('vista')
+    }
+    setParams(nuevos, { replace: true })
+  }
+
+  const cambiarOrden = (e) => {
+    const nuevos = new URLSearchParams(params)
+    if (e.target.value === 'cercania') nuevos.set('orden', 'cercania')
+    else nuevos.delete('orden')
+    nuevos.delete('pagina') // con otro orden se parte desde la primera página
+    setErrores({ ...errores, orden: undefined })
+    setParams(nuevos)
   }
 
   const aplicar = (e) => {
@@ -168,7 +207,7 @@ export default function Alojamientos() {
 
   const cargando = resultado.clave !== clave
   const { datos } = resultado
-  const conFiltros = hayFiltros(params)
+  const conFiltros = hayFiltros(filtrosURL)
   const institucion = opciones?.institucion
   const zonas = ZONAS.map((zona) => ({
     ...zona,
@@ -282,6 +321,29 @@ export default function Alojamientos() {
           aria-busy={cargando}>
           <h2 id="titulo-resultados" className="visualmente-oculto">Resultados</h2>
 
+          <div className="resultados-controles">
+            <div className="vista-selector" role="group" aria-label="Cómo ver los resultados">
+              <button type="button" aria-pressed={!enMapa} onClick={() => cambiarVista(false)}>Lista</button>
+              <button type="button" aria-pressed={enMapa} onClick={() => cambiarVista(true)}>Mapa</button>
+            </div>
+            {/* El mapa ya muestra la cercanía: el orden solo aplica a la lista */}
+            {!enMapa && (
+              <div className="orden-selector">
+                <label htmlFor="orden">Ordenar por</label>
+                <select id="orden" value={porCercania ? 'cercania' : 'reciente'} onChange={cambiarOrden}
+                  aria-describedby={errores.orden || (opciones && !institucion) ? 'orden-ayuda' : undefined}>
+                  <option value="reciente">Más recientes</option>
+                  <option value="cercania" disabled={opciones && !institucion}>Más cerca de mi sede</option>
+                </select>
+              </div>
+            )}
+          </div>
+          {!enMapa && (errores.orden || (opciones && !institucion)) && (
+            <p className="campo-ayuda orden-ayuda" id="orden-ayuda">
+              {errores.orden ?? <><Link to="/perfil/editar">Indica tu institución y sede</Link> para ordenar por cercanía.</>}
+            </p>
+          )}
+
           {resultado.error && !cargando && <p className="alerta" role="alert">{resultado.error}</p>}
           {!datos && !resultado.error && <p className="cargando">Cargando alojamientos…</p>}
 
@@ -296,7 +358,7 @@ export default function Alojamientos() {
                 <div className="alojamientos-vacio">
                   {!conFiltros ? (
                     <h3>No hay alojamientos disponibles por ahora</h3> // CA-09.4
-                  ) : soloCosto(params) ? (
+                  ) : soloCosto(filtrosURL) ? (
                     <>
                       <h3>No encontramos alojamientos en ese rango</h3>
                       <p>Prueba ampliando el rango de precios.</p>{/* CA-10.4 */}
@@ -313,13 +375,21 @@ export default function Alojamientos() {
                 </div>
               )}
 
-              <ul className={`alojamientos-lista${cargando ? ' actualizando' : ''}`}>
-                {datos.resultados.map((pub) => (
-                  <TarjetaAlojamiento key={pub.id} pub={pub} desde={pathname + search} />
-                ))}
-              </ul>
+              {enMapa && datos.total > 0 && (
+                <Suspense fallback={<p className="cargando">Cargando el mapa…</p>}>
+                  <MapaAlojamientos consulta={claveFiltros} desde={pathname + search} />
+                </Suspense>
+              )}
 
-              {datos.paginas > 1 && (
+              {!enMapa && (
+                <ul className={`alojamientos-lista${cargando ? ' actualizando' : ''}`}>
+                  {datos.resultados.map((pub) => (
+                    <TarjetaAlojamiento key={pub.id} pub={pub} desde={pathname + search} />
+                  ))}
+                </ul>
+              )}
+
+              {!enMapa && datos.paginas > 1 && (
                 <nav className="paginacion" aria-label="Páginas de resultados">
                   <button type="button" className="boton secundario" disabled={datos.pagina <= 1}
                     onClick={() => ir(aURL(desdeURL(params), datos.pagina - 1))}>

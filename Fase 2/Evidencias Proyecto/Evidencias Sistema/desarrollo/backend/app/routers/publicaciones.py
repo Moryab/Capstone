@@ -5,6 +5,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.db import db, siguiente_codigo
@@ -15,6 +16,7 @@ from app.routers.perfil import datos_invalidos
 from app.matching import cerrar_propuestas_de_publicacion, generar_propuestas
 from app.schemas.busqueda import TAMANO_PAGINA, FiltrosBusqueda, error_rango, filtro_preferencias
 from app.schemas.publicaciones import MAX_FOTOS, PublicacionIn, PublicacionOut
+from app.ubicacion import MAX_KM_DESDE_LA_COMUNA, centro_de_zona, distancia_km, geojson
 
 router = APIRouter(prefix="/api/publicaciones", tags=["Publicaciones"])
 
@@ -50,14 +52,35 @@ async def buscar_propia(publicacion_id: str, usuario: dict) -> dict:
     return doc
 
 
-async def campos_desde(datos: PublicacionIn) -> dict | None:
-    """Convierte lo enviado en los campos del documento. Devuelve None si la comuna no existe."""
+def coordenadas_desde(datos: PublicacionIn, comuna: dict, anterior: dict | None) -> dict | JSONResponse:
+    """El punto exacto (si se marcó) y el centro de la zona que ven los demás. Al editar sin mover el
+    punto se conserva la zona: sortearla de nuevo con cada cambio permitiría acercarse al punto."""
+    punto = datos.ubicacion.punto
+    if punto is None:
+        return {"coordenadas": comuna["centro"], "punto_exacto": None}
+    exacto = [round(punto.lng, 6), round(punto.lat, 6)]
+    if distancia_km(exacto, comuna["centro"]["coordinates"]) > MAX_KM_DESDE_LA_COMUNA:
+        return datos_invalidos({
+            "ubicacion.punto": f"El punto marcado queda lejos de {comuna['nombre']}. Revisa la comuna o mueve el punto"
+        })
+    previa = (anterior or {}).get("ubicacion", {})
+    if (previa.get("punto_exacto") or {}).get("coordinates") == exacto:
+        return {"coordenadas": previa["coordenadas"], "punto_exacto": previa["punto_exacto"]}
+    return {"coordenadas": geojson(centro_de_zona(exacto)), "punto_exacto": geojson(exacto)}
+
+
+async def campos_desde(datos: PublicacionIn, anterior: dict | None = None) -> dict | JSONResponse:
+    """Convierte lo enviado en los campos del documento. Devuelve un 422 si la comuna no existe o el
+    punto no calza con ella. `anterior` es el documento que se está editando."""
     try:
         comuna = await db.comunas.find_one({"_id": ObjectId(datos.ubicacion.comuna_id)})
     except InvalidId:
         comuna = None
     if not comuna:
-        return None
+        return datos_invalidos(COMUNA_INVALIDA)
+    coordenadas = coordenadas_desde(datos, comuna, anterior)
+    if isinstance(coordenadas, JSONResponse):
+        return coordenadas
 
     gastos = datos.gastos.model_dump()
     return {
@@ -75,8 +98,8 @@ async def campos_desde(datos: PublicacionIn) -> dict | None:
             "comuna_nombre": comuna["nombre"],
             "sector": datos.ubicacion.sector,
             "direccion_referencia": datos.ubicacion.direccion_referencia,
-            # Por ahora el centro de la comuna; más adelante se podrá marcar el punto exacto
-            "coordenadas": comuna["centro"],
+            # «coordenadas» es lo público (zona o centro de la comuna); «punto_exacto», lo marcado
+            **coordenadas,
         },
         "gastos": {**gastos, "todos_incluidos": all(g["incluido"] for g in gastos.values())},
         "reglas": datos.reglas.model_dump(),
@@ -108,8 +131,8 @@ async def oferentes_verificados() -> list[ObjectId]:
 async def publicar(datos: PublicacionIn, usuario: dict = Depends(solo_oferente)):
     """HU-05 y HU-06: solo el oferente publica (modos.py)."""
     campos = await campos_desde(datos)
-    if campos is None:
-        return datos_invalidos(COMUNA_INVALIDA)
+    if isinstance(campos, JSONResponse):
+        return campos
     if datos.cupos_disponibles == 0:
         return datos_invalidos({"cupos_disponibles": "Al publicar debe haber al menos un cupo disponible"})
 
@@ -134,14 +157,9 @@ async def publicar(datos: PublicacionIn, usuario: dict = Depends(solo_oferente))
     }
 
 
-@router.get("")
-async def buscar_alojamientos(
-    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
-):
-    """HU-09 a HU-12: alojamientos activos, del más reciente al más antiguo y de a 10 (CA-09.1).
-
-    Todos los filtros se combinan a la vez (CA-11.4 y CA-12.3).
-    """
+async def consulta_de_busqueda(filtros: FiltrosBusqueda, usuario: dict) -> dict | JSONResponse:
+    """La consulta de Mongo con todos los filtros combinados (CA-11.4 y CA-12.3). La usan el
+    listado y el mapa, para que muestren exactamente lo mismo. Devuelve un 422 si algo no calza."""
     if error := error_rango(filtros.costo_min, filtros.costo_max):
         return datos_invalidos(error)
 
@@ -164,23 +182,127 @@ async def buscar_alojamientos(
         zonas = set(cercanas) if zonas is None else zonas & set(cercanas)
     if zonas is not None:
         consulta["ubicacion.comuna_id"] = {"$in": list(zonas)}
+    return consulta
+
+
+@router.get("")
+async def buscar_alojamientos(
+    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
+):
+    """HU-09 a HU-12: alojamientos activos de a 10, del más reciente al más antiguo (CA-09.1) o,
+    con orden=cercania, del más cercano a la sede del perfil al más lejano."""
+    consulta = await consulta_de_busqueda(filtros, usuario)
+    if isinstance(consulta, JSONResponse):
+        return consulta
+    sede = await sede_del_perfil(usuario)
+    if filtros.orden == "cercania" and not sede:
+        return datos_invalidos({"orden": "Indica tu institución y sede en tu perfil para ordenar por cercanía"})
 
     total = await db.publicaciones.count_documents(consulta)
-    cursor = (
-        db.publicaciones.find(consulta)
-        .sort([("fecha_publicacion", -1), ("_id", -1)])
-        .skip((filtros.pagina - 1) * TAMANO_PAGINA)
-        .limit(TAMANO_PAGINA)
-    )
+    saltar = (filtros.pagina - 1) * TAMANO_PAGINA
+    if filtros.orden == "cercania":
+        # $geoNear usa el índice de ubicacion.coordenadas: la zona pública, nunca el punto exacto
+        cursor = await db.publicaciones.aggregate([
+            {"$geoNear": {
+                "near": geojson(sede["coordenadas"]), "key": "ubicacion.coordenadas",
+                "distanceField": "distancia_m", "spherical": True, "query": consulta,
+            }},
+            # Las del centro de una misma comuna empatan: entre ellas, la más reciente primero
+            {"$sort": {"distancia_m": 1, "fecha_publicacion": -1, "_id": -1}},
+            {"$skip": saltar},
+            {"$limit": TAMANO_PAGINA},
+        ])
+    else:
+        cursor = (
+            db.publicaciones.find(consulta)
+            .sort([("fecha_publicacion", -1), ("_id", -1)])
+            .skip(saltar)
+            .limit(TAMANO_PAGINA)
+        )
     return {
         "total": total,
         "pagina": filtros.pagina,
         "paginas": max(1, -(-total // TAMANO_PAGINA)),
+        "orden": filtros.orden,
         "resultados": [
-            PublicacionOut.desde_doc(doc, es_propia=doc["oferente_id"] == usuario["_id"])
+            con_distancia(PublicacionOut.desde_doc(doc, es_propia=doc["oferente_id"] == usuario["_id"]), doc, sede)
             async for doc in cursor
         ],
     }
+
+
+def con_distancia(pub: PublicacionOut, doc: dict, sede: dict | None) -> PublicacionOut:
+    """La publicación con la distancia de su zona a la sede (sin sede, queda en None)."""
+    if not sede:
+        return pub
+    km = distancia_km(doc["ubicacion"]["coordenadas"]["coordinates"], sede["coordenadas"])
+    return pub.model_copy(update={"distancia_km": round(km, 1)})
+
+
+# El mapa trae todos los resultados de una vez (sin páginas), con este tope por si crecen mucho
+MAX_PUNTOS_MAPA = 300
+
+
+async def sede_del_perfil(usuario: dict) -> dict | None:
+    """La sede del perfil con sus coordenadas, para ubicarla en el mapa y medir distancias. Si la
+    sede no calza con ninguna, se usa la primera de la institución."""
+    perfil = usuario.get("perfil", {})
+    if not perfil.get("institucion_id"):
+        return None
+    institucion = await db.instituciones.find_one({"_id": perfil["institucion_id"]}, {"sigla": 1, "sedes": 1})
+    sedes = (institucion or {}).get("sedes", [])
+    sede = next((s for s in sedes if s["nombre"] == perfil.get("sede")), sedes[0] if sedes else None)
+    if not sede or not sede.get("coordenadas"):
+        return None
+    return {"institucion": institucion["sigla"], "nombre": sede["nombre"], "coordenadas": sede["coordenadas"]["coordinates"]}
+
+
+@router.get("/mapa")
+async def mapa_de_alojamientos(
+    filtros: Annotated[FiltrosBusqueda, Query()], usuario: dict = Depends(usuario_actual)
+):
+    """Los mismos alojamientos del listado, como puntos para el mapa, con la distancia a la sede.
+
+    `precision` dice qué es cada punto: «zona» (centro del círculo aproximado), «comuna» (sin punto
+    marcado, el centro de la comuna; varias pueden compartirlo) o «exacta» (las propias).
+    """
+    consulta = await consulta_de_busqueda(filtros, usuario)
+    if isinstance(consulta, JSONResponse):
+        return consulta
+    sede = await sede_del_perfil(usuario)
+    total = await db.publicaciones.count_documents(consulta)
+    cursor = (
+        db.publicaciones.find(consulta, {
+            "titulo": 1, "tipo": 1, "costo_mensual": 1, "cupos_disponibles": 1, "ubicacion": 1, "fotos": 1,
+            "oferente_id": 1,
+        })
+        .sort([("fecha_publicacion", -1), ("_id", -1)])
+        .limit(MAX_PUNTOS_MAPA)
+    )
+    puntos = []
+    async for p in cursor:
+        es_propia = p["oferente_id"] == usuario["_id"]
+        exacto = p["ubicacion"].get("punto_exacto")
+        if exacto and es_propia:
+            coordenadas, precision = exacto["coordinates"], "exacta"
+        else:
+            coordenadas, precision = p["ubicacion"]["coordenadas"]["coordinates"], "zona" if exacto else "comuna"
+        principal = next((f["url"] for f in p.get("fotos", []) if f["es_principal"]), None)
+        puntos.append({
+            "id": str(p["_id"]),
+            "titulo": p["titulo"],
+            "tipo": p["tipo"],
+            "costo_mensual": p["costo_mensual"],
+            "cupos_disponibles": p["cupos_disponibles"],
+            "comuna": p["ubicacion"]["comuna_nombre"],
+            "sector": p["ubicacion"]["sector"],
+            "foto_url": principal,
+            "coordenadas": coordenadas,
+            "precision": precision,
+            "distancia_km": round(distancia_km(coordenadas, sede["coordenadas"]), 1) if sede else None,
+            "es_propia": es_propia,
+        })
+    return {"total": total, "mostrados": len(puntos), "sede": sede, "puntos": puntos}
 
 
 @router.get("/filtros")
@@ -232,7 +354,8 @@ async def detalle(publicacion_id: str, usuario: dict = Depends(usuario_actual)):
     # Una cuenta con acceso limitado no se les muestra a los demás, tampoco sus publicaciones
     if not es_propia and (not oferente or not esta_verificado(oferente)):
         raise NO_ENCONTRADA
-    return PublicacionOut.desde_doc(doc, es_propia=es_propia, oferente=oferente)
+    pub = PublicacionOut.desde_doc(doc, es_propia=es_propia, oferente=oferente)
+    return con_distancia(pub, doc, await sede_del_perfil(usuario))
 
 
 @router.put("/{publicacion_id}")
@@ -243,9 +366,9 @@ async def editar(publicacion_id: str, datos: PublicacionIn, usuario: dict = Depe
         raise HTTPException(
             status.HTTP_409_CONFLICT, "La publicación está suspendida por moderación y no se puede editar"
         )
-    campos = await campos_desde(datos)
-    if campos is None:
-        return datos_invalidos(COMUNA_INVALIDA)
+    campos = await campos_desde(datos, anterior=doc)
+    if isinstance(campos, JSONResponse):
+        return campos
 
     # Pausada por el cambio de rol: si su dueño sigue siendo buscador, sigue pausada. Si ya volvió a
     # ser oferente, guardarla equivale a responder «sí, sigue disponible» (opción «Editarla antes»)
