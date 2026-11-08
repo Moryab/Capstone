@@ -17,6 +17,7 @@ from app.routers import (
     auth,
     catalogos,
     compatibilidades,
+    conversaciones,
     cuestionario,
     estadisticas,
     evaluaciones,
@@ -129,6 +130,7 @@ app.include_router(reportes.router)        # EP-06 · HU-24, HU-25 y HU-26
 app.include_router(moderacion.router)      # EP-06 y EP-07 · HU-27 y HU-30
 app.include_router(verificacion.router)    # EP-02 · HU-21 y HU-22
 app.include_router(admin.router)           # EP-07 · HU-28 y HU-29
+app.include_router(conversaciones.router)  # Mensajes entre estudiantes (chat)
 
 # Fotos subidas por los usuarios (perfil y alojamientos)
 CARPETA_FOTOS.mkdir(parents=True, exist_ok=True)

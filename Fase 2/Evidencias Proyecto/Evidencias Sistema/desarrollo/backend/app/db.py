@@ -120,3 +120,13 @@ async def crear_indices() -> None:
     )
 
     # --- EP-07 · administración (HU-28 y HU-29) ---
+
+    # --- Mensajes entre estudiantes (chat) ---
+    # Una conversación por par: «clave» son los dos ids ordenados
+    await db.conversaciones.create_index([("clave", ASCENDING)], unique=True, name="clave_1")
+    await db.conversaciones.create_index(
+        [("participantes", ASCENDING), ("fecha_actividad", DESCENDING)], name="participantes_1_fecha_actividad_-1"
+    )
+    await db.mensajes.create_index([("conversacion_id", ASCENDING), ("_id", ASCENDING)], name="conversacion_id_1__id_1")
+    # Para el freno de mensajes por minuto
+    await db.mensajes.create_index([("autor_id", ASCENDING), ("fecha_envio", DESCENDING)], name="autor_id_1_fecha_envio_-1")
