@@ -18,6 +18,19 @@ const CLAVE_BARRA = 'rm_barra_contraida'
 const REVISAR_AVISOS_MS = 60000 // cada cuánto se consulta si hay avisos nuevos
 const REVISAR_MENSAJES_MS = 20000 // y si hay mensajes sin leer (la página de mensajes también lo pide al leer)
 
+// Fondo ilustrado de algunas páginas (inicio/inicio.css, «Fondos de página»). Las demás usan el liso
+const FONDOS = {
+  '/': 'ciudad',
+  '/mis-publicaciones': 'ciudad',
+  '/mensajes': 'topografia', // también /mensajes/:id
+  '/alojamientos': 'ciudad',
+  // Perfil: el propio (todas sus pestañas), su vista pública y el de otros estudiantes
+  '/perfil': 'ciudad',
+  '/perfil-publico': 'ciudad',
+  '/usuarios': 'ciudad',
+}
+const fondoDe = (ruta) => FONDOS[ruta] ?? FONDOS[`/${ruta.split('/')[1]}`]
+
 /**
  * Marco común de las páginas con sesión: barra lateral (o barra inferior en móvil) y el panel de
  * configuración. Envuelve al inicio (como `children`) y a las demás páginas (con <Outlet />).
@@ -74,7 +87,8 @@ export default function Marco({ children }) {
       <Navegacion usuario={usuario} cerrarSesion={cerrarSesion} contraida={contraida} setContraida={setContraida} abrirConfig={() => setConfigAbierta(true)}
         abrirAvisos={() => setAvisosAbiertos(true)} noLeidas={noLeidas} mensajesSinLeer={mensajesSinLeer} pathname={pathname} />
 
-      <div ref={contenido} id="contenido" className={`i-pagina${pathname === '/' ? ' es-inicio' : ''}`} tabIndex={-1}>
+      <div ref={contenido} id="contenido" className={`i-pagina${pathname === '/' ? ' es-inicio' : ''}`} tabIndex={-1}
+        data-fondo={admin ? undefined : fondoDe(pathname)}>
         {/* La página de mensajes avisa al leer, para que el contador baje enseguida */}
         {children ?? <Outlet context={{ revisarMensajes }} />}
       </div>

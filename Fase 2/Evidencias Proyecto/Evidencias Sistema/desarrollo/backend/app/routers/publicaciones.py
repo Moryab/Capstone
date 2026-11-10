@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -157,6 +158,28 @@ async def publicar(datos: PublicacionIn, usuario: dict = Depends(solo_oferente))
     }
 
 
+# Cada vocal acepta sus variantes con tilde: «concepcion» encuentra «Concepción» y al revés
+VARIANTES = {"a": "aáàä", "e": "eéèë", "i": "iíìï", "o": "oóòö", "u": "uúùü", "n": "nñ"}
+
+
+def patron_sin_tildes(palabra: str) -> str:
+    return "".join(
+        f"[{VARIANTES[base]}]" if (base := next((b for b, v in VARIANTES.items() if c in v), None)) else re.escape(c)
+        for c in palabra.lower()
+    )
+
+
+CAMPOS_TEXTO = ("titulo", "descripcion", "ubicacion.comuna_nombre", "ubicacion.sector")
+
+
+def filtro_texto(texto: str) -> list[dict]:
+    """Cada palabra debe aparecer en alguno de los campos («pieza talcahuano» busca las dos)."""
+    return [
+        {"$or": [{campo: {"$regex": patron_sin_tildes(palabra), "$options": "i"}} for campo in CAMPOS_TEXTO]}
+        for palabra in texto.split()[:8]
+    ]
+
+
 async def consulta_de_busqueda(filtros: FiltrosBusqueda, usuario: dict) -> dict | JSONResponse:
     """La consulta de Mongo con todos los filtros combinados (CA-11.4 y CA-12.3). La usan el
     listado y el mapa, para que muestren exactamente lo mismo. Devuelve un 422 si algo no calza."""
@@ -182,6 +205,8 @@ async def consulta_de_busqueda(filtros: FiltrosBusqueda, usuario: dict) -> dict 
         zonas = set(cercanas) if zonas is None else zonas & set(cercanas)
     if zonas is not None:
         consulta["ubicacion.comuna_id"] = {"$in": list(zonas)}
+    if filtros.buscar.strip():
+        consulta["$and"] = filtro_texto(filtros.buscar)
     return consulta
 
 

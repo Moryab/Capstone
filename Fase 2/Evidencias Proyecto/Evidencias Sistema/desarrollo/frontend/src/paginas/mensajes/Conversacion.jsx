@@ -6,10 +6,17 @@ import InsigniaVerificacion from '../../componentes/InsigniaVerificacion.jsx'
 import { formatearPesos } from '../../publicaciones.js'
 import { mayusculaInicial as mayuscula } from '../../inicio/utilidades.js'
 import { horaDe, mismoDia, nombreDe, tituloDia } from './formato.js'
+import { IlustracionSaludo, SiluetaConversacion } from './Ilustraciones.jsx'
 
 const REVISAR_MS = 4000 // cada cuánto se piden los mensajes nuevos de la conversación abierta
 const MAX_MENSAJE = 1000 // el mismo de backend/app/schemas/conversaciones.py
 const AVISAR_DESDE = 900 // se muestra el contador de caracteres al acercarse al límite
+
+const IconoEnviar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M5 12h13M13 6l6 6-6 6" />
+  </svg>
+)
 
 // La publicación de la que se habla, dentro del mensaje
 function TarjetaPublicacion({ pub }) {
@@ -48,6 +55,8 @@ export default function Conversacion({ id, alCambiar }) {
   const lista = useRef(null)
   const ultimoId = useRef(null) // lo usa el intervalo sin reiniciarse con cada mensaje
   const scroll = useRef({ modo: 'final', alto: 0 }) // qué hacer con el scroll al cambiar los mensajes
+  // Los mensajes que ya estaban al abrir (o al cargar los anteriores) no se animan; solo los que llegan
+  const yaVistos = useRef(new Set())
 
   const { conv, mensajes, hayAnteriores, error } = estado
   useEffect(() => {
@@ -61,6 +70,7 @@ export default function Conversacion({ id, alCambiar }) {
       .then((r) => {
         if (!vigente) return
         scroll.current.modo = 'final'
+        r.mensajes.forEach((m) => yaVistos.current.add(m.id))
         setEstado({ conv: r.conversacion, mensajes: r.mensajes, hayAnteriores: r.hay_anteriores, error: '' })
         alCambiar()
       })
@@ -105,6 +115,7 @@ export default function Conversacion({ id, alCambiar }) {
     try {
       const r = await api(`/conversaciones/${id}/mensajes?antes=${mensajes[0].id}`)
       scroll.current = { modo: 'anteriores', alto: lista.current.scrollHeight - lista.current.scrollTop }
+      r.mensajes.forEach((m) => yaVistos.current.add(m.id))
       setEstado((e) => ({ ...e, mensajes: [...r.mensajes, ...e.mensajes], hayAnteriores: r.hay_anteriores }))
     } catch (err) {
       setErrorEnvio(err.message)
@@ -152,28 +163,34 @@ export default function Conversacion({ id, alCambiar }) {
 
   if (error) {
     return (
-      <div className="chat-elige">
+      <div className="chat-estado">
+        <h2>No pudimos abrir esta conversación</h2>
         <p>{error}</p>
         <Link to="/mensajes" className="boton secundario">Volver a mis mensajes</Link>
       </div>
     )
   }
-  if (!conv) return <p className="cargando">Cargando conversación…</p>
+  if (!conv) return <SiluetaConversacion />
 
   const { otro } = conv
   return (
     <div className="chat-conversacion">
       <header className="chat-cabecera">
-        <Link to="/mensajes" className="chat-volver" aria-label="Volver a mis mensajes">←</Link>
-        <Avatar nombre={otro.nombre} apellido={otro.ap_paterno} foto={otro.foto_url} tamano={40} />
-        <div>
-          {otro.disponible ? (
-            <Link to={`/usuarios/${otro.id}`} className="chat-nombre" state={{ desde: `/mensajes/${id}` }}>
-              {nombreDe(otro)} <InsigniaVerificacion verificado={otro.verificado} />
-            </Link>
-          ) : <span className="chat-nombre">{nombreDe(otro)}</span>}
-          <small>{otro.disponible ? 'Ver perfil' : 'Ya no está disponible en RoomMatch'}</small>
+        <Link to="/mensajes" className="chat-volver" aria-label="Volver a mis mensajes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+        </Link>
+        <Avatar nombre={otro.nombre} apellido={otro.ap_paterno} foto={otro.foto_url} tamano={44} />
+        <div className="chat-cabecera-textos">
+          <span className="chat-nombre">{nombreDe(otro)}</span>
+          {otro.disponible
+            ? <InsigniaVerificacion verificado={otro.verificado} />
+            : <small>Ya no está disponible en RoomMatch</small>}
         </div>
+        {otro.disponible && (
+          <Link to={`/usuarios/${otro.id}`} className="chat-ver-perfil" state={{ desde: `/mensajes/${id}` }}>
+            Ver perfil
+          </Link>
+        )}
       </header>
 
       <div ref={lista} className="chat-mensajes">
@@ -183,23 +200,33 @@ export default function Conversacion({ id, alCambiar }) {
           </button>
         )}
         {mensajes.length === 0 && (
-          <p className="chat-primer-mensaje">Escríbele a {mayuscula(otro.nombre)} para comenzar la conversación.</p>
+          <div className="chat-estado chat-primer-mensaje">
+            <IlustracionSaludo />
+            <p>Escríbele a {mayuscula(otro.nombre)} para comenzar la conversación.</p>
+          </div>
         )}
         {/* role="log": los lectores de pantalla anuncian los mensajes que llegan */}
         <ol className="chat-burbujas" role="log" aria-live="polite" aria-label={`Mensajes con ${nombreDe(otro)}`}>
-          {mensajes.map((m, i) => (
+          {mensajes.map((m, i) => {
+            const anterior = mensajes[i - 1]
+            const nuevoDia = !anterior || !mismoDia(anterior.fecha_envio, m.fecha_envio)
+            // Varios seguidos de la misma persona van juntos, como un solo bloque
+            const seguido = !nuevoDia && anterior.es_mio === m.es_mio
+            const clases = ['chat-burbuja', m.es_mio && 'mia', seguido && 'seguida', !yaVistos.current.has(m.id) && 'entra']
+            return (
             <Fragment key={m.id}>
-              {(i === 0 || !mismoDia(mensajes[i - 1].fecha_envio, m.fecha_envio)) && (
+              {nuevoDia && (
                 <li className="chat-dia" aria-hidden="true"><span>{tituloDia(m.fecha_envio)}</span></li>
               )}
-              <li className={`chat-burbuja${m.es_mio ? ' mia' : ''}`}>
+              <li className={clases.filter(Boolean).join(' ')}>
                 <span className="visualmente-oculto">{m.es_mio ? 'Tú' : mayuscula(otro.nombre)}, {tituloDia(m.fecha_envio)}:</span>
                 {m.publicacion && <TarjetaPublicacion pub={m.publicacion} />}
                 <p>{m.texto}</p>
                 <time dateTime={m.fecha_envio}>{horaDe(m.fecha_envio)}</time>
               </li>
             </Fragment>
-          ))}
+            )
+          })}
         </ol>
       </div>
 
@@ -218,8 +245,9 @@ export default function Conversacion({ id, alCambiar }) {
           <textarea id="chat-texto" value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={alTeclear}
             maxLength={MAX_MENSAJE} rows={1} placeholder="Escribe un mensaje…"
             aria-describedby={errorEnvio ? 'chat-error' : undefined} />
-          <button type="submit" className="boton" disabled={enviando || !texto.trim()}>
-            {enviando ? 'Enviando…' : 'Enviar'}
+          <button type="submit" className="chat-enviar" disabled={enviando || !texto.trim()}
+            aria-label={enviando ? 'Enviando' : 'Enviar mensaje'} title="Enviar (Enter)" data-enviando={enviando || undefined}>
+            <IconoEnviar />
           </button>
           {texto.length >= AVISAR_DESDE && (
             <span className="chat-contador">{texto.length}/{MAX_MENSAJE}</span>

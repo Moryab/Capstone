@@ -79,6 +79,7 @@ async def verificacion_out(usuario: dict) -> VerificacionOut:
         ),
         puede_verificar_correo=bool(institucion_correo) and estado in PUEDE_CORREO,
         verificado_con_correo=estado == "verificado" and verificacion.get("metodo") == "correo_institucional",
+        fecha_verificacion=verificacion.get("fecha_verificacion") if estado == "verificado" else None,
     )
 
 
@@ -247,31 +248,86 @@ def nombre_completo(doc: dict) -> str:
     return " ".join(p for p in (doc["nombre"], doc.get("ap_paterno"), doc.get("ap_materno")) if p)
 
 
+async def migrar_revocaciones() -> None:
+    """Las revocaciones hechas antes de guardarse en la solicitud quedaron solo en la cuenta: se
+    copian a su solicitud aprobada. Se puede repetir sin efecto."""
+    async for u in db.usuarios.find(
+        {"verificacion.estado": "revocado", "verificacion.solicitud_id": {"$ne": None}}, {"verificacion": 1}
+    ):
+        v = u["verificacion"]
+        await db.solicitudes_verificacion.update_one(
+            {"_id": v["solicitud_id"], "estado": "aprobada", "revocacion": {"$exists": False}},
+            {"$set": {"revocacion": {
+                "fecha": v.get("fecha_revocacion"), "motivo": v.get("motivo_revocacion"), "admin_id": v.get("admin_id"),
+            }}},
+        )
+
+
+async def fechas_revocacion() -> list[datetime]:
+    """Una fecha por cada revocación: las guardadas en solicitudes y las de cuentas que siguen
+    revocadas (incluye las verificadas con correo institucional, que no tienen solicitud)."""
+    fechas = {}
+    async for s in db.solicitudes_verificacion.find({"revocacion": {"$exists": True}}, {"revocacion.fecha": 1}):
+        fechas[s["_id"]] = s["revocacion"]["fecha"]
+    async for u in db.usuarios.find({"verificacion.estado": "revocado"}, {"verificacion": 1}):
+        v = u["verificacion"]
+        fechas.setdefault(v.get("solicitud_id") or u["_id"], v.get("fecha_revocacion"))
+    return [f for f in fechas.values() if f]
+
+
 @router.get("/solicitudes", response_model=list[SolicitudResumenOut])
 async def listar_solicitudes(
     estado: Literal["pendientes", "procesadas"] = "pendientes", _admin: dict = Depends(solo_admin)
 ):
     """CA-22.1: pendientes de la más antigua a la más reciente. Las procesadas quedan como
-    historial (CA-22.4), de la última revisada hacia atrás."""
+    historial (CA-22.4), de la última novedad hacia atrás. En el historial, una aprobada cuya
+    verificación se quitó después sale como «revocada», y también aparecen las cuentas verificadas
+    con correo institucional que se revocaron (no tienen solicitud)."""
     if estado == "pendientes":
         filtro, orden = {"estado": {"$in": POR_REVISAR}}, [("fecha_solicitud", 1)]
     else:
         filtro, orden = {"estado": {"$nin": POR_REVISAR}}, [("fecha_revision", -1)]
     solicitudes = await db.solicitudes_verificacion.find(filtro).sort(orden).to_list(500)
 
+    # Verificadas con correo institucional y revocadas: sin solicitud, se muestran desde la cuenta
+    por_correo = [] if estado == "pendientes" else await db.usuarios.find(
+        {"verificacion.estado": "revocado", "verificacion.solicitud_id": None},
+        {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "perfil.foto_url": 1, "verificacion": 1},
+    ).to_list(500)
+
     usuarios = {
         u["_id"]: u
         async for u in db.usuarios.find(
             {"_id": {"$in": [s["usuario_id"] for s in solicitudes]}},
-            {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "perfil.foto_url": 1},
+            {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "perfil.foto_url": 1, "verificacion": 1},
         )
     }
-    instituciones = await nombres_instituciones({s["institucion_id"] for s in solicitudes})
+    instituciones = await nombres_instituciones(
+        {s["institucion_id"] for s in solicitudes} | {u["verificacion"].get("institucion_id") for u in por_correo}
+    )
     filas = []
+    for u in por_correo:
+        v = u["verificacion"]
+        filas.append(SolicitudResumenOut(
+            id=str(u["_id"]),
+            origen="correo",
+            usuario_id=str(u["_id"]),
+            nombre=nombre_completo(u),
+            correo=u["correo"],
+            institucion_nombre=instituciones.get(v.get("institucion_id")),
+            tipo_comprobante="correo_institucional",
+            estado="revocada",
+            fecha_solicitud=v.get("fecha_verificacion") or v["fecha_revocacion"],
+            fecha_revision=v.get("fecha_verificacion"),
+            fecha_revocacion=v.get("fecha_revocacion"),
+            motivo_revocacion=v.get("motivo_revocacion"),
+            foto_url=u.get("perfil", {}).get("foto_url"),
+        ))
     for s in solicitudes:
         u = usuarios.get(s["usuario_id"])
         if not u:
             continue  # la cuenta se eliminó
+        revocacion = s.get("revocacion")
         filas.append(SolicitudResumenOut(
             id=str(s["_id"]),
             codigo=s["codigo"],
@@ -281,11 +337,16 @@ async def listar_solicitudes(
             institucion_nombre=instituciones.get(s["institucion_id"]),
             situacion=s.get("situacion") or situacion_de(s["tipo_comprobante"]),
             tipo_comprobante=s["tipo_comprobante"],
-            estado=s["estado"],
+            estado="revocada" if revocacion else s["estado"],
             fecha_solicitud=s["fecha_solicitud"],
             fecha_revision=s.get("fecha_revision"),
+            fecha_revocacion=revocacion and revocacion.get("fecha"),
+            motivo_revocacion=revocacion and revocacion.get("motivo"),
             foto_url=u.get("perfil", {}).get("foto_url"),
         ))
+    if estado == "procesadas":
+        # De la última novedad hacia atrás: una revocación cuenta desde que se hizo
+        filas.sort(key=lambda f: f.fecha_revocacion or f.fecha_revision or f.fecha_solicitud, reverse=True)
     return filas
 
 
@@ -304,8 +365,15 @@ async def ver_solicitud(solicitud_id: str, _admin: dict = Depends(solo_admin)):
     )
     fecha_nac = usuario.get("fecha_nac")
     base = SolicitudOut.desde_doc(solicitud, instituciones.get(solicitud["institucion_id"]))
+    revocacion = solicitud.get("revocacion")
+    revocador = revocacion and revocacion.get("admin_id") and await db.usuarios.find_one(
+        {"_id": revocacion["admin_id"]}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1}
+    )
     return SolicitudAdminOut(
-        **base.model_dump(),
+        **(base.model_dump() | ({"estado": "revocada"} if revocacion else {})),
+        fecha_revocacion=revocacion and revocacion.get("fecha"),
+        motivo_revocacion=revocacion and revocacion.get("motivo"),
+        revocada_por=revocador and nombre_completo(revocador),
         observaciones=solicitud.get("observaciones"),
         admin_revisor=revisor and nombre_completo(revisor),
         solicitante=SolicitanteOut(
@@ -406,6 +474,15 @@ async def quitar_verificacion(oid: ObjectId, admin: dict, motivo: str) -> None:
     )
     if not resultado.matched_count:
         raise HTTPException(status.HTTP_409_CONFLICT, "Este perfil no tiene una verificación vigente")
+    # La solicitud aprobada guarda la revocación (campo nuevo), así queda en el historial aunque el
+    # estudiante después vuelva a verificarse. Con correo institucional no hay solicitud
+    usuario = await db.usuarios.find_one({"_id": oid}, {"verificacion.solicitud_id": 1})
+    solicitud_id = usuario.get("verificacion", {}).get("solicitud_id")
+    if solicitud_id:
+        await db.solicitudes_verificacion.update_one(
+            {"_id": solicitud_id},
+            {"$set": {"revocacion": {"fecha": ahora, "motivo": motivo, "admin_id": admin["_id"]}}},
+        )
     await notificar(
         oid, "verificacion_estudiante", "Tu verificación de estudiante fue revocada",
         f"Motivo: {motivo.rstrip('.')}. Puedes volver a solicitarla con un comprobante actualizado.",
@@ -423,6 +500,59 @@ async def revocar_verificacion(usuario_id: str, datos: RevocacionIn, admin: dict
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
     await quitar_verificacion(oid, admin, datos.motivo)
     return {"mensaje": "Verificación revocada. La insignia ya no aparece en el perfil"}
+
+
+@router.post("/usuarios/{usuario_id}/restaurar")
+async def restaurar_verificacion(usuario_id: str, admin: dict = Depends(solo_admin)):
+    """Deshace una revocación (CA-23.4): la cuenta vuelve a quedar verificada con la misma solicitud
+    o el mismo correo institucional con que se verificó. La revocación queda en el historial de la
+    solicitud (campo nuevo `revocaciones_anteriores`)."""
+    try:
+        oid = ObjectId(usuario_id)
+    except InvalidId:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    ahora = datetime.now(timezone.utc)
+    anterior = await db.usuarios.find_one_and_update(
+        {"_id": oid, "verificacion.estado": "revocado"},
+        {"$set": {
+            "verificacion.estado": "verificado",
+            "verificacion.fecha_revocacion": None,
+            "verificacion.motivo_revocacion": None,
+            "verificacion.admin_id": admin["_id"],
+            "verificacion.fecha_restauracion": ahora,  # campo nuevo (no está en el modelo de datos)
+            "fecha_actualizacion": ahora,
+        }},
+        projection={"verificacion": 1},
+    )
+    if not anterior:
+        usuario = await db.usuarios.find_one({"_id": oid}, {"verificacion.estado": 1})
+        if not usuario:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+        if usuario.get("verificacion", {}).get("estado") == "pendiente":
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                "Ya envió una nueva solicitud de verificación: revísala en Verificaciones")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este perfil no tiene una verificación revocada")
+
+    solicitud_id = anterior["verificacion"].get("solicitud_id")
+    if solicitud_id:
+        solicitud = await db.solicitudes_verificacion.find_one({"_id": solicitud_id}, {"revocacion": 1})
+        if solicitud and solicitud.get("revocacion"):
+            await db.solicitudes_verificacion.update_one(
+                {"_id": solicitud_id},
+                {
+                    "$unset": {"revocacion": ""},
+                    "$push": {"revocaciones_anteriores": {
+                        **solicitud["revocacion"], "fecha_restauracion": ahora, "restaurada_por": admin["_id"],
+                    }},
+                },
+            )
+    await al_quedar_verificado(oid)  # vuelve a contar en la compatibilidad y el matching
+    await notificar(
+        oid, "verificacion_estudiante", "Tu verificación de estudiante fue restablecida",
+        "Revisamos tu caso y tu perfil vuelve a mostrar la insignia de estudiante verificado.",
+        ("usuario", oid),
+    )
+    return {"mensaje": "Verificación restablecida. La insignia vuelve a aparecer en el perfil"}
 
 
 @router.get("/solicitudes/{solicitud_id}/comprobante")

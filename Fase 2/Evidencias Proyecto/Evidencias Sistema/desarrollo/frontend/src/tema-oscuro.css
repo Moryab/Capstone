@@ -72,7 +72,6 @@ html.tema-oscuro .tarjeta,
 html.tema-oscuro .perfil-vista { box-shadow: 0 30px 70px rgb(0 0 0 / 0.55); }
 
 /* Búsqueda de alojamientos y hábitos del perfil */
-html.tema-oscuro .alojamiento-etiquetas li { background: rgb(45 212 191 / 0.14); }
 /* «Imprescindible» usa el color de marca de fondo, que de noche es claro: el texto pasa a oscuro */
 html.tema-oscuro .imprescindible { color: var(--fondo); }
 /* Enlaces de texto sin estilo propio: el azul por defecto del navegador casi no se lee de noche */

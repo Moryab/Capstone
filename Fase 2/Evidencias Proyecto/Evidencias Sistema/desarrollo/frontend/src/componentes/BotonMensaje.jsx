@@ -21,7 +21,7 @@ export default function BotonMensaje({ usuarioId, nombre, publicacion, texto = '
   if (!estaVerificado(usuario)) {
     return (
       <p className="campo-ayuda boton-mensaje-ayuda">
-        Podrás enviarle mensajes a {nombre} cuando <Link to="/verificacion">tu cuenta esté verificada</Link>.
+        Podrás enviarle mensajes a {nombre} cuando <Link to="/perfil/verificacion">tu cuenta esté verificada</Link>.
       </p>
     )
   }

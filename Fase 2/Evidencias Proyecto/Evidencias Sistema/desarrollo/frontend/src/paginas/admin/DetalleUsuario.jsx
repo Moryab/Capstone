@@ -10,6 +10,7 @@ import { textoCuenta, textoPublicacion, textoVerificacion } from './datos.js'
 import AccionCuenta from './AccionCuenta.jsx'
 import CambiarRol from './CambiarRol.jsx'
 import ReactivarCuenta from './ReactivarCuenta.jsx'
+import RestaurarVerificacion from './RestaurarVerificacion.jsx'
 import './reportes.css'
 import { EtiquetaRol, PaginaAdmin } from './ui/componentes.jsx'
 import { nombrePropio, rut } from './ui/formato.js'
@@ -177,6 +178,18 @@ export default function DetalleUsuario() {
         ))}
       </Seccion>
 
+      {/* Deshacer una revocación: también para quien se verificó con correo institucional (sin solicitud) */}
+      {perfil.verificacion_estado === 'revocado' && (
+        <section className="reporte-accion" aria-labelledby="titulo-restaurar">
+          <h2 id="titulo-restaurar">Verificación revocada</h2>
+          <p className="revision-sub">Si la revocaste por error o el caso ya se aclaró, puedes volver a verificarlo.</p>
+          {aviso.id === `error-${id}` && <p className="alerta" role="alert">{aviso.texto}</p>}
+          <div className="acciones">
+            <RestaurarVerificacion usuarioId={perfil.id} nombre={nombrePropio(perfil.nombre_completo)} className="boton"
+              alTerminar={(texto) => alTerminar(`${texto}.`)} alFallar={(texto) => setAviso({ id: `error-${id}`, texto })} />
+          </div>
+        </section>
+      )}
       {perfil.estado_cuenta !== 'eliminada' && (
         <CambiarRol key={`rol-${id}`} usuarioId={perfil.id} nombre={nombrePropio(perfil.nombre_completo)} modo={perfil.modo}
           alTerminar={alTerminar} />

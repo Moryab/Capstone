@@ -8,7 +8,9 @@ import {
   IconoCamara, IconoCerrar, IconoEditar, IconoEscudo, IconoFlecha, IconoMas, IconoMatch, IconoPausa,
 } from '../inicio/iconos.jsx'
 import { contar, gsap, prefiereSinMovimiento } from '../landing/animaciones.js'
-import { formatearFecha, formatearPesos, textoDe, TIPOS } from '../publicaciones.js'
+import {
+  CARACTERISTICAS, formatearFecha, formatearPesos, GENEROS_PREFERIDOS, MAX_FOTOS, SERVICIOS, textoDe, TIPOS,
+} from '../publicaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { estaVerificado } from '../sesion/verificacion.js'
 import './misPublicaciones.css'
@@ -29,7 +31,6 @@ const PESTANAS = [
 ]
 // En «Todas», primero lo que necesita una respuesta y al final lo que no depende de su dueño
 const ORDEN = { pausada: 0, activa: 1, completa: 2, suspendida: 3 }
-const ANCHO_INDICADOR = 100 // px: el indicador de la pestaña se estira con scaleX desde este ancho
 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
 
@@ -47,7 +48,7 @@ function porPublicacion(r) {
 
 // Sin fotos: una habitación dibujada con los colores de la marca
 const SinFotos = () => (
-  <svg className="mp-sin-fotos" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <svg className="mp-sin-fotos" viewBox="0 0 320 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
     <rect width="320" height="200" fill="#e3f1ef" />
     <rect y="150" width="320" height="50" fill="#cfe5e1" />
     <rect x="196" y="46" width="78" height="62" rx="4" fill="#fff" />
@@ -81,8 +82,8 @@ const Casas = () => (
   </svg>
 )
 
-// Pestañas con un indicador que se desliza (solo transform) y flechas del teclado
-function Pestanas({ pestanas, actual, alCambiar }) {
+// Pestañas en una cápsula, con una píldora que se desliza a la elegida y flechas del teclado
+function Pestanas({ pestanas, actual, alCambiar, resumen }) {
   const lista = useRef(null)
   const indicador = useRef(null)
   const primera = useRef(true)
@@ -90,7 +91,7 @@ function Pestanas({ pestanas, actual, alCambiar }) {
   const mover = useCallback((animar) => {
     const boton = lista.current?.querySelector(`[data-clave="${actual}"]`)
     if (!boton || !indicador.current) return
-    const destino = { x: boton.offsetLeft, scaleX: boton.offsetWidth / ANCHO_INDICADOR }
+    const destino = { x: boton.offsetLeft, width: boton.offsetWidth }
     if (animar) gsap.to(indicador.current, { ...destino, duration: 0.4, ease: 'power3.out' })
     else gsap.set(indicador.current, destino)
   }, [actual])
@@ -131,63 +132,123 @@ function Pestanas({ pestanas, actual, alCambiar }) {
         ))}
         <span ref={indicador} className="mp-indicador" aria-hidden="true" />
       </div>
+      {resumen && <p className="mp-pestanas-resumen">{resumen}</p>}
     </div>
   )
 }
 
-// Una publicación: foto, estado, precio, cupos libres y lo que se puede hacer con ella
-function TarjetaPublicacion({ p, info, oferente, alEliminar, alReactivar }) {
+// Lo que incluye y permite, en frases cortas para las etiquetas de la tarjeta
+function etiquetasDe(p) {
+  const incluidos = SERVICIOS.filter((x) => p.gastos?.[x.clave]?.incluido).map((x) => x.texto.toLowerCase())
+  const gastos = p.gastos?.todos_incluidos ? 'Gastos incluidos'
+    : incluidos.length ? `Incluye ${incluidos.join(', ').replace(/, ([^,]*)$/, ' y $1')}` : null
+  const r = p.reglas ?? {}
+  return [
+    gastos && { texto: gastos, tono: 'acento' },
+    ...CARACTERISTICAS.filter((c) => p.caracteristicas?.[c.clave]).map((c) => ({ texto: c.texto })),
+    p.genero_preferido !== 'indiferente' && { texto: textoDe(GENEROS_PREFERIDOS, p.genero_preferido) },
+    { texto: r.permite_mascotas ? 'Acepta mascotas' : 'Sin mascotas', tono: 'suave' },
+    { texto: r.permite_fumar ? 'Se puede fumar' : 'No se fuma', tono: 'suave' },
+    { texto: r.permite_visitas ? 'Visitas permitidas' : 'Sin visitas', tono: 'suave' },
+  ].filter(Boolean)
+}
+
+const IconoOjo = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" />
+  </svg>
+)
+
+/**
+ * Una publicación. Se arma según su propio ancho (container queries en misPublicaciones.css):
+ * angosta, todo apilado; mediana, la foto al lado; ancha, además una columna con cifras y acciones.
+ * La foto siempre se recorta igual y acompaña la altura del texto: no deja huecos.
+ */
+function TarjetaPublicacion({ p, info, conMatches, oferente, alEliminar, alReactivar }) {
   const foto = p.fotos.find((f) => f.es_principal) ?? p.fotos[0]
+  const miniaturas = p.fotos.filter((f) => f !== foto).slice(0, 3)
   const estado = ESTADO[p.estado] ?? { texto: p.estado, tono: 'aviso' }
   const editar = `/publicaciones/${p.id}/editar`
   const avance = p.cupos_totales ? p.cupos_disponibles / p.cupos_totales : 0
+  const fecha = p.fecha_ultima_modificacion
+    ? `Editada el ${formatearFecha(p.fecha_ultima_modificacion)}`
+    : `Publicada el ${formatearFecha(p.fecha_publicacion)}`
+  const porResponder = info?.porResponder ?? 0
 
   return (
     <li className="mp-tarjeta" data-id={p.id} data-estado={p.estado}>
-      <div className="mp-media">
-        {foto ? <img src={foto.url} alt="" loading="lazy" /> : <SinFotos />}
-        <span className="mp-estado" data-tono={estado.tono}><span className="mp-punto" aria-hidden="true" />{estado.texto}</span>
-        {p.fotos.length > 0
-          ? <span className="mp-fotos"><IconoCamara /> {p.fotos.length}</span>
-          : p.estado !== 'suspendida' && <Link to={editar} className="mp-agregar-fotos"><IconoCamara /> Agregar fotos</Link>}
-      </div>
-
-      <div className="mp-cuerpo">
-        <p className="mp-meta">{textoDe(TIPOS, p.tipo)} · {p.ubicacion.comuna_nombre}</p>
-        <h3><Link to={`/alojamientos/${p.id}`} className="mp-titulo">{p.titulo}</Link></h3>
-        <p className="mp-precio">{formatearPesos(p.costo_mensual)} <span>/ mes</span></p>
-
-        <div className="mp-cupos">
-          <p><span>Cupos libres</span> <strong>{p.cupos_disponibles} de {p.cupos_totales}</strong></p>
-          <span className="mp-barra" aria-hidden="true">
-            <span className="mp-barra-relleno" style={{ '--avance': avance }} />
-          </span>
+      <div className="mp-tarjeta-interior">
+        <div className="mp-media">
+          {foto ? <img src={foto.url} alt="" loading="lazy" /> : <SinFotos />}
+          <span className="mp-estado" data-tono={estado.tono}><span className="mp-punto" aria-hidden="true" />{estado.texto}</span>
+          {miniaturas.length > 0 && (
+            <span className="mp-miniaturas" aria-hidden="true">
+              {miniaturas.map((f) => <img key={f.url} src={f.url} alt="" loading="lazy" />)}
+            </span>
+          )}
+          {p.fotos.length === 0 && p.estado !== 'suspendida' && (
+            <Link to={editar} className="mp-agregar-fotos"><IconoCamara /> Agregar fotos</Link>
+          )}
         </div>
 
-        {info?.porResponder > 0 && (
-          <Link to="/propuestas" className="mp-senal">
-            <IconoMatch /> {plural(info.porResponder, 'propuesta por responder', 'propuestas por responder')} <IconoFlecha />
-          </Link>
-        )}
-        {info?.roomies > 0 && (
-          <p className="mp-senal tranquila"><IconoMatch /> {plural(info.roomies, 'roomie vive aquí', 'roomies viven aquí')}</p>
-        )}
-        {p.estado === 'pausada' && <p className="mp-nota">Nadie la ve mientras esté pausada.</p>}
-        {p.estado === 'suspendida' && <p className="mp-nota" data-tono="alerta">Un administrador la ocultó. Revisa el aviso que te enviamos.</p>}
-      </div>
+        <div className="mp-contenido">
+          {/* Lo principal: qué es, cuánto cuesta y cómo es */}
+          <div className="mp-principal">
+            <p className="mp-meta">{textoDe(TIPOS, p.tipo)} en {p.ubicacion.comuna_nombre}, {p.ubicacion.sector}</p>
+            <h3><Link to={`/alojamientos/${p.id}`} className="mp-titulo">{p.titulo}</Link></h3>
+            <p className="mp-precio">{formatearPesos(p.costo_mensual)} <span>/ mes</span></p>
+            {p.descripcion && <p className="mp-descripcion">{p.descripcion}</p>}
+            <ul className="mp-etiquetas" aria-label="Qué incluye y qué permite">
+              {etiquetasDe(p).map((e) => <li key={e.texto} data-tono={e.tono}>{e.texto}</li>)}
+            </ul>
+            {porResponder > 0 && (
+              <Link to="/propuestas" className="mp-senal">
+                <IconoMatch /> {plural(porResponder, 'propuesta por responder', 'propuestas por responder')} <IconoFlecha />
+              </Link>
+            )}
+            {p.estado === 'pausada' && <p className="mp-nota">Nadie la ve mientras esté pausada.</p>}
+            {p.estado === 'suspendida' && <p className="mp-nota" data-tono="alerta">Un administrador la ocultó. Revisa el aviso que te enviamos.</p>}
+            <p className="mp-fecha">{fecha}</p>
+          </div>
 
-      <div className="mp-pie">
-        <span className="mp-fecha">
-          {p.fecha_ultima_modificacion ? `Editada el ${formatearFecha(p.fecha_ultima_modificacion)}` : `Publicada el ${formatearFecha(p.fecha_publicacion)}`}
-        </span>
-        <div className="mp-acciones">
-          {p.estado === 'pausada' && oferente && (
-            <button type="button" className="mp-boton primario" onClick={() => alReactivar(p)}>Publicar de nuevo</button>
-          )}
-          <Link to={editar} className="mp-boton" aria-label={`Editar «${p.titulo}»`}><IconoEditar /> Editar</Link>
-          <button type="button" className="mp-boton icono peligro" onClick={() => alEliminar(p)} aria-label={`Eliminar «${p.titulo}»`}>
-            <IconoPapelera />
-          </button>
+          {/* Cifras y acciones */}
+          <div className="mp-lateral">
+            <dl className="mp-datos">
+              <div className="mp-dato mp-dato-cupos">
+                <dt>Cupos libres</dt>
+                <dd>{p.cupos_disponibles}<small> de {p.cupos_totales}</small></dd>
+                <span className="mp-barra" aria-hidden="true"><span className="mp-barra-relleno" style={{ '--avance': avance }} /></span>
+              </div>
+              {conMatches && (
+                <div className="mp-dato" data-destacado={porResponder > 0 || undefined} data-cero={porResponder === 0 || undefined}>
+                  <dt>Por responder</dt><dd>{porResponder}</dd>
+                </div>
+              )}
+              {conMatches && (
+                <div className="mp-dato" data-cero={!info?.roomies || undefined}><dt>Roomies</dt><dd>{info?.roomies ?? 0}</dd></div>
+              )}
+              <div className="mp-dato" data-cero={p.fotos.length === 0 || undefined}>
+                <dt>Fotos</dt><dd>{p.fotos.length}<small> de {MAX_FOTOS}</small></dd>
+              </div>
+            </dl>
+
+            <div className="mp-acciones">
+              {p.estado === 'pausada' && oferente && (
+                <button type="button" className="mp-boton primario mp-accion-principal" onClick={() => alReactivar(p)}>
+                  Publicar de nuevo
+                </button>
+              )}
+              <Link to={editar} className={`mp-boton ${p.estado === 'pausada' && oferente ? '' : 'primario'}`}
+                aria-label={`Editar «${p.titulo}»`}>
+                <IconoEditar /> Editar
+              </Link>
+              <Link to={`/alojamientos/${p.id}`} className="mp-boton mp-ver"><IconoOjo /> Ver como estudiante</Link>
+              <button type="button" className="mp-boton icono peligro" onClick={() => alEliminar(p)}
+                aria-label={`Eliminar «${p.titulo}»`} title="Eliminar">
+                <IconoPapelera />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </li>
@@ -277,7 +338,8 @@ export default function MisPublicaciones() {
     if (prefiereSinMovimiento()) return undefined
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(panel)
-      gsap.from(q('.mp-tarjeta'), { opacity: 0, y: 14, duration: 0.4, stagger: 0.05, ease: 'power3.out' })
+      // Con un desenfoque breve: lo que entra se funde en vez de aparecer de golpe
+      gsap.from(q('.mp-tarjeta'), { opacity: 0, y: 14, filter: 'blur(3px)', duration: 0.4, stagger: 0.05, ease: 'power3.out', clearProps: 'filter' })
       gsap.from(q('.mp-barra-relleno'), { scaleX: 0, duration: 0.6, stagger: 0.05, ease: 'power3.out', delay: 0.1 })
     }, panel)
     return () => ctx.revert()
@@ -377,7 +439,15 @@ export default function MisPublicaciones() {
 
       {!listo && (
         <div className="mp-cargando" role="status" aria-label="Cargando tus publicaciones">
-          <span /><span /><span />
+          {[0, 1].map((i) => (
+            <div key={i} className="mp-silueta">
+              <span className="mp-sil-foto" />
+              <span className="mp-sil-texto">
+                <span style={{ width: '40%' }} /><span style={{ width: '75%', height: 20 }} /><span style={{ width: '30%', height: 24 }} />
+                <span style={{ width: '90%' }} /><span className="mp-sil-datos" />
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -411,11 +481,12 @@ export default function MisPublicaciones() {
 
       {listo && lista.length > 0 && (
         <section className="mp-listado" aria-label="Tus publicaciones">
-          <Pestanas pestanas={pestanas} actual={actual} alCambiar={setFiltro} />
+          <Pestanas pestanas={pestanas} actual={actual} alCambiar={setFiltro}
+            resumen={actual === 'todas' ? plural(lista.length, 'publicación', 'publicaciones') : `${mostradas.length} de ${lista.length}`} />
           <div ref={panel} id="mp-panel" role="tabpanel" aria-labelledby={`mp-tab-${actual}`}>
             <ul className="mp-grilla">
               {mostradas.map((p) => (
-                <TarjetaPublicacion key={p.id} p={p} info={matches?.[p.id]} oferente={oferente}
+                <TarjetaPublicacion key={p.id} p={p} info={matches?.[p.id]} conMatches={Boolean(matches)} oferente={oferente}
                   alEliminar={setPorEliminar} alReactivar={(pub) => setRevision([pub])} />
               ))}
             </ul>

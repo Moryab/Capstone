@@ -10,7 +10,7 @@ import { IconoFlecha, IconoFoto } from './iconos.jsx'
 // Sin fotos: una habitación dibujada con los colores de la marca
 function SinFotos() {
   return (
-    <svg className="p2-pub-placeholder" viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg className="p2-pub-placeholder" viewBox="0 0 320 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
       <rect width="320" height="200" fill="#e3f1ef" />
       <rect y="150" width="320" height="50" fill="#cfe5e1" />
       <rect x="196" y="46" width="78" height="62" rx="4" fill="#fff" />
@@ -174,7 +174,13 @@ export default function Publicaciones() {
       </div>
 
       {mensaje.texto && <p className={mensaje.tipo} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>}
-      {publicaciones === null && !mensaje.texto && <p className="p2-vacio">Cargando tus publicaciones…</p>}
+      {publicaciones === null && !mensaje.texto && (
+        <ul className="p2-pubs p2-pubs-silueta" role="status" aria-label="Cargando tus publicaciones">
+          {[0, 1].map((i) => (
+            <li key={i}><span className="p2-sil-foto" /><span className="p2-sil-linea" /><span className="p2-sil-linea corta" /></li>
+          ))}
+        </ul>
+      )}
 
       {publicaciones?.length === 0 && (
         <div className="p2-pubs-vacio">

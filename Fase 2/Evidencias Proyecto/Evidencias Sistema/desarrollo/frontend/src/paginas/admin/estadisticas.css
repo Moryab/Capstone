@@ -300,6 +300,20 @@ html.tema-oscuro .g-tooltip { background: #1d3550; }
 .g-ranking-pista { grid-column: 2 / -1; height: 8px; overflow: hidden; background: var(--a-sup-2); border-radius: 999px; }
 .g-ranking-pista span { display: block; height: 100%; background: var(--est-exitoso); border-radius: inherit; transform: scaleX(var(--avance)); transform-origin: left center; }
 
+/* Análisis por categoría (EP-08): fracaso cuando difieren frente a cuando coinciden */
+.g-categorias { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+.g-categorias li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 12px; }
+.g-cat-nombre { overflow: hidden; font-size: 0.92rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; color: var(--a-titulo); }
+.g-cat-brecha { font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--a-suave); }
+.g-cat-brecha[data-sube] { padding: 2px 8px; color: var(--a-espera); background: var(--a-espera-fondo); border-radius: 999px; }
+.g-cat-barra { grid-column: 1 / -1; display: grid; grid-template-columns: 76px minmax(0, 1fr) 8.5rem; align-items: center; gap: 10px; }
+.g-cat-texto { font-size: 0.8rem; color: var(--a-suave); }
+.g-cat-pista { height: 8px; overflow: hidden; background: var(--a-sup-2); border-radius: 999px; }
+.g-cat-pista span { display: block; height: 100%; background: var(--est-exitoso); border-radius: inherit; transform: scaleX(var(--avance)); transform-origin: left center; }
+.g-cat-barra.coinciden .g-cat-pista span { background: var(--est-no-exitoso); }
+.g-cat-valor { font-size: 0.86rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; color: var(--a-titulo); }
+.g-cat-valor small { font-weight: 500; color: var(--a-suave); }
+
 
 /* ---------- Bienvenida (Hero.jsx) ---------- */
 .h-hero {
@@ -809,9 +823,9 @@ html.tema-oscuro .es-admin .c-mes td button[data-elegido]:hover:not(:disabled) {
    Al aparecer, las barras crecen desde la base y los rellenos desde la izquierda; después, al
    cambiar un filtro, la misma transición lleva del valor anterior al nuevo */
 @media (prefers-reduced-motion: no-preference) {
-  .g-meta-valor, .g-ranking-pista span { transition: transform 600ms var(--a-curva); }
+  .g-meta-valor, .g-ranking-pista span, .g-cat-pista span { transition: transform 600ms var(--a-curva); }
   @starting-style {
     .g-barra { transform: scaleY(0); }
-    .g-meta-valor, .g-ranking-pista span { transform: scaleX(0); }
+    .g-meta-valor, .g-ranking-pista span, .g-cat-pista span { transform: scaleX(0); }
   }
 }

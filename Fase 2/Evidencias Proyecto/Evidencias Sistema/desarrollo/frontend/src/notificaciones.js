@@ -11,7 +11,7 @@ export function enlaceDe(aviso) {
     case 'recordatorio_evaluacion':
       return referencia.id ? `/evaluacion/${referencia.id}` : '/propuestas'
     case 'verificacion_estudiante':
-      return '/verificacion'
+      return '/perfil/verificacion'
     case 'accion_moderacion':
       return referencia.tipo === 'publicacion' && referencia.id ? `/alojamientos/${referencia.id}` : null
     default:

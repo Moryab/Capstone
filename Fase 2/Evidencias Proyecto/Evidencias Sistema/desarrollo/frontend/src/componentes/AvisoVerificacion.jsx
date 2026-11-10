@@ -36,7 +36,7 @@ export default function AvisoVerificacion({ detalle, className = '' }) {
         <strong>{titulo}</strong> {texto}
         {detalle && <> {detalle}</>}
       </p>
-      <Link to="/verificacion">{enlace}</Link>
+      <Link to="/perfil/verificacion">{enlace}</Link>
     </div>
   )
 }

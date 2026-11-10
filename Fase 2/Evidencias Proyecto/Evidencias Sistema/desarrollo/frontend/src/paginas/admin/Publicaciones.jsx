@@ -6,7 +6,7 @@ import { formatearPesos, textoDe, TIPOS } from '../../publicaciones.js'
 import { ESTADOS_PUBLICACION, textoPublicacion } from './datos.js'
 import Paginacion from './Paginacion.jsx'
 import './reportes.css'
-import Buscador from './ui/Buscador.jsx'
+import Buscador from '../../componentes/Buscador.jsx'
 import {
   BarraFiltros, ChipEstado, EncabezadoAdmin, EstadoVacio, ICONOS_ESTADO, ImagenSuave, PaginaAdmin, TarjetaKpi,
 } from './ui/componentes.jsx'

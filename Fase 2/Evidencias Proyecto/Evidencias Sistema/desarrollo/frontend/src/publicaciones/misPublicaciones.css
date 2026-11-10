@@ -8,9 +8,7 @@
   gap: 24px;
   align-content: start;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px clamp(16px, 3vw, 40px) 56px;
+  padding: 24px clamp(16px, 2.4vw, 36px) 56px;
 }
 /* Sin esto, las pestañas (que se desplazan de lado) ensancharían toda la página en el celular */
 .mp-pagina > * { min-width: 0; }
@@ -124,64 +122,89 @@
 .mp-pendiente-texto span { font-size: 0.86rem; line-height: 1.45; color: var(--i-suave); }
 .mp-pendiente > .mp-boton { grid-column: 2; justify-self: start; }
 
-/* ---------- Botones de la página ---------- */
+/* ---------- Botones de la página ----------
+   Formales pero con presencia: el principal en verde con un brillo suave y sombra de su color; el
+   secundario con borde. Al presionar se encogen apenas (respuesta inmediata) */
 .mp-boton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 8px 14px;
-  font: 600 0.86rem/1 'Work Sans', system-ui, sans-serif;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  font: 600 0.88rem/1 'Work Sans', system-ui, sans-serif;
   color: var(--i-titulo);
   text-decoration: none;
   background: var(--i-sup);
   border: 1px solid var(--i-borde-fuerte);
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 160ms var(--mp-curva), background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition: transform 160ms var(--mp-curva), background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
 }
-.mp-boton svg { width: 16px; height: 16px; }
+.mp-boton svg { flex: none; width: 17px; height: 17px; }
 .mp-boton:active { transform: scale(0.97); }
 .mp-boton:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2px; }
-.mp-boton.primario { color: var(--i-sup); background: var(--i-acento); border-color: var(--i-acento); }
-.mp-boton.icono { width: 40px; padding: 0; }
-.mp-boton.peligro { color: var(--i-peligro); }
+.mp-boton.primario {
+  color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--i-acento) 88%, #fff), var(--i-acento));
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 10px 20px -12px color-mix(in srgb, var(--i-acento) 90%, transparent);
+}
+html.tema-oscuro .mp-boton.primario { color: var(--i-sup); }
+.mp-boton.icono { width: 44px; padding: 0; }
+.mp-boton.peligro { color: var(--i-peligro); border-color: color-mix(in srgb, var(--i-peligro) 30%, var(--i-borde)); }
 @media (hover: hover) and (pointer: fine) {
   .mp-boton:hover { border-color: var(--i-acento); background: var(--i-tinte); }
-  .mp-boton.primario:hover { background: color-mix(in srgb, var(--i-acento) 85%, #000); }
+  .mp-boton.primario:hover { background: linear-gradient(180deg, var(--i-acento), color-mix(in srgb, var(--i-acento) 82%, #000)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 14px 26px -12px color-mix(in srgb, var(--i-acento) 90%, transparent); }
   .mp-boton.peligro:hover { border-color: var(--i-peligro); background: var(--i-peligro-fondo); }
 }
 
-/* ---------- Pestañas con indicador deslizante ---------- */
-.mp-pestanas-zona { margin-bottom: 18px; overflow-x: auto; scrollbar-width: none; }
-.mp-pestanas-zona::-webkit-scrollbar { display: none; }
+/* ---------- Pestañas: cápsula blanca con una píldora que se desliza ----------
+   Van sobre una superficie propia para que no se pierdan sobre el fondo ilustrado */
+.mp-pestanas-zona {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 .mp-pestanas {
   position: relative;
   display: inline-flex;
-  gap: 4px;
-  min-width: 100%;
-  border-bottom: 1px solid var(--i-borde);
+  gap: 2px;
+  max-width: 100%;
+  padding: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--i-sup);
+  border: 1px solid var(--i-borde);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgb(14 36 64 / 0.05), 0 14px 30px -22px rgb(14 36 64 / 0.45);
 }
+.mp-pestanas::-webkit-scrollbar { display: none; }
 .mp-pestanas [role='tab'] {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 10px 14px;
-  font: 600 0.92rem/1 'Work Sans', system-ui, sans-serif;
+  min-height: 40px;
+  padding: 0 16px;
+  font: 600 0.9rem/1 'Work Sans', system-ui, sans-serif;
   white-space: nowrap;
   color: var(--i-suave);
   background: none;
   border: 0;
-  border-radius: 10px 10px 0 0;
+  border-radius: 999px;
   cursor: pointer;
   transition: color 200ms ease;
 }
-.mp-pestanas [role='tab'][aria-selected='true'] { color: var(--i-titulo); }
-.mp-pestanas [role='tab']:focus-visible { outline: 3px solid var(--i-acento); outline-offset: -3px; }
+.mp-pestanas [role='tab'][aria-selected='true'] { color: #fff; }
+html.tema-oscuro .mp-pestanas [role='tab'][aria-selected='true'] { color: var(--i-sup); }
+.mp-pestanas [role='tab']:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
-  .mp-pestanas [role='tab']:hover { color: var(--i-titulo); }
+  .mp-pestanas [role='tab']:not([aria-selected='true']):hover { color: var(--i-titulo); }
 }
 .mp-cuenta {
   min-width: 22px;
@@ -194,63 +217,74 @@
   border-radius: 999px;
   transition: color 200ms ease, background-color 200ms ease;
 }
-[aria-selected='true'] > .mp-cuenta { color: var(--i-sup); background: var(--i-acento); }
-/* 100px de ancho base: GSAP lo mueve con x y lo estira con scaleX */
+[aria-selected='true'] > .mp-cuenta { color: #fff; background: rgb(255 255 255 / 0.2); }
+html.tema-oscuro [aria-selected='true'] > .mp-cuenta { color: var(--i-sup); background: rgb(0 0 0 / 0.15); }
+/* GSAP la mueve con x y le da el ancho de la pestaña elegida */
 .mp-indicador {
   position: absolute;
-  bottom: -1px;
+  top: 5px;
+  bottom: 5px;
   left: 0;
-  width: 100px;
-  height: 3px;
+  width: 0;
   background: var(--i-acento);
-  border-radius: 3px;
-  transform-origin: left center;
+  border-radius: 999px;
+  box-shadow: 0 6px 14px -8px rgb(18 118 107 / 0.8);
   pointer-events: none;
 }
+.mp-pestanas-resumen { font-size: 0.9rem; font-weight: 600; color: var(--i-suave); }
 
-/* ---------- Tarjetas ---------- */
+/* ---------- Tarjetas ----------
+   Pensadas primero para el celular (todo apilado). Cada tarjeta se reacomoda según su propio ancho
+   con container queries: desde 640px la foto va al lado; desde 980px las cifras y acciones pasan a
+   una columna propia. La foto acompaña la altura del texto, así no quedan huecos */
 .mp-grilla {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 620px), 1fr));
+  gap: 22px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .mp-tarjeta {
+  container-type: inline-size;
   position: relative;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
   background: var(--i-sup);
   border: 1px solid var(--i-borde);
-  border-radius: 22px;
-  box-shadow: 0 18px 40px -28px rgb(15 59 74 / 0.4);
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgb(14 36 64 / 0.05), 0 22px 44px -30px rgb(15 59 74 / 0.45);
   transition: transform 260ms var(--mp-curva), box-shadow 260ms var(--mp-curva), border-color 200ms ease;
 }
 .mp-tarjeta[data-estado='pausada'] { border-color: color-mix(in srgb, #d4a017 55%, var(--i-borde)); }
 .mp-tarjeta[data-estado='suspendida'] { border-color: color-mix(in srgb, var(--i-peligro) 45%, var(--i-borde)); }
 @media (hover: hover) and (pointer: fine) {
-  .mp-tarjeta:hover { transform: translateY(-4px); box-shadow: 0 28px 50px -28px rgb(15 59 74 / 0.55); }
-  .mp-tarjeta:hover .mp-media img { transform: scale(1.04); }
+  .mp-tarjeta:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgb(14 36 64 / 0.06), 0 30px 56px -30px rgb(15 59 74 / 0.55); }
+  .mp-tarjeta:hover .mp-media > img { transform: scale(1.04); }
 }
+.mp-tarjeta-interior { display: grid; grid-template-columns: minmax(0, 1fr); height: 100%; }
 
-.mp-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--i-sup-2); }
-.mp-media img, .mp-sin-fotos { display: block; width: 100%; height: 100%; object-fit: cover; }
-.mp-media img { transition: transform 500ms var(--mp-curva); }
+/* ----- Foto: siempre recortada igual, sea del tamaño que sea ----- */
+.mp-media { position: relative; aspect-ratio: 16 / 10; max-height: 340px; overflow: hidden; background: var(--i-sup-2); }
+.mp-media:has(.mp-sin-fotos) { background: #e3f1ef; }
+.mp-media > img, .mp-media > .mp-sin-fotos { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+/* La ilustración se ve entera (no se agranda) y se apoya abajo; el resto lo completa el fondo */
+.mp-media > .mp-sin-fotos { object-fit: contain; }
+.mp-media > img { transition: transform 600ms var(--mp-curva); }
+.mp-media::after { position: absolute; inset: 60% 0 0; content: ''; background: linear-gradient(transparent, rgb(14 36 64 / 0.4)); pointer-events: none; }
 /* Pausada u oculta: la foto se apaga para que se note que nadie la ve */
 .mp-tarjeta:is([data-estado='pausada'], [data-estado='suspendida']) .mp-media > :is(img, svg) { opacity: 0.55; filter: grayscale(0.6); }
 
 .mp-estado {
   --mp-tono: #12766b;
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  font-size: 0.75rem;
+  padding: 6px 11px;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #0e2440;
   background: rgb(255 255 255 / 0.92);
@@ -261,37 +295,94 @@
 .mp-estado[data-tono='alerta'] { --mp-tono: #b42318; }
 .mp-punto { width: 8px; height: 8px; background: var(--mp-tono); border-radius: 50%; }
 .mp-estado[data-tono='ok'] .mp-punto { box-shadow: 0 0 0 3px rgb(18 118 107 / 0.2); }
-.mp-fotos, .mp-agregar-fotos {
+.mp-miniaturas { position: absolute; bottom: 14px; left: 14px; z-index: 1; display: flex; gap: 6px; }
+.mp-miniaturas img { width: 44px; height: 34px; object-fit: cover; border: 2px solid rgb(255 255 255 / 0.9); border-radius: 9px; box-shadow: 0 4px 10px -4px rgb(0 0 0 / 0.4); }
+/* Sin fotos: la invitación va centrada abajo, dentro de la foto (nunca se corta) */
+.mp-agregar-fotos {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: inline-flex;
+  inset: auto 0 16px;
+  z-index: 1;
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-size: 0.78rem;
+  gap: 7px;
+  width: max-content;
+  max-width: calc(100% - 28px);
+  margin: 0 auto;
+  padding: 9px 16px;
+  font-size: 0.84rem;
   font-weight: 600;
+  white-space: nowrap;
   color: #fff;
-  background: rgb(14 36 64 / 0.72);
+  text-decoration: none;
+  background: #12766b;
   border-radius: 999px;
+  box-shadow: 0 10px 22px -10px rgb(18 118 107 / 0.9);
+  transition: transform 160ms var(--mp-curva), background-color 160ms ease;
 }
-.mp-fotos svg, .mp-agregar-fotos svg { width: 14px; height: 14px; }
-.mp-agregar-fotos { text-decoration: none; background: #12766b; transition: transform 160ms var(--mp-curva); }
+.mp-agregar-fotos svg { flex: none; width: 15px; height: 15px; }
+.mp-agregar-fotos:hover { background: #0f5f58; }
 .mp-agregar-fotos:active { transform: scale(0.97); }
+.mp-agregar-fotos:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
-.mp-cuerpo { display: grid; flex: 1; align-content: start; gap: 8px; padding: 18px 20px 4px; }
-.mp-meta { font-size: 0.82rem; color: var(--i-suave); }
-.mp-cuerpo h3 { font-size: 1.08rem; line-height: 1.3; }
+/* ----- Contenido ----- */
+.mp-contenido { display: flex; flex-direction: column; min-width: 0; }
+.mp-principal { display: grid; align-content: start; gap: 10px; padding: 20px 18px 16px; }
+.mp-meta { font-size: 0.84rem; font-weight: 500; color: var(--i-suave); }
+.mp-principal h3 { font-size: clamp(1.15rem, 2.4vw, 1.4rem); line-height: 1.25; }
 .mp-titulo { color: var(--i-titulo); text-decoration: none; }
 .mp-titulo:hover { text-decoration: underline; text-underline-offset: 3px; }
 .mp-titulo:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2px; border-radius: 4px; }
-.mp-precio { font: 700 1.45rem/1.1 'Outfit', system-ui, sans-serif; color: var(--i-titulo); }
-.mp-precio span { font: 400 0.82rem 'Work Sans', system-ui, sans-serif; color: var(--i-suave); }
+.mp-precio { font: 700 1.7rem/1.1 'Outfit', system-ui, sans-serif; letter-spacing: -0.01em; color: var(--i-titulo); font-variant-numeric: tabular-nums; }
+.mp-precio span { font: 400 0.86rem 'Work Sans', system-ui, sans-serif; letter-spacing: 0; color: var(--i-suave); }
+.mp-descripcion {
+  display: -webkit-box;
+  max-width: 72ch;
+  overflow: hidden;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--i-texto);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+.mp-etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; }
+.mp-etiquetas li { padding: 5px 11px; font-size: 0.78rem; font-weight: 600; line-height: 1.3; color: var(--i-titulo); background: var(--i-sup-2); border-radius: 999px; }
+.mp-etiquetas li[data-tono='acento'] { color: var(--i-acento); background: var(--i-tinte); }
+.mp-etiquetas li[data-tono='suave'] { font-weight: 500; color: var(--i-suave); background: none; border: 1px solid var(--i-borde); }
+.mp-senal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 8px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--i-acento);
+  text-decoration: none;
+  background: var(--i-tinte);
+  border-radius: 999px;
+  transition: transform 160ms var(--mp-curva);
+}
+.mp-senal svg { width: 15px; height: 15px; }
+.mp-senal svg:last-child { transition: transform 200ms var(--mp-curva); }
+a.mp-senal:active { transform: scale(0.97); }
+a.mp-senal:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { a.mp-senal:hover svg:last-child { transform: translateX(3px); } }
+.mp-nota { font-size: 0.84rem; line-height: 1.45; color: var(--i-suave); }
+.mp-nota[data-tono='alerta'] { color: var(--i-peligro); }
+.mp-fecha { font-size: 0.78rem; color: var(--i-suave); }
 
-.mp-cupos { display: grid; gap: 6px; margin-top: 4px; }
-.mp-cupos p { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--i-suave); }
-.mp-cupos strong { color: var(--i-titulo); }
-.mp-barra { display: block; height: 6px; overflow: hidden; background: var(--i-sup-2); border-radius: 999px; }
+/* ----- Cifras y acciones ----- */
+.mp-lateral { display: grid; gap: 14px; padding: 0 18px 18px; }
+.mp-datos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.mp-dato { display: grid; align-content: start; gap: 6px; min-width: 0; padding: 12px 14px; background: var(--i-sup-2); border-radius: 14px; }
+.mp-dato dt { font-size: 0.75rem; font-weight: 600; line-height: 1.2; color: var(--i-suave); }
+.mp-dato dd { margin: 0; font: 700 1.35rem/1.1 'Outfit', system-ui, sans-serif; color: var(--i-titulo); font-variant-numeric: tabular-nums; }
+.mp-dato small { margin-left: 3px; font: 500 0.8rem 'Work Sans', system-ui, sans-serif; color: var(--i-suave); }
+.mp-dato[data-cero] dd { color: var(--i-suave); }
+.mp-dato[data-destacado] { background: var(--i-tinte); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--i-acento) 30%, transparent); }
+.mp-dato[data-destacado] dd { color: var(--i-acento); }
+.mp-barra { display: block; height: 5px; margin-top: 2px; overflow: hidden; background: color-mix(in srgb, var(--i-borde) 70%, transparent); border-radius: 999px; }
 .mp-barra-relleno {
   display: block;
   height: 100%;
@@ -301,37 +392,50 @@
   transform-origin: left center;
 }
 
-.mp-senal {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  justify-self: start;
-  margin-top: 4px;
-  padding: 6px 12px;
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--i-acento);
-  text-decoration: none;
-  background: var(--i-tinte);
-  border-radius: 999px;
-  transition: transform 160ms var(--mp-curva);
-}
-.mp-senal svg { width: 15px; height: 15px; }
-a.mp-senal:active { transform: scale(0.97); }
-a.mp-senal:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2px; }
-.mp-senal.tranquila { color: var(--i-texto); background: var(--i-sup-2); }
-.mp-nota { font-size: 0.84rem; line-height: 1.45; color: var(--i-suave); }
-.mp-nota[data-tono='alerta'] { color: var(--i-peligro); }
+/* Acciones: Editar destaca; Ver como estudiante acompaña; eliminar queda aparte, chico y a la derecha */
+.mp-acciones { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding-top: 14px; border-top: 1px solid var(--i-borde); }
+.mp-acciones .mp-boton { min-width: 0; white-space: nowrap; }
+.mp-acciones .mp-accion-principal { grid-column: 1 / -1; }
+/* En espacios angostos: Editar y eliminar en una fila, «Ver como estudiante» debajo, a todo el ancho */
+.mp-acciones .mp-ver { grid-column: 1 / -1; order: 1; }
 
-.mp-pie { display: grid; gap: 10px; padding: 14px 20px 18px; }
-.mp-fecha { font-size: 0.78rem; color: var(--i-suave); }
-.mp-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--i-borde); }
-/* Eliminar queda aparte, a la derecha, para no tocarlo sin querer */
-.mp-acciones > .peligro { margin-left: auto; }
+/* ----- Tarjeta mediana: la foto sigue arriba (al costado quedaría alta y angosta, como con
+   zoom); el texto tiene más aire y las cifras van en una fila ----- */
+@container (min-width: 640px) {
+  .mp-media { aspect-ratio: 21 / 9; }
+  .mp-principal { padding: 22px 24px 16px; }
+  .mp-lateral { padding: 0 24px 22px; }
+  .mp-datos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* Las acciones ocupan todo el ancho del texto: caben las tres en una fila */
+  .mp-acciones { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .mp-acciones .mp-ver { grid-column: auto; order: 0; }
+}
+/* ----- Tarjeta ancha: foto al costado (su proporción calza con la altura del texto) y además
+   cifras y acciones en su propia columna ----- */
+@container (min-width: 980px) {
+  .mp-tarjeta-interior { grid-template-columns: minmax(300px, 32%) minmax(0, 1fr); }
+  .mp-media { aspect-ratio: auto; max-height: none; min-height: 300px; }
+  .mp-contenido { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 34%); }
+  .mp-principal { padding: 26px 28px; }
+  .mp-lateral {
+    grid-template-rows: auto 1fr;
+    padding: 22px;
+    background: color-mix(in srgb, var(--i-sup-2) 55%, transparent);
+    border-left: 1px solid var(--i-borde);
+  }
+  .mp-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Columna angosta: vuelve a dos filas */
+  .mp-acciones { align-self: end; grid-template-columns: minmax(0, 1fr) auto; }
+  .mp-acciones .mp-ver { grid-column: 1 / -1; order: 1; }
+}
 
 /* ---------- Cargando y vacío ---------- */
-.mp-cargando { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 20px; }
-.mp-cargando span { height: 340px; background: var(--i-esqueleto); border-radius: 22px; animation: mp-latido 1.4s ease-in-out infinite; }
+.mp-cargando { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 620px), 1fr)); gap: 22px; }
+.mp-silueta { display: grid; grid-template-columns: minmax(200px, 40%) minmax(0, 1fr); min-height: 300px; overflow: hidden; background: var(--i-sup); border: 1px solid var(--i-borde); border-radius: 24px; }
+.mp-sil-foto, .mp-sil-texto > span { background: var(--i-esqueleto); animation: mp-latido 1.4s ease-in-out infinite; }
+.mp-sil-texto { display: grid; align-content: start; gap: 12px; padding: 24px; }
+.mp-sil-texto > span { display: block; height: 14px; border-radius: 8px; }
+.mp-sil-texto > .mp-sil-datos { height: 64px; margin-top: 8px; border-radius: 14px; }
 @keyframes mp-latido { 50% { opacity: 0.55; } }
 
 .mp-vacio {
@@ -355,9 +459,19 @@ a.mp-senal:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2
   .mp-casas { display: none; }
   .mp-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mp-vacio { grid-template-columns: minmax(0, 1fr); }
+  .mp-silueta { grid-template-columns: minmax(0, 1fr); }
+  .mp-sil-foto { aspect-ratio: 4 / 3; }
+  .mp-pestanas-resumen { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .mp-pagina *, .mp-pagina *::before { transition-duration: 1ms !important; animation: none !important; }
   .mp-tarjeta:hover, .mp-tarjeta:hover .mp-media img { transform: none; }
 }
+
+/* Avisos y la pestaña de publicaciones: aparecen con un fundido corto (las tarjetas las anima GSAP) */
+@media (prefers-reduced-motion: no-preference) {
+  .mp-aviso { animation: mp-aparecer 320ms var(--mp-curva) backwards; }
+  #mp-panel { animation: mp-aparecer 360ms var(--mp-curva) backwards; }
+}
+@keyframes mp-aparecer { from { opacity: 0; transform: translateY(8px); } }

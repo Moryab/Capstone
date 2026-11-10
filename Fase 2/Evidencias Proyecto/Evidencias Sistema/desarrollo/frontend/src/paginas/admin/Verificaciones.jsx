@@ -66,6 +66,9 @@ export default function Verificaciones() {
             elegida={vista === 'procesadas' && resultado === 'aprobada'} alElegir={() => ir('procesadas', 'aprobada')} />
           <TarjetaKpi etiqueta={`Rechazadas (${resumen?.dias ?? 30} días)`} icono={ICONOS_ESTADO.x} tono="error" valor={v?.rechazadas ?? '…'}
             elegida={vista === 'procesadas' && resultado === 'rechazada'} alElegir={() => ir('procesadas', 'rechazada')} />
+          {/* CA-23.4: verificadas a las que después se les quitó la verificación */}
+          <TarjetaKpi etiqueta={`Revocadas (${resumen?.dias ?? 30} días)`} icono={ICONOS_ESTADO.prohibido} tono="vino" valor={v?.revocadas ?? '…'}
+            elegida={vista === 'procesadas' && resultado === 'revocada'} alElegir={() => ir('procesadas', 'revocada')} />
         </div>
       )}
 
@@ -78,7 +81,7 @@ export default function Verificaciones() {
               aria-label={`Quitar filtro ${ESTADOS_SOLICITUD[resultado]}`}>
               Resultado: {ESTADOS_SOLICITUD[resultado]} <span aria-hidden="true">×</span>
             </button>
-          ) : <span className="a-filtros-ninguno">Ninguno · usa «Aprobadas» o «Rechazadas» para filtrar</span>}
+          ) : <span className="a-filtros-ninguno">Ninguno · usa «Aprobadas», «Rechazadas» o «Revocadas» para filtrar</span>}
         </div>
       )}
 
@@ -88,7 +91,7 @@ export default function Verificaciones() {
         vista === 'pendientes'
           ? <EstadoVacio titulo="¡Todo al día!" texto="No hay solicitudes de verificación esperando revisión." />
           : <EstadoVacio ilustracion="buscar" titulo={resultado ? 'Nada con ese resultado' : 'Sin historial todavía'}
-              texto={resultado ? 'Prueba con el otro resultado o mira todo el historial.' : 'Aún no se ha procesado ninguna solicitud.'} />
+              texto={resultado ? 'Prueba con otro resultado o mira todo el historial.' : 'Aún no se ha procesado ninguna solicitud.'} />
       )}
 
       {/* Mientras carga, la tabla ya está en su lugar con filas de silueta (no hay spinner) */}
@@ -117,6 +120,8 @@ export default function Verificaciones() {
                 const { nombre, apellido } = partesNombre(s.nombre)
                 // Más de 3 días esperando: se marca para atenderla primero
                 const demorada = vista === 'pendientes' && ahora - new Date(s.fecha_solicitud).getTime() > 3 * DIA_MS
+                // Verificada con correo institucional: no hay solicitud, se abre la ficha del usuario
+                const porCorreo = s.origen === 'correo'
                 return (
                   <tr key={s.id} data-abierto={vista === 'pendientes' || undefined}>
                     <td data-etiqueta="Estudiante">
@@ -124,14 +129,14 @@ export default function Verificaciones() {
                         <Avatar nombre={nombre} apellido={apellido} foto={s.foto_url} tamano={40} />
                         <span>
                           <strong>{nombrePropio(s.nombre)}</strong>
-                          <span className="a-tabla-sub">{s.correo} · N.º {s.codigo}</span>
+                          <span className="a-tabla-sub">{s.correo}{s.codigo != null && ` · N.º ${s.codigo}`}</span>
                         </span>
                       </span>
                     </td>
                     <td data-etiqueta="Institución">{s.institucion_nombre ?? 'Sin indicar'}</td>
                     <td data-etiqueta="Comprobante">
-                      {textoTipo(s.tipo_comprobante)}
-                      <span className="a-tabla-sub">{textoSituacion(s.situacion)}</span>
+                      {porCorreo ? 'Correo institucional' : textoTipo(s.tipo_comprobante)}
+                      <span className="a-tabla-sub">{porCorreo ? 'Verificación automática' : textoSituacion(s.situacion)}</span>
                     </td>
                     <td data-etiqueta={vista === 'pendientes' ? 'Esperando' : 'Revisada'}>
                       {vista === 'pendientes' ? (
@@ -142,11 +147,17 @@ export default function Verificaciones() {
                       ) : fecha.format(new Date(s.fecha_revision))}
                     </td>
                     {vista === 'procesadas' && (
-                      <td data-etiqueta="Resultado"><ChipEstado tipo="solicitud" valor={s.estado}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</ChipEstado></td>
+                      <td data-etiqueta="Resultado">
+                        <ChipEstado tipo="solicitud" valor={s.estado}>{ESTADOS_SOLICITUD[s.estado] ?? s.estado}</ChipEstado>
+                        {s.fecha_revocacion && (
+                          <span className="a-tabla-sub" title={s.motivo_revocacion ?? undefined}>El {fecha.format(new Date(s.fecha_revocacion))}</span>
+                        )}
+                      </td>
                     )}
                     <td>
-                      <Link to={`/admin/verificaciones/${s.id}`} state={{ vista }} className={`a-boton${vista === 'pendientes' ? ' primario' : ''}`}
-                        aria-label={`${vista === 'pendientes' ? 'Revisar' : 'Ver'} la solicitud de ${nombrePropio(s.nombre)}`}>
+                      <Link to={porCorreo ? `/admin/usuarios/${s.usuario_id}` : `/admin/verificaciones/${s.id}`} state={{ vista }}
+                        className={`a-boton${vista === 'pendientes' ? ' primario' : ''}`}
+                        aria-label={porCorreo ? `Ver la ficha de ${nombrePropio(s.nombre)}` : `${vista === 'pendientes' ? 'Revisar' : 'Ver'} la solicitud de ${nombrePropio(s.nombre)}`}>
                         {vista === 'pendientes' && <IconoRevisar />} {vista === 'pendientes' ? 'Revisar' : 'Ver'}
                       </Link>
                     </td>

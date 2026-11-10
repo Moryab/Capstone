@@ -7,6 +7,7 @@ import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import { useResumenAdmin } from '../../marco/ResumenAdmin.jsx'
 import { ESTADOS_SOLICITUD, fechaHora, textoSituacion, textoTipo } from '../verificacion/datos.js'
+import RestaurarVerificacion from './RestaurarVerificacion.jsx'
 import { ChipEstado, PaginaAdmin } from './ui/componentes.jsx'
 import { nombrePropio } from './ui/formato.js'
 
@@ -232,12 +233,36 @@ export default function DetalleVerificacion() {
             </Dato>
             <Dato etiqueta="Revisada por">{solicitud.admin_revisor}</Dato>
             {solicitud.motivo_rechazo && <Dato etiqueta="Motivo">{solicitud.motivo_rechazo}</Dato>}
+            {/* CA-23.4: se aprobó y después se quitó la verificación */}
+            {solicitud.estado === 'revocada' && (
+              <>
+                <Dato etiqueta="Revocada el">
+                  {solicitud.fecha_revocacion && fechaHora.format(new Date(solicitud.fecha_revocacion))}
+                </Dato>
+                <Dato etiqueta="Revocada por">{solicitud.revocada_por}</Dato>
+                <Dato etiqueta="Motivo de la revocación">{solicitud.motivo_revocacion}</Dato>
+              </>
+            )}
             {solicitud.estado === 'aprobada' && (
               <Dato etiqueta="Verificación hoy">
                 {estudiante.verificacion_estado === 'verificado' ? 'Vigente' : 'Ya no está vigente'}
               </Dato>
             )}
           </dl>
+
+          {/* Deshacer la revocación, mientras no haya enviado una solicitud nueva */}
+          {solicitud.estado === 'revocada' && estudiante.verificacion_estado === 'revocado' && (
+            <div className="a-decision-acciones">
+              <RestaurarVerificacion usuarioId={estudiante.id} nombre={nombrePropio(estudiante.nombre_completo)}
+                alTerminar={async (texto) => {
+                  setMensaje({ tipo: 'exito', texto: `${texto}.` })
+                  avisar(texto)
+                  recargarResumen()
+                  await cargar()
+                }}
+                alFallar={(texto) => setMensaje({ tipo: 'alerta', texto })} />
+            </div>
+          )}
 
           {/* CA-23.4: solo se revoca una verificación vigente */}
           {solicitud.estado === 'aprobada' && estudiante.verificacion_estado === 'verificado' && (

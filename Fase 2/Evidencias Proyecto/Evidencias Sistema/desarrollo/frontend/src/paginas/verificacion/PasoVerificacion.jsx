@@ -34,7 +34,7 @@ export default function PasoVerificacion() {
 
   const alEnviar = async () => {
     await recargarUsuario()
-    navegar('/cuestionario', { replace: true })
+    navegar('/', { replace: true })
   }
 
   return (
@@ -44,7 +44,7 @@ export default function PasoVerificacion() {
         <button type="button" className="v-paso-salir" onClick={cerrarSesion}>Cerrar sesión</button>
       </header>
       <main className="tarjeta pagina-form">
-        <p className="v-paso-etiqueta">Último paso</p>
+        <p className="v-paso-etiqueta">Ya casi terminas</p>
         <h1>Confirma que eres estudiante</h1>
         <p className="subtitulo">
           RoomMatch es exclusiva para estudiantes. Si te registraste con el correo de tu institución te

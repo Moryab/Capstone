@@ -27,6 +27,7 @@ export const ESTADOS_SOLICITUD = {
   en_revision: 'En revisión',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
+  revocada: 'Revocada', // aprobada y quitada después por un administrador (solo lo ve el administrador)
 }
 
 export const fechaHora = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long', timeStyle: 'short' })

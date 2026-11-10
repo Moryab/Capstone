@@ -26,15 +26,19 @@ function maximoEje(valor) {
 const marcasEje = (maximo) => (maximo <= 4 ? Array.from({ length: maximo + 1 }, (_, i) => i) : [0, maximo / 2, maximo])
 
 // ---------- Meta (CA-20.1): el valor frente a la meta, con el estado escrito ----------
-export function Meta({ valor, meta, detalle }) {
-  const cumple = valor != null && valor >= meta
+// Con `maximo` la meta es un tope (menos es mejor, como los reportes). Una meta tan baja como 5 % se
+// vería pegada al borde en una pista de 0 a 100 %, por eso la pista llega solo hasta `escala`
+export function Meta({ valor, meta, detalle, maximo = false, escala = 100 }) {
+  const cumple = valor != null && (maximo ? valor < meta : valor >= meta)
   const cifra = useCifraAnimada(valor, pct)
+  const tope = Math.max(escala, valor ?? 0)
+  const textoMeta = maximo ? `Meta bajo ${meta} %` : `Meta ${meta} %`
   return (
     <div className="g-meta">
       <p ref={cifra} className="g-cifra">{pct(valor)}</p>
-      <div className="g-meta-pista" role="img" aria-label={`${pct(valor)} frente a una meta de ${meta} %`}>
-        <span className="g-meta-valor" data-cumple={cumple} style={{ '--avance': Math.min(valor ?? 0, 100) / 100 }} />
-        <span className="g-meta-marca" style={{ left: `${meta}%` }}><span>Meta {meta} %</span></span>
+      <div className="g-meta-pista" role="img" aria-label={`${pct(valor)} frente a una meta ${maximo ? 'bajo el' : 'de'} ${meta} %`}>
+        <span className="g-meta-valor" data-cumple={cumple} style={{ '--avance': Math.min(valor ?? 0, tope) / tope }} />
+        <span className="g-meta-marca" style={{ left: `${(100 * meta) / tope}%` }}><span>{textoMeta}</span></span>
       </div>
       <p className="g-meta-estado" data-cumple={cumple}>
         <span aria-hidden="true">{cumple ? '▲' : '▼'}</span> {cumple ? 'Meta cumplida' : 'Bajo la meta'}
@@ -287,6 +291,37 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
         </p>
       </div>
     </div>
+  )
+}
+
+// ---------- Análisis por categoría (EP-08): qué diferencias de hábitos fracasan más ----------
+export const brechaDe = (d) => (d == null ? 'Sin comparación' : `${d > 0 ? '+' : ''}${numero.format(d)} pts`)
+
+function BarraCategoria({ clase, texto, tasa, fracasos, casos }) {
+  return (
+    <span className={`g-cat-barra ${clase}`}>
+      <span className="g-cat-texto">{texto}</span>
+      <span className="g-cat-pista" aria-hidden="true"><span style={{ '--avance': (tasa ?? 0) / 100 }} /></span>
+      <span className="g-cat-valor">{casos ? <>{pct(tasa)} <small>({fracasos} de {casos})</small></> : <small>Sin casos</small>}</span>
+    </span>
+  )
+}
+
+export function Categorias({ filas }) {
+  return (
+    <ol className="g-categorias">
+      {filas.map((f) => (
+        <li key={f.categoria}>
+          <span className="g-cat-nombre">{f.etiqueta}</span>
+          <span className="g-cat-brecha" data-sube={f.diferencia > 0 || undefined}
+            title="Puntos que sube la tasa de fracaso cuando difieren">{brechaDe(f.diferencia)}</span>
+          <BarraCategoria clase="difieren" texto="Difieren" tasa={f.tasa_fracaso_con_diferencia}
+            fracasos={f.fracasos_con_diferencia} casos={f.casos_con_diferencia} />
+          <BarraCategoria clase="coinciden" texto="Coinciden" tasa={f.tasa_fracaso_sin_diferencia}
+            fracasos={f.fracasos_sin_diferencia} casos={f.casos_sin_diferencia} />
+        </li>
+      ))}
+    </ol>
   )
 }
 

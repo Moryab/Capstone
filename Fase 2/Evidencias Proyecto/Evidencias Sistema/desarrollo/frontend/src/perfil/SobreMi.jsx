@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
 import { mayuscula } from './datos.js'
 import { IconoLapiz } from './iconos.jsx'
+import Vacio from './Vacio.jsx'
 
 const MAXIMO = 300 // mismo límite que valida el backend (CA-03.1)
 
@@ -69,11 +70,11 @@ export default function SobreMi({ perfil, alGuardar }) {
       ) : perfil.descripcion ? (
         <blockquote className="p2-cita"><p>{perfil.descripcion}</p></blockquote>
       ) : (
-        <p className="p2-vacio">
+        <Vacio ilustracion="texto">
           {propio
             ? 'Aún no escribes nada. Cuéntales a tus posibles roomies cómo eres, qué estudias y qué buscas.'
             : 'Este estudiante aún no agrega una descripción.'}
-        </p>
+        </Vacio>
       )}
     </section>
   )

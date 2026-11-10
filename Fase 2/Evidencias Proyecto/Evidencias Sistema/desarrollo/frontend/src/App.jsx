@@ -49,10 +49,10 @@ function Raiz() {
   const { usuario, cargando } = useSesion()
   if (cargando) return <p className="cargando">Cargando…</p>
   if (usuario?.rol === 'administrador') return <Navigate to="/admin" replace />
-  // Primero debe enviar el documento que acredita que es estudiante
-  if (usuario?.verificacion_estado === 'no_verificado') return <Navigate to="/confirma-estudiante" replace />
-  // El cuestionario es obligatorio antes de entrar al inicio
+  // Primero el cuestionario de convivencia, obligatorio antes de entrar al inicio
   if (usuario && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
+  // Luego debe enviar el documento que acredita que es estudiante
+  if (usuario?.verificacion_estado === 'no_verificado') return <Navigate to="/confirma-estudiante" replace />
   // Luego elige su rol: buscador u oferente
   if (usuario && !usuario.modo) return <Navigate to="/bienvenida" replace />
   return (
@@ -60,6 +60,13 @@ function Raiz() {
       {usuario ? <Marco><Inicio /></Marco> : <Landing />}
     </Suspense>
   )
+}
+
+
+// /verificacion → /perfil/verificacion, conservando #formulario (desde el aviso de rechazo)
+function IrAVerificacion() {
+  const { hash } = useLocation()
+  return <Navigate to={{ pathname: '/perfil/verificacion', hash }} replace />
 }
 
 export default function App() {
@@ -77,13 +84,13 @@ export default function App() {
       )}
       <Routes>
         <Route path="/" element={<Raiz />} />
-        {/* HU-13: obligatorio justo después del registro, a pantalla completa y sin la barra */}
-        {/* EP-02: «Último paso: confirma que eres estudiante», obligatorio antes del cuestionario */}
+        {/* EP-02: «Confirma que eres estudiante», obligatorio después del cuestionario y antes del rol */}
         <Route path="/confirma-estudiante" element={
-          <RutaProtegida sinVerificacion sinCuestionario sinRol><PasoVerificacion /></RutaProtegida>
+          <RutaProtegida sinVerificacion sinRol><PasoVerificacion /></RutaProtegida>
         } />
+        {/* HU-13: obligatorio justo después del registro, a pantalla completa y sin la barra */}
         <Route path="/cuestionario" element={
-          <RutaProtegida sinCuestionario>
+          <RutaProtegida sinCuestionario sinVerificacion sinRol>
             <Suspense fallback={<p className="cargando">Cargando…</p>}><PaginaCuestionario /></Suspense>
           </RutaProtegida>
         } />
@@ -101,6 +108,8 @@ export default function App() {
             <Route index element={<Suspense fallback={<CargandoPerfil />}><MiPerfil /></Suspense>} />
             <Route path="editar" element={<EditarPerfil />} />
             <Route path="cuestionario" element={<Suspense fallback={null}><PestanaHabitos /></Suspense>} />
+            {/* EP-02: verificación de estudiante (HU-21) */}
+            <Route path="verificacion" element={<Verificacion />} />
           </Route>
           <Route path="/usuarios/:id" element={conCarga(<PerfilUsuario />)} />
           {/* Vista previa del propio perfil como lo ven los demás */}
@@ -119,8 +128,8 @@ export default function App() {
           <Route path="/evaluacion/:matchId" element={<Evaluacion />} />
           <Route path="/evaluacion/:matchId/razones" element={<Razones />} />
           <Route path="/evaluacion/:matchId/terminar" element={<Terminar />} />
-          {/* EP-02: verificación de estudiante (HU-21) */}
-          <Route path="/verificacion" element={<Verificacion />} />
+          {/* La verificación pasó a ser una pestaña de «Mi perfil»: la dirección antigua lleva ahí */}
+          <Route path="/verificacion" element={<IrAVerificacion />} />
           {/* Mensajes entre estudiantes (chat) */}
           <Route path="/mensajes" element={<Suspense fallback={null}><Mensajes /></Suspense>} />
           <Route path="/mensajes/:id" element={<Suspense fallback={null}><Mensajes /></Suspense>} />

@@ -6,7 +6,7 @@ import { GENEROS, textoGenero } from '../../perfil.js'
 import { ESTADOS_CUENTA, ESTADOS_VERIFICACION, FILTRO_MODOS, textoCuenta, textoModo, textoVerificacion } from './datos.js'
 import Paginacion from './Paginacion.jsx'
 import './reportes.css'
-import Buscador from './ui/Buscador.jsx'
+import Buscador from '../../componentes/Buscador.jsx'
 import FiltroFecha, { textoRango } from './ui/FiltroFecha.jsx'
 import {
   BarraFiltros, ChipEstado, EncabezadoAdmin, EtiquetaRol, EstadoVacio, FilasSilueta, ICONOS_ESTADO, PaginaAdmin, TablaAdmin, TarjetaKpi,

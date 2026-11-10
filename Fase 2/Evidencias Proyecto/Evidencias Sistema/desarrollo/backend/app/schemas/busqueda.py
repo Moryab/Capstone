@@ -38,11 +38,14 @@ class FiltrosBusqueda(Preferencias):
     """Parámetros de GET /api/publicaciones. Las comunas se repiten: ?comunas=a&comunas=b.
 
     `orden` no filtra: «reciente» (CA-09.1) o «cercania», de la más cercana a la sede del perfil.
+    `buscar` no es parte de las preferencias guardadas (HU-12): solo afina la búsqueda del momento.
     """
 
     pagina: int = Field(default=1, ge=1)
     comunas: list[str] = []
     orden: Literal["reciente", "cercania"] = "reciente"
+    # Texto libre: cada palabra debe aparecer en el título, la descripción, la comuna o el sector
+    buscar: str = Field(default="", max_length=100)
 
 
 def filtro_preferencias(p: Preferencias) -> dict:

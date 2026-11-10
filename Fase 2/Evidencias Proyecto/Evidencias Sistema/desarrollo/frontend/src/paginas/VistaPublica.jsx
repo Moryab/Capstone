@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
-import { useFondoCiudad } from '../fondo.js'
 import Compatibilidad from '../perfil/Compatibilidad.jsx'
 import DatosClave from '../perfil/DatosClave.jsx'
 import { IconoOjo } from '../perfil/iconos.jsx'
@@ -22,7 +21,6 @@ export default function VistaPublica() {
   const { usuario } = useSesion()
   const [perfil, setPerfil] = useState(null)
   const [error, setError] = useState('')
-  useFondoCiudad()
 
   useEffect(() => {
     api(`/usuarios/${usuario.id}/perfil`)
