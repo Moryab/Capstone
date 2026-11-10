@@ -79,6 +79,7 @@ async def verificacion_out(usuario: dict) -> VerificacionOut:
         ),
         puede_verificar_correo=bool(institucion_correo) and estado in PUEDE_CORREO,
         verificado_con_correo=estado == "verificado" and verificacion.get("metodo") == "correo_institucional",
+        fecha_verificacion=verificacion.get("fecha_verificacion") if estado == "verificado" else None,
     )
 
 

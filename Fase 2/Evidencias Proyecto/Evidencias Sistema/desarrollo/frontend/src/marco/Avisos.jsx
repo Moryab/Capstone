@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { IconoCampana, IconoCerrar } from '../inicio/iconos.jsx'
 import { enlaceDe, haceCuanto } from '../notificaciones.js'
+import ModalResultado from '../paginas/verificacion/ModalResultado.jsx'
 import './avisos.css'
 
 /**
@@ -14,6 +15,7 @@ export default function Avisos({ abierto, alCerrar, alCambiar }) {
   const navegar = useNavigate()
   const [datos, setDatos] = useState(null)
   const [error, setError] = useState('')
+  const [resultadoAbierto, setResultadoAbierto] = useState(false) // ventana del resultado de la verificación
 
   useEffect(() => {
     const d = dialogo.current
@@ -33,6 +35,12 @@ export default function Avisos({ abierto, alCerrar, alCambiar }) {
       await api(`/notificaciones/${aviso.id}/leida`, { metodo: 'PUT' }).catch(() => {})
       alCambiar()
     }
+    // Verificación (aprobada, rechazada o revocada): el resultado se muestra encima, sin cambiar de página
+    if (aviso.tipo === 'verificacion_estudiante') {
+      alCerrar()
+      setResultadoAbierto(true)
+      return
+    }
     const enlace = enlaceDe(aviso)
     if (enlace) {
       alCerrar()
@@ -49,6 +57,7 @@ export default function Avisos({ abierto, alCerrar, alCambiar }) {
   }
 
   return (
+    <>
     <dialog ref={dialogo} className="i-config" aria-labelledby="i-titulo-avisos" onClose={alCerrar}
       onClick={(e) => e.target === dialogo.current && alCerrar()}>
       <div className="i-config-contenido">
@@ -93,5 +102,7 @@ export default function Avisos({ abierto, alCerrar, alCambiar }) {
         )}
       </div>
     </dialog>
+    <ModalResultado abierto={resultadoAbierto} alCerrar={() => setResultadoAbierto(false)} />
+    </>
   )
 }

@@ -95,19 +95,29 @@ export default function TarjetaPasos() {
   const confeti = useRef(null)
   const [celebrado, setCelebrado] = useState(null)
 
+  // En el orden en que se hacen: el registro pide la cuenta, luego el cuestionario y luego el
+  // comprobante de estudiante (App.jsx y RutaProtegida no dejan seguir sin ellos). Después la foto y,
+  // al final, el perfil: solo está completo con sus datos, la descripción y la foto
   const pasos = [
     { clave: 'cuenta', titulo: 'Crea tu cuenta', hecho: true },
-    { clave: 'perfil', titulo: 'Completa tu perfil', hecho: usuario.perfil_completo },
-    { clave: 'foto', titulo: 'Sube tu foto de perfil', hecho: Boolean(usuario.foto_url) },
     // HU-13: el cuestionario de hábitos alimenta el cálculo de compatibilidad
     { clave: 'cuestionario', titulo: 'Responde el cuestionario de convivencia', hecho: Boolean(usuario.cuestionario_completo) },
-    // HU-22: lo aprueba un administrador; aquí solo se muestra en qué va
+    // HU-21 y HU-22: se envía al registrarse y lo aprueba un administrador; aquí se ve en qué va
     { clave: 'verificacion', titulo: 'Verifica que eres estudiante', hecho: estaVerificado(usuario) },
+    { clave: 'foto', titulo: 'Sube tu foto de perfil', hecho: Boolean(usuario.foto_url) },
+    {
+      clave: 'perfil',
+      titulo: 'Completa tu perfil',
+      hecho: usuario.perfil_completo && Boolean(usuario.tiene_descripcion) && Boolean(usuario.foto_url),
+    },
   ]
   const verificacion = ESTADO_VERIFICACION[estaVerificado(usuario) ? 'verificado' : usuario.verificacion_estado]
     ?? ESTADO_VERIFICACION.pendiente
   const hechos = pasos.filter((p) => p.hecho).length
-  const siguiente = pasos.find((p) => !p.hecho)
+  // Mientras un administrador revisa el comprobante no hay nada que hacer en ese paso: se sugiere
+  // el siguiente que sí depende del estudiante (y, si no queda otro, se muestra que está en revisión)
+  const enRevision = (p) => p.clave === 'verificacion' && usuario.verificacion_estado === 'pendiente'
+  const siguiente = pasos.find((p) => !p.hecho && !enRevision(p)) ?? pasos.find((p) => !p.hecho)
   const estado = Object.fromEntries(pasos.map((p) => [p.clave, p.hecho]))
   const firma = JSON.stringify(estado)
 
@@ -162,7 +172,11 @@ export default function TarjetaPasos() {
             {usuario.campos_faltantes.length > 0 && (
               <p className="i-siguiente-texto">Falta: {describirFaltantes(usuario.campos_faltantes)}.</p>
             )}
-            <Link to="/perfil/editar" className="l-boton">Completar perfil</Link>
+            {usuario.campos_faltantes.length === 0 && !usuario.tiene_descripcion && (
+              <p className="i-siguiente-texto">Falta una descripción: cuéntales a tus posibles roomies cómo eres.</p>
+            )}
+            {/* Sin datos pendientes, la descripción se escribe en «Ver perfil» (Sobre mí) */}
+            <Link to={usuario.campos_faltantes.length ? '/perfil/editar' : '/perfil'} className="l-boton">Completar perfil</Link>
           </>
         )}
         {siguiente?.clave === 'cuestionario' && (
@@ -187,7 +201,7 @@ export default function TarjetaPasos() {
             <p className="i-siguiente-texto">
               No tienes que hacer nada más: te avisaremos apenas tu perfil quede verificado.
             </p>
-            <Link to="/verificacion" className="l-boton">Ver mi solicitud</Link>
+            <Link to="/perfil/verificacion" className="l-boton">Ver mi solicitud</Link>
           </>
         )}
         {siguiente?.clave === 'verificacion' && usuario.verificacion_estado !== 'pendiente' && (
@@ -198,7 +212,7 @@ export default function TarjetaPasos() {
                 ? 'Tu documento fue rechazado. Revisa el motivo y envía otro.'
                 : 'Envía un documento vigente para que otros estudiantes confíen en tu perfil.'}
             </p>
-            <Link to="/verificacion" className="l-boton">
+            <Link to="/perfil/verificacion" className="l-boton">
               {usuario.verificacion_estado === 'rechazado' ? 'Ver el motivo y enviar otro' : 'Enviar documento'}
             </Link>
           </>

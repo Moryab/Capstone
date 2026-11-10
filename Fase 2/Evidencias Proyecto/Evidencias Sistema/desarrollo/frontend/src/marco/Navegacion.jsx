@@ -80,7 +80,9 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
       </div>
       {estudiante && <Link to="/perfil" className="i-menu-opcion"><IconoUsuario /> Ver mi perfil</Link>}
       {/* EP-02 · HU-21 */}
-      {estudiante && <Link to="/verificacion" className="i-menu-opcion"><IconoEscudo /> Verificar que soy estudiante</Link>}
+      {estudiante && usuario.verificacion_estado !== 'verificado' && (
+        <Link to="/perfil/verificacion" className="i-menu-opcion"><IconoEscudo /> Verificar que soy estudiante</Link>
+      )}
       <button type="button" className="i-menu-opcion peligro" onClick={cerrarSesion}>
         <IconoSalir /> Cerrar sesión
       </button>

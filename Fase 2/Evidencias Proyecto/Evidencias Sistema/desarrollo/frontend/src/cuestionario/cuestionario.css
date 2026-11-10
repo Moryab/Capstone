@@ -441,7 +441,25 @@ body.c-sin-scroll { overflow: hidden; }
 .c-editar:hover { border-color: var(--primario); }
 
 /* Pestaña «Hábitos» del perfil */
-.c-pestana.tarjeta { text-align: left; }
+.c-pestana.tarjeta {
+  text-align: left;
+  /* Vidrio: deja ver el fondo de ondas del perfil; los hábitos van más opacos para que resalten */
+  background: color-mix(in srgb, var(--tarjeta) 62%, transparent);
+  border: 1px solid rgb(255 255 255 / 0.65);
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.06), 0 8px 20px -10px rgb(11 31 58 / 0.14), 0 24px 48px -28px rgb(11 31 58 / 0.22);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+/* Hábitos: centrada, pero un poco más grande que las otras tarjetas de las pestañas */
+.pestana-contenido > .c-pestana.tarjeta { max-width: 1200px; padding: clamp(24px, 3vw, 40px); }
+.c-pestana .c-resumen-lista { gap: 14px; }
+.c-pestana .c-resumen-item { grid-template-columns: 66px minmax(0, 1fr) auto; padding: 16px 18px; }
+.c-pestana .c-resumen-ilustracion { width: 66px; height: 66px; }
+.c-pestana .c-resumen-ilustracion .c-ilustracion { width: 50px; height: 50px; }
+.c-pestana .c-resumen-textos strong { font-size: 1.02rem; }
+html.tema-oscuro .c-pestana.tarjeta { border-color: rgb(255 255 255 / 0.08); box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6); }
+.c-pestana .c-resumen-item { background: color-mix(in srgb, var(--tarjeta) 88%, transparent); box-shadow: 0 4px 12px -10px rgb(11 31 58 / 0.3); }
+.c-pestana .c-resumen-item.nivel-imprescindible { background: color-mix(in srgb, #f2c94c 14%, var(--tarjeta)); }
 .c-pestana .c-resumen { padding: 0; background: none; border: 0; box-shadow: none; }
 .c-pestana > .exito, .c-pestana > .alerta { margin: 0 0 16px; }
 .c-capa { position: fixed; inset: 0; z-index: 80; isolation: isolate; color: var(--texto); display: flex; flex-direction: column; padding-top: 20px; overflow-y: auto; }

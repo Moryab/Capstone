@@ -232,6 +232,37 @@ body.pagina-inicio #root { padding-bottom: 0; }
 .i-pagina { min-width: 0; padding: 8px 0 40px; }
 .i-pagina.es-inicio { padding: 0; }
 .i-pagina:focus { outline: none; }
+
+/* ---------- Fondos de página (Marco.jsx, data-fondo) ----------
+   Una capa fija a la ventana, detrás del contenido y a la derecha de la barra lateral: no se
+   mueve al bajar y nunca tapa nada. Va apenas desenfocada para que el texto de encima se lea bien;
+   se agranda un poco para que el borde desenfocado quede fuera de la vista */
+.i-pagina[data-fondo] { position: relative; isolation: isolate; }
+.i-pagina[data-fondo]::before {
+  position: fixed;
+  inset: -12px -12px -12px calc(var(--i-barra, 0px) - 12px);
+  z-index: -1;
+  content: '';
+  pointer-events: none;
+  transition: left 0.3s ease;
+}
+/* Topografía: curvas de nivel finas, como un mapa, con un brillo verde azulado arriba */
+.i-pagina[data-fondo='topografia']::before {
+  background:
+    url('../assets/fondo-topografia.svg') center / cover no-repeat,
+    radial-gradient(60% 50% at 0% 0%, rgb(15 118 110 / 0.10), transparent 70%),
+    linear-gradient(180deg, #edf5f5 0%, var(--fondo) 60%);
+  filter: blur(2px);
+  opacity: 0.75;
+}
+html.tema-oscuro .i-pagina[data-fondo='topografia']::before { background: url('../assets/fondo-topografia.svg') center / cover no-repeat; opacity: 0.25; }
+/* Ciudad: la ilustración del inicio de sesión, desenfocada para que resalte lo de encima */
+.i-pagina[data-fondo='ciudad']::before {
+  background: url('../assets/roommatch-bg.svg') center bottom / cover no-repeat;
+  filter: blur(3px);
+  opacity: 0.85;
+}
+html.tema-oscuro .i-pagina[data-fondo='ciudad']::before { filter: blur(3px) invert(1) hue-rotate(180deg); opacity: 0.16; }
 /* Las páginas antiguas centraban su contenido con la cabecera de arriba; dentro del marco
    van arriba, con aire */
 .i-pagina > main.tarjeta, .i-pagina > .tarjeta { margin: 24px auto; }
@@ -1596,7 +1627,11 @@ button.i-config-fila { cursor: pointer; }
 @media (max-width: 899px) {
   .i-app, .i-app.barra-contraida { grid-template-columns: minmax(0, 1fr); }
   .i-barra { display: none; }
+  .i-pagina[data-fondo]::before { left: -12px; }
   .i-barra-superior {
+    /* Por encima del fondo ilustrado de la página (.i-pagina[data-fondo]), que es una capa fija */
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     padding: 14px 16px 4px;

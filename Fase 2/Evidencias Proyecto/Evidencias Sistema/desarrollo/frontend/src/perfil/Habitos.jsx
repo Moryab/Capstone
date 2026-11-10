@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { textoRespuesta } from '../cuestionario.js'
 import { CATEGORIAS, corto, fraseConvivencia, mayuscula, NIVELES } from './datos.js'
 import { IconoHabito, IconoSello } from './iconos.jsx'
+import Vacio from './Vacio.jsx'
 
 // Ficha de un hábito: al frente el ícono y la respuesta corta; al voltearla (mouse, toque o
 // Enter), la respuesta completa y su importancia. El texto completo también está para lectores
@@ -49,11 +50,11 @@ export default function Habitos({ perfil, importancia }) {
     return (
       <section className="p2-tarjeta p2-anima" aria-labelledby="p2-titulo-habitos">
         <h2 id="p2-titulo-habitos">Perfil de convivencia</h2>
-        <p className="p2-vacio">
+        <Vacio ilustracion="habitos">
           {propio
             ? <>Aún no respondes el cuestionario. <Link to="/perfil/cuestionario">Responderlo ahora</Link></>
             : `${nombre} aún no responde el cuestionario de hábitos.`}
-        </p>
+        </Vacio>
       </section>
     )
   }

@@ -4,7 +4,6 @@ import { api } from '../api.js'
 import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import BotonReportar from '../componentes/BotonReportar.jsx'
 import { useCompatibilidad } from '../componentes/Compatibilidad.jsx'
-import { useFondoCiudad } from '../fondo.js'
 import Compatibilidad from '../perfil/Compatibilidad.jsx'
 import DatosClave from '../perfil/DatosClave.jsx'
 import { BarraEstadoMatch, TarjetaContacto, TarjetaEstadoMatch } from '../perfil/EstadoMatch.jsx'
@@ -26,7 +25,6 @@ export default function PerfilUsuario() {
   const compat = useCompatibilidad(id === usuario.id ? null : id)
   const match = useMatchCon(id === usuario.id ? null : id)
 
-  useFondoCiudad()
 
   const cargar = useCallback(() => {
     let vigente = true // evita mostrar una respuesta vieja si se cambia de perfil rápido

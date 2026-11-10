@@ -149,3 +149,5 @@ class VerificacionOut(BaseModel):
     # Con un correo institucional el estudiante matriculado se verifica sin enviar un comprobante
     puede_verificar_correo: bool = False
     verificado_con_correo: bool = False
+    # Cuándo quedó verificada (con comprobante o con el correo institucional)
+    fecha_verificacion: datetime | None = None

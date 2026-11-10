@@ -4,8 +4,7 @@
    mueve el trazo de un SVG pequeño). Texto mínimo de 14px (0.875rem).
    ===================================================================== */
 
-/* El perfil usa todo el ancho del área (como el inicio); los formularios siguen centrados */
-.contenedor-perfil { width: min(1440px, calc(100% - 48px)); }
+/* El perfil usa todo el ancho del área (ancho en index.css); los formularios siguen centrados */
 .pestana-contenido > .tarjeta { max-width: 1000px; margin-inline: auto; }
 
 .p2 {
@@ -15,7 +14,7 @@
   --p2-amarillo: #b7791f;
   --p2-rojo: #c62828;
   display: grid;
-  gap: 24px;
+  gap: 28px;
   font-size: 1rem;
 }
 .p2 h2 { margin: 0; font-family: 'Outfit', system-ui, sans-serif; font-size: 1.25rem; color: var(--marca); }
@@ -104,17 +103,49 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 
 /* ---------- Columnas ---------- */
 
-.p2-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); align-items: start; gap: 24px; }
-.p2-principal { display: grid; gap: 24px; min-width: 0; }
-.p2-lateral { position: sticky; top: 20px; display: grid; gap: 20px; min-width: 0; }
+.p2-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); align-items: start; gap: 28px; }
+.p2-principal { display: grid; gap: 28px; min-width: 0; }
+.p2-lateral { position: sticky; top: 20px; display: grid; gap: 22px; min-width: 0; }
 
+/* Tarjetas de vidrio: dejan ver el fondo de ondas del perfil. Lo de adentro (fichas, filas,
+   publicaciones, datos) es sólido, así la información resalta sobre el vidrio */
 .p2-tarjeta {
-  padding: 24px;
-  background: var(--tarjeta);
-  border: 1px solid var(--p2-borde);
+  --p2-vidrio: color-mix(in srgb, var(--tarjeta) 62%, transparent);
+  padding: clamp(20px, 2.2vw, 28px);
+  background: var(--p2-vidrio);
+  border: 1px solid rgb(255 255 255 / 0.65);
   border-radius: var(--p2-radio);
-  box-shadow: 0 18px 40px -28px rgb(15 59 74 / 0.45);
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.06), 0 8px 20px -10px rgb(11 31 58 / 0.14), 0 24px 48px -28px rgb(11 31 58 / 0.22);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
 }
+html.tema-oscuro .p2-tarjeta { border-color: rgb(255 255 255 / 0.08); }
+
+/* Estado vacío ilustrado de una sección */
+.p2v { display: flex; gap: 18px; align-items: center; padding: 16px 18px; background: color-mix(in srgb, var(--tarjeta) 85%, transparent); border: 1px dashed var(--p2-borde); border-radius: 16px; }
+.p2v-ilustracion { flex: none; width: 92px; }
+.p2v-ilustracion svg { display: block; width: 100%; height: auto; }
+.p2v-hoja { fill: var(--tarjeta); stroke: var(--p2-borde); stroke-width: 1.5; }
+.p2v-linea { fill: none; stroke: var(--borde); stroke-width: 5; stroke-linecap: round; }
+.p2v-acento { fill: var(--primario); }
+.p2v-punta { fill: #f2c94c; }
+.p2v-caja { fill: var(--campo); stroke: var(--borde); stroke-width: 1.5; }
+.p2v-check { fill: var(--primario); }
+.p2v-tic { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+@media (prefers-reduced-motion: no-preference) {
+  .p2v-lapiz { animation: p2v-escribir 3.2s ease-in-out infinite; transform-origin: 60px 70px; }
+}
+@keyframes p2v-escribir { 50% { transform: translate(-6px, 2px) rotate(-4deg); } }
+
+/* Siluetas de las publicaciones mientras cargan */
+.p2-pubs-silueta li { display: grid; gap: 10px; padding-bottom: 16px; overflow: hidden; background: var(--tarjeta); border: 1px solid var(--p2-borde); border-radius: 18px; }
+.p2-sil-foto { aspect-ratio: 16 / 10; background: var(--campo); }
+.p2-sil-linea { height: 14px; margin: 0 16px; background: var(--campo); border-radius: 8px; }
+.p2-sil-linea.corta { width: 45%; }
+@media (prefers-reduced-motion: no-preference) {
+  .p2-pubs-silueta :is(.p2-sil-foto, .p2-sil-linea) { animation: p2-pulso 1.5s ease-in-out infinite; }
+}
+@keyframes p2-pulso { 50% { opacity: 0.5; } }
 .p2-tarjeta > h2 { margin-bottom: 16px; }
 .p2-tarjeta-cabecera { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
 .p2-tarjeta-cabecera .boton { gap: 6px; margin: 0; padding: 9px 20px; }
@@ -139,7 +170,7 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 
 /* ---------- Compatibilidad ---------- */
 
-.p2-compat { background: linear-gradient(135deg, rgb(63 209 184 / 0.1), var(--tarjeta) 45%); }
+.p2-compat { background: linear-gradient(135deg, rgb(63 209 184 / 0.12), var(--p2-vidrio) 45%); }
 .p2-compat-resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 32px; margin-bottom: 22px; }
 .p2-compat-textos { display: grid; gap: 6px; flex: 1 1 280px; }
 .p2-compat-textos h2 { font-size: 1.7rem; }
@@ -275,17 +306,18 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 .p2-imprescindibles li svg { color: var(--primario); }
 .p2-ayuda { margin-bottom: 12px !important; font-size: 0.875rem; color: var(--texto-suave); }
 
-.p2-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
-.p2-ficha { perspective: 900px; }
+/* Flex que crece: cada fila ocupa todo el ancho de la tarjeta, incluida la última, sin huecos */
+.p2-fichas { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.p2-ficha { flex: 1 1 160px; min-width: 0; perspective: 900px; }
 .p2-ficha:nth-child(2) { transition-delay: 0.04s; }
 .p2-ficha:nth-child(3) { transition-delay: 0.08s; }
 .p2-ficha:nth-child(4) { transition-delay: 0.12s; }
 .p2-ficha:nth-child(5) { transition-delay: 0.16s; }
 .p2-ficha:nth-child(6) { transition-delay: 0.2s; }
 .p2-ficha:nth-child(7) { transition-delay: 0.24s; }
-.p2-ficha-boton { display: block; width: 100%; height: 100%; min-height: 176px; padding: 0; font: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
+.p2-ficha-boton { display: block; width: 100%; height: 100%; min-height: 204px; padding: 0; font: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
 /* Las dos caras van en la misma celda: la ficha toma la altura de la cara con más texto, así nada se sale */
-.p2-ficha-interior { position: relative; display: grid; height: 100%; min-height: 176px; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.p2-ficha-interior { position: relative; display: grid; height: 100%; min-height: 204px; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 .p2-ficha.volteada .p2-ficha-interior { transform: rotateY(180deg); }
 @media (hover: hover) and (pointer: fine) {
   .p2-ficha-boton:hover .p2-ficha-interior { transform: rotateY(180deg); }
@@ -297,7 +329,7 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 18px;
+  padding: 20px;
   backface-visibility: hidden;
   border: 1px solid var(--p2-borde);
   border-radius: 16px;
@@ -305,10 +337,10 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 .p2-ficha-cara.frente { align-items: flex-start; justify-content: flex-end; background: var(--tarjeta); }
 .p2-ficha-cara.reverso { justify-content: center; color: #fff; background: linear-gradient(140deg, #0e2440, #12766b); border-color: transparent; transform: rotateY(180deg); }
 .p2-ficha.es-imprescindible .p2-ficha-cara.frente { border: 2px solid #0e2440; }
-.p2-ficha-icono { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: auto; color: var(--primario); background: var(--campo); border-radius: 14px; }
+.p2-ficha-icono { display: grid; place-items: center; width: 60px; height: 60px; margin-bottom: auto; color: var(--primario); background: var(--campo); border-radius: 14px; }
 .p2-ficha-categoria { font-size: 0.875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
 .p2-ficha-cara.reverso .p2-ficha-categoria { color: #3fd1b8; }
-.p2-ficha-corto { font: 700 1.1rem 'Outfit', system-ui, sans-serif; line-height: 1.25; color: var(--marca); overflow-wrap: break-word; }
+.p2-ficha-corto { font: 700 1.2rem 'Outfit', system-ui, sans-serif; line-height: 1.25; color: var(--marca); overflow-wrap: break-word; }
 .p2-ficha-completo { font-size: 0.9375rem; font-weight: 600; line-height: 1.35; overflow-wrap: break-word; }
 .p2-ficha-nivel-texto { font-size: 0.875rem; line-height: 1.4; color: rgb(255 255 255 / 0.85); }
 .p2-ficha .p2-sello-mini { position: absolute; top: 14px; right: 14px; }
@@ -336,7 +368,7 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 .p2-match-estado.abierta { color: #0e2440; background: #f2c94c; }
 .p2-match-estado.ninguna { color: var(--marca); background: var(--campo); }
 .p2-match-texto { font-size: 0.9375rem; line-height: 1.55; color: var(--texto); }
-.p2-match.estado-confirmado { border: 2px solid var(--p2-verde); background: linear-gradient(160deg, rgb(63 209 184 / 0.14), var(--tarjeta) 55%); }
+.p2-match.estado-confirmado { border: 2px solid var(--p2-verde); background: linear-gradient(160deg, rgb(63 209 184 / 0.16), var(--p2-vidrio) 55%); }
 .p2-match.estado-abierta { border: 2px solid #f2c94c; }
 .p2-match-alojamiento { display: flex; align-items: center; gap: 12px; margin: 14px 0; padding: 10px; background: var(--campo); border-radius: 12px; }
 .p2-match-alojamiento > span:last-child { display: grid; gap: 2px; min-width: 0; font-size: 0.875rem; color: var(--texto-suave); }
@@ -375,7 +407,8 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
    que se estiran para ocupar el espacio */
 .p2-pubs > li:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .p2-pubs > li:last-child:nth-child(odd) .p2-pub { flex-direction: row; }
-.p2-pubs > li:last-child:nth-child(odd) .p2-pub-media { flex: 0 0 min(48%, 460px); aspect-ratio: auto; min-height: 260px; }
+/* La foto mantiene 4:3 (recortada al centro): una foto vertical o muy grande no estira la tarjeta */
+.p2-pubs > li:last-child:nth-child(odd) .p2-pub-media { flex: 0 0 min(40%, 400px); aspect-ratio: 4 / 3; }
 .p2-pubs > li:last-child:nth-child(odd) .p2-pub-info { padding: 22px 26px; gap: 10px; }
 .p2-pubs > li:last-child:nth-child(odd) .p2-pub-info h3 { font-size: 1.35rem; }
 .p2-pubs > li:last-child:nth-child(odd) .p2-pub-precio { font-size: 1.6rem; }
@@ -385,10 +418,11 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 }
 .p2-pub { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: var(--tarjeta); border: 1px solid var(--p2-borde); border-radius: 18px; transform-style: preserve-3d; transition: box-shadow 0.25s; }
 .p2-pub:hover { box-shadow: 0 20px 40px -24px rgb(15 59 74 / 0.55); }
-.p2-pub-media { position: relative; aspect-ratio: 16 / 10; background: var(--campo); }
+.p2-pub-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--campo); }
 .p2-pub-estado { position: absolute; top: 12px; left: 12px; z-index: 2; font-size: 0.875rem; }
 .p2-carrusel, .p2-carrusel-pista { width: 100%; height: 100%; }
-.p2-carrusel { position: relative; }
+/* El carrusel llena la caja de la foto: el tamaño lo da la caja (su proporción), nunca la imagen */
+.p2-carrusel { position: absolute; inset: 0; }
 .p2-carrusel-pista { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .p2-carrusel-pista::-webkit-scrollbar { display: none; }
 .p2-carrusel-pista img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; }
@@ -430,10 +464,19 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 .p2-pub-datos li { padding: 3px 10px; font-size: 0.875rem; color: var(--texto); background: var(--campo); border-radius: 999px; }
 .p2-pub-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--p2-borde); }
 .p2-pub-acciones { display: flex; gap: 8px; }
-.p2-pubs-vacio { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: center; gap: 22px; }
-.p2-pubs-vacio .p2-pub-placeholder { border-radius: 14px; }
-.p2-pubs-vacio > div { display: grid; justify-items: start; gap: 8px; }
-.p2-pubs-vacio .boton { gap: 6px; margin: 6px 0 0; padding: 10px 20px; }
+/* Sin publicaciones: apilado en una tarjeta angosta y lado a lado cuando hay espacio (según el
+   ancho de la tarjeta, no de la pantalla: en dos columnas la tarjeta es angosta aunque la pantalla no) */
+.p2-publicaciones { container-type: inline-size; }
+.p2-pubs-vacio { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 18px; }
+.p2-pubs-vacio .p2-pub-placeholder { display: block; width: 100%; max-width: 360px; height: auto; aspect-ratio: 16 / 10; border-radius: 14px; }
+.p2-pubs-vacio > div { display: grid; justify-items: start; gap: 8px; max-width: 52ch; }
+.p2-pubs-vacio .boton { gap: 6px; margin: 6px 0 0; padding: 12px 22px; line-height: 1.3; }
+@container (min-width: 560px) {
+  .p2-pubs-vacio { grid-template-columns: minmax(200px, 40%) minmax(0, 1fr); gap: 26px; }
+  .p2-pubs-vacio .p2-pub-placeholder { max-width: none; }
+}
+/* La ilustración se ve entera (sin zoom) en cualquier tamaño; el color de fondo completa el resto */
+.p2-pub-placeholder { background: #e3f1ef; }
 
 /* ---------- Vista previa ---------- */
 
@@ -475,7 +518,6 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
   .p2-anillo-cifra strong { font-size: 2.1rem; }
   .p2-compat-resumen { justify-content: center; text-align: center; }
   .p2-leyenda { justify-content: center; }
-  .p2-pubs-vacio { grid-template-columns: minmax(0, 1fr); }
   .p2-fichas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* El estado del match queda fijo abajo, sobre la navegación */
   .modo-otro .p2-barra-match {

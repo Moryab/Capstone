@@ -148,6 +148,8 @@ class UsuarioOut(BaseModel):
     # Con convivencia como buscador no puede cambiar de rol (como oferente lo revisa la API)
     con_convivencia: bool = False
     foto_url: str | None = None
+    # Para «Completa tu perfil» (inicio): además de los datos obligatorios, la descripción y la foto
+    tiene_descripcion: bool = False
     fecha_registro: datetime
 
     @classmethod
@@ -173,5 +175,6 @@ class UsuarioOut(BaseModel):
             modo=doc.get("modo"),
             con_convivencia=bool(doc.get("match_activo_id")),
             foto_url=doc.get("perfil", {}).get("foto_url"),
+            tiene_descripcion=bool((doc.get("perfil", {}).get("descripcion") or "").strip()),
             fecha_registro=doc["fecha_registro"],
         )
