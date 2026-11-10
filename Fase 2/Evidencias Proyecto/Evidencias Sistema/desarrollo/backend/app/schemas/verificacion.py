@@ -59,17 +59,21 @@ class SolicitudOut(BaseModel):
 class SolicitudResumenOut(BaseModel):
     """Fila del listado «Solicitudes de verificación» del administrador (CA-22.1)."""
 
-    id: str
-    codigo: int
+    id: str  # de la solicitud; con origen «correo», de la cuenta
+    # «correo»: verificada con correo institucional y revocada. No tiene solicitud ni comprobante
+    origen: Literal["solicitud", "correo"] = "solicitud"
+    codigo: int | None = None
     usuario_id: str
     nombre: str
     correo: str
     institucion_nombre: str | None = None
-    situacion: str
+    situacion: str | None = None
     tipo_comprobante: str
-    estado: str
+    estado: str  # pendiente | en_revision | aprobada | rechazada | revocada (aprobada y quitada después)
     fecha_solicitud: datetime
     fecha_revision: datetime | None = None
+    fecha_revocacion: datetime | None = None
+    motivo_revocacion: str | None = None
     foto_url: str | None = None
 
 
@@ -98,6 +102,10 @@ class SolicitudAdminOut(SolicitudOut):
 
     observaciones: str | None = None
     admin_revisor: str | None = None
+    # Si se aprobó y después se quitó la verificación (CA-23.4)
+    fecha_revocacion: datetime | None = None
+    motivo_revocacion: str | None = None
+    revocada_por: str | None = None
     solicitante: SolicitanteOut
 
 

@@ -17,7 +17,9 @@ import Hero from './estadisticas/Hero.jsx'
 import Semana, { diaLargo, SERIES_SEMANA } from './estadisticas/Semana.jsx'
 import Calendario from './estadisticas/Calendario.jsx'
 import { useResumenAdmin } from '../../marco/ResumenAdmin.jsx'
-import { BarrasMes, Lineas, Meta, nombreMes, pct, Ranking, SERIES_LINEAS } from './estadisticas/Graficos.jsx'
+import {
+  BarrasMes, brechaDe, Categorias, Lineas, Meta, nombreMes, pct, Ranking, SERIES_LINEAS,
+} from './estadisticas/Graficos.jsx'
 import {
   CORTO_TARJETA, esPeriodo, PERIODOS, PERIODOS_TARJETA, rangoDe, sufijoArchivo, textoPeriodo,
 } from './estadisticas/periodos.js'
@@ -42,6 +44,10 @@ const MOTIVOS = [
 
 const razonesDe = (d) => d.razones.map((f) => ({ etiqueta: textoDe(RAZONES, f.razon), cantidad: f.cantidad }))
 const motivosDe = (d) => d.motivos_fin.map((f) => ({ etiqueta: textoDe(MOTIVOS, f.motivo), cantidad: f.cantidad }))
+const categoriasDe = (d) => d.analisis_categorias.map((f) => ({ ...f, etiqueta: textoDe(RAZONES, f.categoria) }))
+
+// CA-20.5: el texto exacto del criterio cuando no hay datos
+const SIN_DATOS = 'Sin datos para mostrar'
 const filasRanking = (titulo, filas) => {
   const total = filas.reduce((s, f) => s + f.cantidad, 0)
   return [[titulo, 'Cantidad', 'Porcentaje'], ...filas.map((f) => [f.etiqueta, f.cantidad, pct((100 * f.cantidad) / total)])]
@@ -177,6 +183,40 @@ const MODULOS = {
     ver: (d) => <Ranking filas={motivosDe(d)} />,
     csv: (d) => filasRanking('Motivo', motivosDe(d)),
   },
+  // EP-08: base para proponer ajustes al algoritmo (HU-20)
+  categorias: {
+    titulo: 'Qué diferencias fracasan más',
+    descripcion: 'Convivencias no exitosas cuando el par difiere en un hábito, frente a cuando coincide',
+    ancho: 'dosTercios',
+    vacio: (d) => d.analisis_categorias.every((f) => f.casos_con_diferencia + f.casos_sin_diferencia === 0),
+    textoVacio: 'No hay convivencias evaluadas para comparar.',
+    ver: (d) => <Categorias filas={categoriasDe(d)} />,
+    csv: (d) => [
+      ['Hábito', 'Fracaso si difieren', 'Fracasos / casos (difieren)', 'Fracaso si coinciden', 'Fracasos / casos (coinciden)', 'Diferencia'],
+      ...categoriasDe(d).map((f) => [
+        f.etiqueta,
+        f.casos_con_diferencia ? pct(f.tasa_fracaso_con_diferencia) : 'Sin casos', `${f.fracasos_con_diferencia} / ${f.casos_con_diferencia}`,
+        f.casos_sin_diferencia ? pct(f.tasa_fracaso_sin_diferencia) : 'Sin casos', `${f.fracasos_sin_diferencia} / ${f.casos_sin_diferencia}`,
+        brechaDe(f.diferencia),
+      ]),
+    ],
+  },
+  // Product Vision (EP-02, EP-06, EP-07): reportes bajo el 5 % del total de anuncios
+  reportes: {
+    titulo: 'Tasa de reportes',
+    ancho: 'tercio',
+    vacio: (d) => d.reportes.tasa_reportes == null,
+    textoVacio: 'No hay anuncios publicados.',
+    ver: (d) => (
+      <Meta valor={d.reportes.tasa_reportes} meta={d.reportes.meta_tasa_reportes_max} maximo escala={15}
+        detalle={`${d.reportes.publicaciones_reportadas} de ${d.reportes.anuncios} anuncios reportados`} />
+    ),
+    csv: (d) => [
+      ['Indicador', 'Valor', 'Meta'],
+      ['Tasa de reportes', pct(d.reportes.tasa_reportes), `Bajo ${d.reportes.meta_tasa_reportes_max} %`],
+      ['Anuncios', d.reportes.anuncios, ''], ['Anuncios reportados', d.reportes.publicaciones_reportadas, ''],
+    ],
+  },
 }
 const ORDEN_INICIAL = Object.keys(MODULOS)
 
@@ -293,7 +333,7 @@ function Tarjeta({ id, editando, global, propio, alCambiarPropio, alAmpliarGloba
         {error && <p className="alerta" role="alert">{error}</p>}
         {!datos && !error && <div className="m-esqueleto" role="status" aria-label="Cargando" />}
         {vacio && (
-          <EstadoVacio compacto ilustracion="grafico" titulo="Sin datos en este período"
+          <EstadoVacio compacto ilustracion="grafico" titulo={SIN_DATOS}
             texto={`${modulo.textoVacio}${!modulo.fijo && filtro.periodo !== 'todo' ? ' Amplía el período para ver más.' : ''}`}
             accion={!modulo.fijo && filtro.periodo !== 'todo' && (
               <button type="button" className="a-boton" onClick={() => (propio ? alCambiarPropio('todo') : alAmpliarGlobal())}>
@@ -403,7 +443,7 @@ export default function Estadisticas() {
         const datos = modulo.fijo ? resumen : await pedir(consultaDe({ ...rangoDe(filtroDe(id)), ciudad }))
         if (!datos) continue
         filas.push([`${modulo.titulo} (${modulo.fijo ?? textoPeriodo(filtroDe(id))})`])
-        filas.push(...(modulo.vacio(datos) ? [['Sin datos en este período']] : modulo.csv(datos, { activas })), [])
+        filas.push(...(modulo.vacio(datos) ? [[SIN_DATOS]] : modulo.csv(datos, { activas })), [])
       }
       descargarCsv(nombreArchivo('estadisticas', rangoDe(global)), filas)
       avisar('Exportaste el panel a CSV')

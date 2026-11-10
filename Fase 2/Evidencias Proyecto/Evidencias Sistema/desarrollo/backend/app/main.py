@@ -12,6 +12,7 @@ from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
 from app.media import CARPETA_FOTOS, URL_MEDIA
 from app.modos import migrar_modos
+from app.routers.verificacion import migrar_revocaciones
 from app.routers import (
     admin,
     auth,
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
     await crear_indices()
     await cargar_datos_iniciales()
     await migrar_modos()  # rol buscador/oferente de las cuentas anteriores a ese cambio
+    await migrar_revocaciones()  # revocaciones anteriores a guardarse en la solicitud
     # EP-08 · HU-18: avisos y recordatorios para evaluar la convivencia
     revision = asyncio.create_task(revisar_periodicamente())
     yield

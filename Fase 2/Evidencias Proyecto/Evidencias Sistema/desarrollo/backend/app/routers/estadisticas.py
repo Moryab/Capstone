@@ -16,12 +16,14 @@ from fastapi import APIRouter, Depends, Query
 from app.db import db
 from app.deps import solo_admin
 from app.routers.perfil import datos_invalidos
+from app.schemas.cuestionario import CATEGORIAS
 
 router = APIRouter(prefix="/api/admin/estadisticas", tags=["Administración: estadísticas"])
 
 ZONA = ZoneInfo("America/Santiago")  # los meses y el filtro de fechas se cuentan en hora de Chile
 META_EXITO = 60  # Product Vision: 60 % de los match concretan una convivencia que funciona
 META_RESPUESTA = 70  # Product Vision: 70 % de respuesta a las evaluaciones del primer mes
+META_REPORTES_MAX = 5  # Product Vision (EP-02, EP-06, EP-07): reportes bajo el 5 % del total de anuncios
 CONVIVENCIAS = ["confirmado", "finalizado"]
 MAX_MESES = 24  # sin período, la serie mensual muestra a lo más los últimos dos años
 
@@ -144,11 +146,56 @@ async def estadisticas(
     if ciudad:
         filtro_reportes |= {"tipo_elemento": "publicacion", "elemento_reportado_id": {"$in": ids_ciudad}}
     lista_reportes = [
-        r async for r in db.reportes.find(filtro_reportes, {"tipo_elemento": 1, "estado": 1, "motivo": 1})
+        r async for r in db.reportes.find(
+            filtro_reportes, {"tipo_elemento": 1, "estado": 1, "motivo": 1, "elemento_reportado_id": 1}
+        )
     ]
     por_tipo = Counter(r["tipo_elemento"] for r in lista_reportes)
     por_estado = Counter(r["estado"] for r in lista_reportes)
     por_motivo = Counter((r["tipo_elemento"], r["motivo"]) for r in lista_reportes)
+
+    # Tasa de reportes (meta: bajo el 5 % del total de anuncios). Anuncios: los publicados hasta el
+    # final del período, en cualquier estado (uno suspendido por un reporte también cuenta)
+    filtro_anuncios: dict = {"fecha_publicacion": {"$lt": fin}} if fin else {}
+    if ciudad:
+        filtro_anuncios["_id"] = {"$in": ids_ciudad}
+    anuncios = await db.publicaciones.count_documents(filtro_anuncios)
+    publicaciones_reportadas = len({
+        r["elemento_reportado_id"] for r in lista_reportes if r["tipo_elemento"] == "publicacion"
+    })
+
+    # EP-08: qué diferencias de hábitos fracasan más. Para cada categoría se compara la tasa de
+    # fracaso de las convivencias evaluadas cuyo par difería en ella con la de las que coincidían.
+    # Se usa la compatibilidad con que se propuso el match (los cálculos viejos quedan como historial)
+    ids_compatibilidad = [m["compatibilidad_id"] for m in evaluadas if m.get("compatibilidad_id")]
+    diferencias = {
+        c["_id"]: set(c.get("categorias_diferentes", []))
+        async for c in db.compatibilidades.find({"_id": {"$in": ids_compatibilidad}}, {"categorias_diferentes": 1})
+    }
+    casos = [
+        (m["resultado"] == "no_exitoso", diferencias[m["compatibilidad_id"]])
+        for m in evaluadas if m.get("compatibilidad_id") in diferencias
+    ]
+    analisis_categorias = []
+    for categoria in CATEGORIAS:
+        con = [fracaso for fracaso, difieren in casos if categoria in difieren]
+        sin = [fracaso for fracaso, difieren in casos if categoria not in difieren]
+        tasa_con, tasa_sin = porcentaje(sum(con), len(con)), porcentaje(sum(sin), len(sin))
+        analisis_categorias.append({
+            "categoria": categoria,
+            "casos_con_diferencia": len(con),
+            "fracasos_con_diferencia": sum(con),
+            "casos_sin_diferencia": len(sin),
+            "fracasos_sin_diferencia": sum(sin),
+            "tasa_fracaso_con_diferencia": tasa_con,
+            "tasa_fracaso_sin_diferencia": tasa_sin,
+            # Puntos porcentuales que sube el fracaso cuando difieren (sin uno de los dos grupos, no hay)
+            "diferencia": round(tasa_con - tasa_sin, 1) if tasa_con is not None and tasa_sin is not None else None,
+        })
+    # Primero las que más suben el fracaso; las que no se pueden comparar, al final
+    analisis_categorias.sort(key=lambda f: (
+        f["diferencia"] is None, -(f["diferencia"] or 0), -(f["tasa_fracaso_con_diferencia"] or 0), f["categoria"]
+    ))
 
     # Serie mensual continua (sin huecos): del inicio del período (o del primer dato) al mes final
     hoy = datetime.now(ZONA).strftime("%Y-%m")
@@ -193,10 +240,16 @@ async def estadisticas(
             "perfiles": por_tipo.get("usuario", 0),
             "publicaciones": por_tipo.get("publicacion", 0),
             "por_estado": {e: por_estado.get(e, 0) for e in ("pendiente", "en_revision", "resuelto")},
+            "anuncios": anuncios,
+            "publicaciones_reportadas": publicaciones_reportadas,
+            "tasa_reportes": porcentaje(publicaciones_reportadas, anuncios),
+            "meta_tasa_reportes_max": META_REPORTES_MAX,
             "por_motivo": [
                 {"tipo": t, "motivo": m, "cantidad": n} for (t, m), n in por_motivo.most_common()
             ],
         },
-        "razones": [{"razon": r, "cantidad": n} for r, n in razones.most_common()],
-        "motivos_fin": [{"motivo": r, "cantidad": n} for r, n in motivos.most_common()],
+        # CA-20.3: de la más a la menos frecuente; a igual cantidad, por nombre (orden estable)
+        "razones": [{"razon": r, "cantidad": n} for r, n in sorted(razones.items(), key=lambda x: (-x[1], x[0]))],
+        "motivos_fin": [{"motivo": r, "cantidad": n} for r, n in sorted(motivos.items(), key=lambda x: (-x[1], x[0]))],
+        "analisis_categorias": analisis_categorias,
     }

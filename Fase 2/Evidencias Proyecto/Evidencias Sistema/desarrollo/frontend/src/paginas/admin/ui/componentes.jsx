@@ -47,6 +47,7 @@ const ESTADOS = {
     en_revision: ['info', 'lupa'],
     aprobada: ['ok', 'check'],
     rechazada: ['error', 'x'],
+    revocada: ['vino', 'prohibido'],
   },
   reporte: {
     pendiente: ['espera', 'reloj'],

@@ -21,7 +21,7 @@ from app.modos import CambioNoPermitido, Modo, cambiar_modo, resumen_cambio
 from app.notificaciones import notificar
 from app.routers.moderacion import registrar_accion
 from app.schemas.moderacion import JustificacionIn
-from app.routers.verificacion import POR_REVISAR, nombre_completo
+from app.routers.verificacion import POR_REVISAR, fechas_revocacion, nombre_completo
 from app.schemas.admin import (
     EliminacionOut, EstadoCuenta, EstadoPublicacion, EstadoVerificacion, PublicacionFilaOut, PublicacionUsuarioOut,
     ReporteRecibidoOut, SolicitudUsuarioOut, SuspensionOut, UsuarioDetalleOut, UsuarioFilaOut, UsuarioPerfilOut,
@@ -117,8 +117,13 @@ async def resumen_moderacion(
         },
         "verificaciones": {
             "pendientes": await db.solicitudes_verificacion.count_documents({"estado": {"$in": POR_REVISAR}}),
-            "aprobadas": await db.solicitudes_verificacion.count_documents({"estado": "aprobada", "fecha_revision": {"$gte": desde}}),
+            # Las aprobadas que después se revocaron se cuentan como revocadas, igual que en el historial
+            "aprobadas": await db.solicitudes_verificacion.count_documents(
+                {"estado": "aprobada", "fecha_revision": {"$gte": desde}, "revocacion": {"$exists": False}}
+            ),
             "rechazadas": await db.solicitudes_verificacion.count_documents({"estado": "rechazada", "fecha_revision": {"$gte": desde}}),
+            # Verificaciones quitadas después de aprobarse (CA-23.4), con o sin solicitud
+            "revocadas": sum(f >= desde for f in await fechas_revocacion()),
         },
     }
 
