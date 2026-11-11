@@ -188,11 +188,12 @@ export default function DetallePublicacionAdmin() {
 
       <FichaPublicacion key={pub.id} pub={pub}>
         {oferente && (
-          <Link to={`/admin/usuarios/${oferente.id}`} className="detalle-oferente">
-            <Avatar nombre={oferente.nombre} apellido={oferente.ap_paterno} foto={oferente.foto_url} tamano={44} />
-            <span>
-              <strong>{oferente.nombre} {oferente.ap_paterno} <InsigniaVerificacion verificado={oferente.verificado} /></strong>
-              <small>Ver ficha del oferente</small>
+          <Link to={`/admin/usuarios/${oferente.id}`} className="fp-oferente">
+            <Avatar nombre={oferente.nombre} apellido={oferente.ap_paterno} foto={oferente.foto_url} tamano={48} />
+            <span className="fp-oferente-datos">
+              <span className="fp-oferente-rol">Oferente · ver ficha</span>
+              <strong>{oferente.nombre} {oferente.ap_paterno}</strong>
+              <InsigniaVerificacion verificado={oferente.verificado} />
             </span>
           </Link>
         )}

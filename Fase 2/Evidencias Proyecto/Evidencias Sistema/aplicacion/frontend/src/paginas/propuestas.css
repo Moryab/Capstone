@@ -34,13 +34,13 @@
   transition: border-color 200ms ease, background-color 200ms ease;
 }
 .pp-interruptor.activo { background: color-mix(in srgb, var(--tarjeta) 92%, var(--primario)); border-color: color-mix(in srgb, var(--primario) 35%, transparent); }
-.pp-interruptor h2 { margin: 0 0 4px; font: 600 1.08rem 'Outfit', system-ui, sans-serif; }
+.pp-pagina .pp-interruptor h2 { margin: 0 0 4px; font: 600 1.08rem 'Outfit', system-ui, sans-serif; }
 .pp-interruptor p { margin: 0; font-size: 0.9rem; line-height: 1.45; color: var(--texto-suave); }
 .pp-interruptor .interruptor { flex: none; }
 
 /* ---------- Secciones ---------- */
 .pp-seccion { margin-bottom: 34px; }
-.pp-seccion > h2 { display: flex; gap: 10px; align-items: center; margin: 0 0 14px; font: 600 1.3rem 'Outfit', system-ui, sans-serif; color: var(--marca); }
+.pp-pagina .pp-seccion > h2 { display: flex; gap: 10px; align-items: center; margin: 0 0 14px; font: 600 1.3rem 'Outfit', system-ui, sans-serif; color: var(--marca); }
 .pp-cuenta {
   display: inline-grid;
   place-items: center;
