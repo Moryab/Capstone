@@ -90,6 +90,18 @@ async def crear_indices() -> None:
     # Cada área agrega sus índices solo dentro de su bloque, así no se cruzan los cambios en git
 
     # --- EP-08 · seguimiento post-match (HU-18 a HU-20) ---
+    # Versiones de los parámetros del algoritmo y revisiones automáticas de sus pesos (modelo de datos).
+    # En vez del único por «estado» del modelo, solo una versión puede estar activa (las retiradas son varias)
+    await db.parametros_algoritmo.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.parametros_algoritmo.create_index([("version", ASCENDING)], unique=True, name="version_1")
+    await db.parametros_algoritmo.create_index(
+        [("estado", ASCENDING)], unique=True, partialFilterExpression={"estado": "activa"}, name="estado_activa_1"
+    )
+    await db.ajustes_algoritmo.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")
+    await db.ajustes_algoritmo.create_index(
+        [("estado", ASCENDING), ("fecha_creacion", DESCENDING)], name="estado_1_fecha_creacion_-1"
+    )
+    await db.ajustes_algoritmo.create_index([("fecha_creacion", DESCENDING)], name="fecha_creacion_-1")
 
     # --- EP-06 · reportes y moderación (HU-24 a HU-27 y HU-30) ---
     await db.reportes.create_index([("codigo", ASCENDING)], unique=True, name="codigo_1")

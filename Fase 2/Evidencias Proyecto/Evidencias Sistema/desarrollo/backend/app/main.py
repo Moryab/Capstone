@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.compatibilidad import asegurar_parametros
 from app.config import settings
 from app.datos_iniciales import cargar_datos_iniciales
 from app.db import client, crear_indices
@@ -38,6 +39,7 @@ from app.seguimiento import revisar_periodicamente
 async def lifespan(app: FastAPI):
     await crear_indices()
     await cargar_datos_iniciales()
+    await asegurar_parametros()  # EP-08: versión v1 de los pesos del algoritmo
     await migrar_modos()  # rol buscador/oferente de las cuentas anteriores a ese cambio
     await migrar_revocaciones()  # revocaciones anteriores a guardarse en la solicitud
     # EP-08 · HU-18: avisos y recordatorios para evaluar la convivencia

@@ -153,7 +153,7 @@ async def _proponer_a(buscador: dict) -> int:
             "fecha_fin_convivencia": None,
             "motivo_fin": None,
             "duracion_convivencia_dias": None,
-            "parametros_version": PARAMETROS_VERSION,
+            "parametros_version": c.get("parametros_version", PARAMETROS_VERSION),  # la del cálculo
             "respuesta_a": dict(sin_respuesta),
             "respuesta_b": dict(sin_respuesta),
             "evaluacion": [],

@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 from pymongo import ReturnDocument
 
+from app.aprendizaje import programar_revision, revisar_algoritmo
 from app.compatibilidad import AJUSTE_PERSONAL_MAX, FACTOR_GRAVEDAD, INCREMENTO_POR_RAZON, recalcular
 from app.db import db
 from app.matching import generar_propuestas
@@ -192,6 +193,8 @@ async def terminar_convivencia(match: dict, usuario: dict, motivo: str, razones:
         await aprender_de_razones(usuario, razones)  # también recalcula y genera propuestas
     else:
         await generar_propuestas()
+    if motivo == "incompatibilidad":
+        programar_revision()  # una convivencia evaluada más para el aprendizaje general (EP-08)
     return await db.matches.find_one({"_id": match["_id"]})
 
 
@@ -202,4 +205,8 @@ async def revisar_periodicamente() -> None:
             await avisar_evaluaciones()
         except Exception:  # un error puntual no debe detener la revisión siguiente
             logging.exception("Error al enviar los avisos de evaluación")
+        try:
+            await revisar_algoritmo()  # EP-08: ajuste general de los pesos, si ya corresponde
+        except Exception:
+            logging.exception("Error al revisar los pesos del algoritmo")
         await asyncio.sleep(REVISAR_CADA.total_seconds())

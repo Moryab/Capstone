@@ -13,10 +13,10 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, Query
 
+from app.aprendizaje import analizar_categorias, compatibilidades_de, fecha_resultado, porcentaje, resumen_aprendizaje
 from app.db import db
 from app.deps import solo_admin
 from app.routers.perfil import datos_invalidos
-from app.schemas.cuestionario import CATEGORIAS
 
 router = APIRouter(prefix="/api/admin/estadisticas", tags=["Administración: estadísticas"])
 
@@ -26,16 +26,6 @@ META_RESPUESTA = 70  # Product Vision: 70 % de respuesta a las evaluaciones del 
 META_REPORTES_MAX = 5  # Product Vision (EP-02, EP-06, EP-07): reportes bajo el 5 % del total de anuncios
 CONVIVENCIAS = ["confirmado", "finalizado"]
 MAX_MESES = 24  # sin período, la serie mensual muestra a lo más los últimos dos años
-
-
-def porcentaje(parte: int, total: int) -> float | None:
-    return round(100 * parte / total, 1) if total else None
-
-
-def fecha_resultado(match: dict) -> datetime | None:
-    """Cuándo quedó el resultado: la última evaluación, o el término si no la hubo."""
-    fechas = [e["fecha_eval"] for e in match.get("evaluacion", [])]
-    return max(fechas) if fechas else match.get("fecha_fin_convivencia")
 
 
 def en_rango(fecha: datetime | None, desde: datetime | None, hasta: datetime | None) -> bool:
@@ -57,6 +47,13 @@ def meses_entre(primero: str, ultimo: str) -> list[str]:
         meses.append(f"{anio:04d}-{mes:02d}")
         anio, mes = (anio + 1, 1) if mes == 12 else (anio, mes + 1)
     return meses
+
+
+@router.get("/algoritmo")
+async def aprendizaje_del_algoritmo(_admin: dict = Depends(solo_admin)):
+    """EP-08: lo que la plataforma aprendió sola. Versión activa de los pesos por hábito, cuánto falta
+    para la próxima revisión y las últimas revisiones (aprobadas o no). No depende del período."""
+    return await resumen_aprendizaje()
 
 
 @router.get("")
@@ -166,36 +163,12 @@ async def estadisticas(
 
     # EP-08: qué diferencias de hábitos fracasan más. Para cada categoría se compara la tasa de
     # fracaso de las convivencias evaluadas cuyo par difería en ella con la de las que coincidían.
-    # Se usa la compatibilidad con que se propuso el match (los cálculos viejos quedan como historial)
-    ids_compatibilidad = [m["compatibilidad_id"] for m in evaluadas if m.get("compatibilidad_id")]
-    diferencias = {
-        c["_id"]: set(c.get("categorias_diferentes", []))
-        async for c in db.compatibilidades.find({"_id": {"$in": ids_compatibilidad}}, {"categorias_diferentes": 1})
-    }
-    casos = [
-        (m["resultado"] == "no_exitoso", diferencias[m["compatibilidad_id"]])
-        for m in evaluadas if m.get("compatibilidad_id") in diferencias
-    ]
-    analisis_categorias = []
-    for categoria in CATEGORIAS:
-        con = [fracaso for fracaso, difieren in casos if categoria in difieren]
-        sin = [fracaso for fracaso, difieren in casos if categoria not in difieren]
-        tasa_con, tasa_sin = porcentaje(sum(con), len(con)), porcentaje(sum(sin), len(sin))
-        analisis_categorias.append({
-            "categoria": categoria,
-            "casos_con_diferencia": len(con),
-            "fracasos_con_diferencia": sum(con),
-            "casos_sin_diferencia": len(sin),
-            "fracasos_sin_diferencia": sum(sin),
-            "tasa_fracaso_con_diferencia": tasa_con,
-            "tasa_fracaso_sin_diferencia": tasa_sin,
-            # Puntos porcentuales que sube el fracaso cuando difieren (sin uno de los dos grupos, no hay)
-            "diferencia": round(tasa_con - tasa_sin, 1) if tasa_con is not None and tasa_sin is not None else None,
-        })
-    # Primero las que más suben el fracaso; las que no se pueden comparar, al final
-    analisis_categorias.sort(key=lambda f: (
-        f["diferencia"] is None, -(f["diferencia"] or 0), -(f["tasa_fracaso_con_diferencia"] or 0), f["categoria"]
-    ))
+    # Es el mismo análisis con que la plataforma ajusta sola los pesos (app/aprendizaje.py)
+    compatibilidades = await compatibilidades_de(evaluadas)
+    analisis_categorias = analizar_categorias([
+        (m["resultado"] == "no_exitoso", set(compatibilidades[m["compatibilidad_id"]].get("categorias_diferentes", [])))
+        for m in evaluadas if m.get("compatibilidad_id") in compatibilidades
+    ])
 
     # Serie mensual continua (sin huecos): del inicio del período (o del primer dato) al mes final
     hoy = datetime.now(ZONA).strftime("%Y-%m")

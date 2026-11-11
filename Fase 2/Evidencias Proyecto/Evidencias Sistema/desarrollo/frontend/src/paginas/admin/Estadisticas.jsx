@@ -12,7 +12,8 @@ import { guardarLocal, leerLocal } from '../../almacenamiento.js'
 import { useAvisoBreve } from '../../componentes/AvisoBreve.jsx'
 import { useSesion } from '../../sesion/SesionContext.jsx'
 import { RAZONES, textoDe } from '../evaluacion/SelectorRazones.jsx'
-import { consultaDe, descargarCsv, pedir, slug, useEstadisticas } from './estadisticas/datos.js'
+import { consultaDe, descargarCsv, pedir, pedirAlgoritmo, slug, useAlgoritmo, useEstadisticas } from './estadisticas/datos.js'
+import Aprendizaje, { textoEstadoAjuste, textoPeso } from './estadisticas/Aprendizaje.jsx'
 import Hero from './estadisticas/Hero.jsx'
 import Semana, { diaLargo, SERIES_SEMANA } from './estadisticas/Semana.jsx'
 import Calendario from './estadisticas/Calendario.jsx'
@@ -147,6 +148,7 @@ const MODULOS = {
     descripcion: 'Lo nuevo de cada día',
     ancho: 'tercio',
     fijo: 'Últimos 7 días',
+    fuente: 'resumen',
     vacio: (d) => !d.actividad?.some((dia) => SERIES_SEMANA.some((s) => dia[s.clave] > 0)),
     textoVacio: 'Sin movimiento estos 7 días.',
     ver: (d) => <Semana actividad={d.actividad} />,
@@ -198,6 +200,32 @@ const MODULOS = {
         f.casos_con_diferencia ? pct(f.tasa_fracaso_con_diferencia) : 'Sin casos', `${f.fracasos_con_diferencia} / ${f.casos_con_diferencia}`,
         f.casos_sin_diferencia ? pct(f.tasa_fracaso_sin_diferencia) : 'Sin casos', `${f.fracasos_sin_diferencia} / ${f.casos_sin_diferencia}`,
         brechaDe(f.diferencia),
+      ]),
+    ],
+  },
+  // EP-08: la mejora continua general. La plataforma ajusta sola los pesos; aquí solo se muestra
+  aprendizaje: {
+    titulo: 'Aprendizaje del algoritmo',
+    descripcion: 'RoomMatch ajusta sola cuánto pesa cada hábito según cómo resultan las convivencias',
+    ancho: 'completo',
+    fijo: 'Automático',
+    fuente: 'algoritmo',
+    vacio: () => false,
+    ver: (d) => <Aprendizaje datos={d} />,
+    csv: (d) => [
+      ['Versión vigente', d.version],
+      ['Convivencias evaluadas', d.casos_evaluados],
+      [],
+      ['Hábito', 'Peso actual', 'Peso inicial'],
+      ...d.pesos.map((p) => [textoDe(RAZONES, p.categoria), textoPeso(p.peso), textoPeso(p.peso_inicial)]),
+      [],
+      ['Fecha', 'Resultado', 'Versión', 'Convivencias analizadas', 'Cambios', 'Éxito antes', 'Éxito con los pesos nuevos', 'Observaciones'],
+      ...d.ajustes.map((a) => [
+        a.fecha.slice(0, 10), textoEstadoAjuste(a), a.version_propuesta ? `${a.version_base} → ${a.version_propuesta}` : a.version_base,
+        a.casos_analizados,
+        a.cambios.map((c) => `${textoDe(RAZONES, c.categoria)} ${textoPeso(c.peso_actual)} → ${textoPeso(c.peso_propuesto)}`).join(', '),
+        a.validacion ? pct(a.validacion.tasa_exito_base) : '', a.validacion ? pct(a.validacion.tasa_exito_propuesta) : '',
+        a.observaciones ?? '',
       ]),
     ],
   },
@@ -282,9 +310,11 @@ function Tarjeta({ id, editando, global, propio, alCambiarPropio, alAmpliarGloba
   const rango = rangoDe(filtro)
   const consulta = consultaDe({ ...rango, ciudad })
   const estadisticas = useEstadisticas(consulta)
+  const algoritmo = useAlgoritmo(modulo.fuente === 'algoritmo')
   const { resumen } = useResumenAdmin()
-  // Las tarjetas «fijas» leen el resumen del admin en vez de las estadísticas del período
-  const { datos, error, cargando } = modulo.fijo ? { datos: resumen, error: '', cargando: false } : estadisticas
+  // Las tarjetas «fijas» no usan el período: leen el resumen del admin o lo aprendido por el algoritmo
+  const { datos, error, cargando } = modulo.fuente === 'resumen' ? { datos: resumen, error: '', cargando: false }
+    : modulo.fuente === 'algoritmo' ? algoritmo : estadisticas
   const vacio = Boolean(datos) && esVacio(modulo, datos)
 
   return (
@@ -440,7 +470,9 @@ export default function Estadisticas() {
       const filas = cabeceraCsv('Estadísticas de match · RoomMatch', global)
       for (const id of orden) {
         const modulo = MODULOS[id]
-        const datos = modulo.fijo ? resumen : await pedir(consultaDe({ ...rangoDe(filtroDe(id)), ciudad }))
+        const datos = modulo.fuente === 'resumen' ? resumen
+          : modulo.fuente === 'algoritmo' ? await pedirAlgoritmo()
+            : await pedir(consultaDe({ ...rangoDe(filtroDe(id)), ciudad }))
         if (!datos) continue
         filas.push([`${modulo.titulo} (${modulo.fijo ?? textoPeriodo(filtroDe(id))})`])
         filas.push(...(modulo.vacio(datos) ? [[SIN_DATOS]] : modulo.csv(datos, { activas })), [])

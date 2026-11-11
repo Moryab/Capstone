@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from pymongo import ReturnDocument
 
+from app.aprendizaje import programar_revision
 from app.db import db
 from app.deps import usuario_actual
 from app.routers.compatibilidades import el_otro, resumenes
@@ -150,6 +151,7 @@ async def evaluar(match_id: str, datos: EvaluacionIn, usuario: dict = Depends(us
             "usuario_id": yo, "momento": MOMENTO, "fecha_aviso": None, "fecha_recordatorio": None, "evaluado": True,
         }}})
     await db.matches.update_one({"_id": match["_id"]}, {"$set": {"resultado": resultado}})
+    programar_revision()  # EP-08: con cada convivencia evaluada la plataforma revisa si ajustar sus pesos
 
     return {
         "mensaje": "¡Gracias por tu evaluación!",

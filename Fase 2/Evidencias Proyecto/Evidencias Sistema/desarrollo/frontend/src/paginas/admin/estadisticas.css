@@ -829,3 +829,43 @@ html.tema-oscuro .es-admin .c-mes td button[data-elegido]:hover:not(:disabled) {
     .g-meta-valor, .g-ranking-pista span, .g-cat-pista span { transform: scaleX(0); }
   }
 }
+
+/* ---------- EP-08 · Aprendizaje del algoritmo ---------- */
+.ap { display: grid; gap: 22px; }
+.ap-estado { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.ap-estado > div { display: grid; gap: 2px; padding: 12px 14px; background: var(--a-sup-2); border-radius: 12px; }
+.ap-estado dt { font-size: 0.8rem; font-weight: 600; color: var(--a-suave); }
+.ap-estado dd { margin: 0; font: 700 1.35rem/1.15 'Outfit', system-ui, sans-serif; font-variant-numeric: tabular-nums; color: var(--a-titulo); }
+.ap-estado small { font-size: 0.78rem; color: var(--a-suave); }
+.ap-columnas { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 28px; }
+.ap-titulo { margin-bottom: 12px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--a-suave); }
+
+.ap-pesos { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.ap-pesos li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 12px; }
+.ap-habito { overflow: hidden; font-size: 0.92rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; color: var(--a-titulo); }
+.ap-valor { font-size: 0.86rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--a-suave); }
+.ap-valor[data-cambio='sube'] { padding: 2px 8px; color: var(--a-espera); background: var(--a-espera-fondo); border-radius: 999px; }
+.ap-valor[data-cambio='baja'] { padding: 2px 8px; color: var(--a-info); background: var(--a-info-fondo); border-radius: 999px; }
+.ap-pista { position: relative; grid-column: 1 / -1; height: 8px; background: var(--a-sup-2); border-radius: 999px; }
+.ap-pista > span { display: block; height: 100%; background: var(--est-exitoso); border-radius: inherit; transform: scaleX(var(--avance)); transform-origin: left center; }
+/* Marca del peso inicial (×1) */
+.ap-pista::after { content: ''; position: absolute; top: -4px; bottom: -4px; left: calc(var(--inicio) * 100%); width: 2px; background: var(--a-titulo); border-radius: 2px; }
+
+.ap-revisiones { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ap-revision { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--a-borde); border-radius: 12px; }
+.ap-revision header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ap-chip { padding: 2px 9px; font-size: 0.76rem; font-weight: 700; color: var(--a-suave); background: var(--a-sup-2); border-radius: 999px; }
+.ap-chip[data-estado='aprobado'] { color: var(--a-ok); background: var(--a-ok-fondo); }
+.ap-chip[data-estado='rechazado'] { color: var(--a-espera); background: var(--a-espera-fondo); }
+.ap-version { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--a-titulo); }
+.ap-meta { font-size: 0.8rem; color: var(--a-suave); }
+.ap-cambios { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 0.88rem; color: var(--a-titulo); }
+.ap-cambios p, .ap-validacion, .ap-observacion, .ap-vacio { font-size: 0.82rem; line-height: 1.45; color: var(--a-suave); }
+.ap-reglas { line-height: 1.5; }
+
+@media (max-width: 1000px) {
+  .ap-columnas { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .ap-estado { grid-template-columns: minmax(0, 1fr); }
+}

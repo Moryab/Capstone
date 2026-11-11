@@ -14,6 +14,32 @@ export function pedir(consulta) {
   return promesa
 }
 
+// EP-08: lo que aprendió el algoritmo. No depende del período ni de la ciudad
+let algoritmo = null
+export function pedirAlgoritmo() {
+  if (algoritmo && Date.now() - algoritmo.hora < VIGENCIA_MS) return algoritmo.promesa
+  const promesa = api('/admin/estadisticas/algoritmo')
+  algoritmo = { promesa, hora: Date.now() }
+  promesa.catch(() => { algoritmo = null })
+  return promesa
+}
+
+/** Datos de «Aprendizaje del algoritmo»; solo los pide la tarjeta que los usa (`activo`) */
+export function useAlgoritmo(activo) {
+  const [estado, setEstado] = useState({ datos: null, error: '' })
+  useEffect(() => {
+    if (!activo) return undefined
+    let vigente = true
+    pedirAlgoritmo()
+      .then((datos) => vigente && setEstado({ datos, error: '' }))
+      .catch((err) => vigente && setEstado({ datos: null, error: err.message }))
+    return () => {
+      vigente = false
+    }
+  }, [activo])
+  return { ...estado, cargando: false }
+}
+
 /** Arma la consulta (?desde=…&hasta=…&ciudad=…) sin los valores vacíos */
 export function consultaDe({ desde, hasta, ciudad }) {
   const p = new URLSearchParams()
