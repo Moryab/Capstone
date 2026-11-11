@@ -1,0 +1,294 @@
+/* Detalle de un alojamiento (componentes/FichaPublicacion.jsx): lo ven el estudiante y el
+   administrador. Dos columnas en el computador (contenido y tarjeta lateral fija) y una en el
+   celular. Mismo lenguaje que las tarjetas de «Alojamientos». Tokens de index.css */
+
+.detalle-publicacion { width: min(1180px, calc(100% - 32px)); }
+
+.fp {
+  --fp-tinte: rgb(15 118 110 / 0.09);
+  --fp-sombra: 0 1px 2px rgb(11 31 58 / 0.05), 0 18px 36px -26px rgb(11 31 58 / 0.4);
+  --fp-linea: color-mix(in srgb, var(--borde) 70%, transparent);
+  --fp-curva: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* ---------- Cabecera ---------- */
+.fp-cabecera { margin: 6px 0 18px; }
+.fp-meta { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--texto-suave); }
+.fp .fp-cabecera h1 { margin: 4px 0 8px; font: 700 clamp(1.6rem, 2.4vw, 2.2rem)/1.15 'Outfit', system-ui, sans-serif; letter-spacing: -0.02em; color: var(--marca); }
+.fp-lugar { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: 0.95rem; color: var(--texto-suave); }
+.fp-lugar svg { flex: none; width: 17px; height: 17px; margin-top: 2px; color: var(--primario); }
+
+/* ---------- Columnas ---------- */
+.fp-cuerpo {
+  display: grid;
+  grid-template-areas: 'galeria lateral' 'secciones lateral';
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 28px 32px;
+  align-items: start;
+}
+.fp-galeria { grid-area: galeria; min-width: 0; }
+.fp-lateral {
+  position: sticky;
+  top: 20px;
+  grid-area: lateral;
+  display: grid;
+  gap: 10px;
+  /* Si con las respuestas abiertas no cabe en la pantalla, se desplaza por dentro (no se corta) */
+  max-height: calc(100vh - 40px);
+  padding: 2px 4px 14px;
+  margin: -2px -4px 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+/* Las secciones van en una tarjeta: sobre el fondo ilustrado de la app, el texto suelto se lee mal */
+.fp-secciones {
+  grid-area: secciones;
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding: 24px 28px 8px;
+  background: var(--tarjeta);
+  border: 1px solid color-mix(in srgb, var(--borde) 60%, transparent);
+  border-radius: 22px;
+  box-shadow: var(--fp-sombra);
+}
+
+/* ---------- Galería ---------- */
+.fp-foto { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--campo); border-radius: 22px; }
+.fp-foto img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fp-foto.sin-fotos { display: grid; }
+.fp-foto.sin-fotos svg { grid-area: 1 / 1; }
+.fp-foto-nota {
+  grid-area: 1 / 1;
+  align-self: end;
+  justify-self: start;
+  margin: 16px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0b1f3a;
+  background: rgb(255 255 255 / 0.9);
+  border-radius: 999px;
+}
+.fp-flecha {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: #0b1f3a;
+  cursor: pointer;
+  background: rgb(255 255 255 / 0.9);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px -6px rgb(11 31 58 / 0.5);
+  transform: translateY(-50%);
+  transition: transform 160ms ease-out, opacity 200ms ease;
+}
+.fp-flecha.anterior { left: 14px; }
+.fp-flecha.siguiente { right: 14px; }
+.fp-flecha:active { transform: translateY(-50%) scale(0.94); }
+.fp-flecha:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+/* Con mouse, las flechas aparecen al pasar sobre la foto; en pantallas táctiles quedan siempre */
+@media (hover: hover) and (pointer: fine) {
+  .fp-flecha { opacity: 0; }
+  .fp-foto:hover .fp-flecha, .fp-flecha:focus-visible { opacity: 1; }
+}
+.fp-contador {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 5px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgb(11 31 58 / 0.55);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.fp-miniaturas { display: flex; gap: 10px; margin: 12px 0 0; padding: 0; overflow-x: auto; list-style: none; }
+.fp-miniaturas button {
+  display: block;
+  width: 92px;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  opacity: 0.7;
+  transition: opacity 200ms ease, border-color 200ms ease;
+}
+.fp-miniaturas button[aria-pressed='true'] { border-color: var(--primario); opacity: 1; }
+.fp-miniaturas button:hover { opacity: 1; }
+.fp-miniaturas button:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+.fp-miniaturas img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- Tarjeta lateral ---------- */
+.fp-tarjeta {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  background: var(--tarjeta);
+  border: 1px solid color-mix(in srgb, var(--borde) 60%, transparent);
+  border-radius: 22px;
+  box-shadow: var(--fp-sombra);
+}
+.fp-precio { margin: 0; font: 700 1.9rem/1.1 'Outfit', system-ui, sans-serif; letter-spacing: -0.02em; color: var(--marca); font-variant-numeric: tabular-nums; }
+.fp-precio span { font: 400 0.9rem 'Work Sans', system-ui, sans-serif; color: var(--texto-suave); }
+.fp-total { margin: -8px 0 0; font-size: 0.86rem; color: var(--texto-suave); }
+.fp-total strong { color: var(--texto); }
+.fp-tarjeta .boton { width: 100%; margin: 0; padding: 12px 18px; }
+.fp-tarjeta .boton-mensaje-ayuda { font-size: 0.85rem; }
+.fp-fechas { margin: 0; padding-top: 12px; font-size: 0.8rem; color: var(--texto-suave); border-top: 1px solid var(--fp-linea); }
+
+/* Quién publicó (también la vista del administrador, con .detalle-oferente) */
+.fp-oferente, .fp-tarjeta .detalle-oferente {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  padding: 12px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--campo);
+  border: 0;
+  border-radius: 16px;
+  transition: background-color 200ms ease;
+}
+.fp-oferente:hover, .fp-tarjeta .detalle-oferente:hover { background: color-mix(in srgb, var(--campo) 70%, var(--borde)); }
+.fp-oferente:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+.fp-oferente .avatar { flex: none; }
+.fp-oferente > svg { flex: none; margin-left: auto; color: var(--texto-suave); }
+.fp-oferente-datos { display: grid; gap: 2px; min-width: 0; }
+.fp-oferente-rol { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
+.fp-oferente-datos strong { overflow: hidden; font: 600 1.02rem 'Outfit', system-ui, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.fp-oferente-datos .insignia-verificado, .fp-oferente-datos .insignia-sin-verificar { justify-self: start; margin-top: 2px; font-size: 0.7rem; }
+.fp-tarjeta .detalle-oferente strong { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+
+/* Compatibilidad */
+.fp-compat { display: grid; gap: 14px; padding: 14px; border: 1px solid var(--fp-linea); border-radius: 16px; }
+.fp-compat-cabeza { display: flex; gap: 14px; align-items: center; }
+.fp-compat-cabeza > div { display: grid; gap: 4px; min-width: 0; }
+.fp-compat-cabeza p { margin: 0; font-size: 0.9rem; font-weight: 600; }
+.fp-compat-cabeza a { font-size: 0.85rem; font-weight: 600; color: var(--primario); }
+.fp .fp-compat-descarte { margin: 0; font-size: 0.8rem; color: var(--aviso); }
+
+/* Hábito por hábito: verde si coinciden, ámbar si se parecen, gris si son distintos */
+.fp-habitos { display: grid; gap: 12px; padding-top: 12px; border-top: 1px solid var(--fp-linea); }
+.fp-habitos-grupo { display: grid; gap: 6px; }
+.fp .fp-habitos-grupo > p { margin: 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
+.fp-habitos-grupo ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.fp-habitos-grupo li {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 4px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+.fp-habitos-grupo.coincide li { color: var(--primario); background: var(--fp-tinte); }
+.fp-habitos-grupo.parecido li { color: #975a16; background: rgb(151 90 22 / 0.1); }
+.fp-habitos-grupo.distinto li { color: var(--texto-suave); background: var(--campo); }
+.fp-habito-marca { font-weight: 700; }
+.fp-imprescindible {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--aviso);
+  border-radius: 50%;
+  cursor: help;
+}
+html.tema-oscuro .fp-habitos-grupo.parecido li { color: #f0b46a; }
+
+/* Respuestas de ambos, plegadas */
+.fp-respuestas summary { font-size: 0.85rem; font-weight: 600; color: var(--primario); cursor: pointer; }
+.fp-respuestas summary:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
+.fp-respuestas dl { display: grid; gap: 0; margin: 10px 0 0; }
+.fp-respuestas dl > div { display: grid; gap: 2px; padding: 8px 0 8px 10px; border-left: 3px solid var(--borde); }
+.fp-respuestas dl > div + div { margin-top: 6px; }
+.fp-respuestas dl > div.coincide { border-left-color: var(--primario); }
+.fp-respuestas dl > div.parecido { border-left-color: #975a16; }
+.fp-respuestas dt { font-size: 0.82rem; font-weight: 700; }
+.fp-respuestas dd { display: grid; gap: 1px; margin: 0; font-size: 0.8rem; color: var(--texto-suave); }
+.fp-imprescindible-texto { font-weight: 600; color: var(--aviso); }
+.fp-compat-nota { margin: 0; font-size: 0.85rem; font-style: italic; color: var(--texto-suave); }
+
+/* Debajo de la tarjeta: reportar, discreto (el botón conserva su diálogo y su lógica) */
+.fp-pie { display: flex; justify-content: center; }
+.fp-pie .boton.peligro-suave {
+  min-height: 0;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--texto-suave);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fp-pie .boton.peligro-suave:hover:not(:disabled) { color: var(--error); background: none; }
+
+/* ---------- Secciones ---------- */
+.fp-datos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 4px; padding: 0; list-style: none; }
+.fp-datos li {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--marca);
+  background: var(--campo);
+  border-radius: 999px;
+}
+.fp-datos svg { flex: none; width: 16px; height: 16px; color: var(--primario); }
+
+.fp-seccion { padding: 26px 0; border-bottom: 1px solid var(--fp-linea); }
+.fp-seccion:last-child { border-bottom: 0; }
+.fp .fp-seccion h2 { margin: 0 0 14px; font: 600 1.3rem 'Outfit', system-ui, sans-serif; color: var(--marca); }
+.fp-texto { max-width: 68ch; margin: 0; font-size: 1rem; line-height: 1.7; white-space: pre-line; }
+
+/* Gastos: cada servicio con su ícono; los incluidos destacados */
+.fp-servicios { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.fp-servicios li { display: flex; gap: 10px; align-items: center; padding: 12px 14px; background: var(--tarjeta); border: 1px solid var(--fp-linea); border-radius: 14px; }
+.fp-servicio-icono { display: grid; flex: none; place-items: center; width: 34px; height: 34px; color: var(--texto-suave); background: var(--campo); border-radius: 10px; }
+.fp-servicios li.incluido .fp-servicio-icono { color: var(--primario); background: var(--fp-tinte); }
+.fp-servicio-nombre { font-weight: 600; }
+.fp-servicio-valor { margin-left: auto; font-size: 0.88rem; color: var(--texto-suave); white-space: nowrap; }
+.fp-servicios li.incluido .fp-servicio-valor { font-weight: 700; color: var(--primario); }
+
+/* Reglas: sí / no con el ícono del hábito */
+.fp-reglas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 0; padding: 0; list-style: none; }
+.fp-reglas li { display: flex; gap: 10px; align-items: center; font-size: 0.95rem; }
+.fp-reglas svg { flex: none; color: var(--primario); }
+.fp-reglas li.no { color: var(--texto-suave); }
+.fp-reglas li.no svg { color: var(--texto-suave); opacity: 0.7; }
+.fp .fp-adicionales { margin: 18px 0 0; padding: 12px 16px; font-size: 0.92rem; line-height: 1.55; background: var(--campo); border-left: 3px solid var(--primario); border-radius: 0 12px 12px 0; }
+
+.fp-seccion .mapa-lienzo.mapa-chico { height: 340px; }
+
+/* ---------- Celular y tablet: una columna (galería, tarjeta y secciones) ---------- */
+@media (max-width: 959px) {
+  .fp-cuerpo { grid-template-areas: 'galeria' 'lateral' 'secciones'; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .fp-lateral { position: static; max-height: none; overflow: visible; }
+}
+@media (max-width: 599px) {
+  .fp-foto { border-radius: 16px; }
+  .fp-servicios, .fp-reglas { grid-template-columns: minmax(0, 1fr); }
+  .fp-seccion { padding: 22px 0; }
+  .fp-secciones { padding: 20px 18px 4px; border-radius: 18px; }
+  .fp-seccion .mapa-lienzo.mapa-chico { height: 280px; }
+}

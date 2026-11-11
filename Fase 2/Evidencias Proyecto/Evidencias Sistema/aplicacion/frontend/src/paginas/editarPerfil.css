@@ -1,0 +1,125 @@
+/* «Editar perfil» (paginas/EditarPerfil.jsx). Secciones como tarjetas: a la izquierda qué es y
+   para qué se usa, a la derecha sus campos; en el celular, uno sobre otro. Tokens de index.css */
+
+.ep {
+  --ep-sombra: 0 1px 2px rgb(11 31 58 / 0.05), 0 18px 36px -26px rgb(11 31 58 / 0.4);
+  --ep-linea: color-mix(in srgb, var(--borde) 60%, transparent);
+  --ep-tinte: rgb(15 118 110 / 0.09);
+
+  display: grid;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+/* ---------- Cabecera ---------- */
+.ep-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 24px;
+  background: var(--tarjeta);
+  border: 1px solid var(--ep-linea);
+  border-radius: 22px;
+  box-shadow: var(--ep-sombra);
+}
+.ep-cabecera .avatar { flex: none; }
+.ep-quien { display: grid; flex: 1; gap: 2px; min-width: 200px; }
+.ep .ep-quien h1 { margin: 0; font: 700 1.5rem/1.2 'Outfit', system-ui, sans-serif; color: var(--marca); }
+.ep .ep-quien p { margin: 0; font-size: 0.88rem; color: var(--texto-suave); }
+.ep-estado {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--aviso);
+  background: var(--aviso-fondo);
+  border-radius: 999px;
+}
+.ep-estado.completo { color: var(--primario); background: var(--ep-tinte); }
+.ep .ep-falta { margin: 0; padding: 12px 16px; font-size: 0.9rem; line-height: 1.5; color: var(--texto); background: var(--aviso-fondo); border-radius: 14px; }
+
+/* ---------- Secciones ---------- */
+.ep form { display: grid; gap: 16px; }
+.ep-seccion {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 24px 32px;
+  padding: 24px;
+  background: var(--tarjeta);
+  border: 1px solid var(--ep-linea);
+  border-radius: 22px;
+  box-shadow: var(--ep-sombra);
+}
+.ep-seccion-info { display: flex; gap: 12px; align-items: flex-start; }
+.ep-seccion-icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--primario);
+  background: var(--ep-tinte);
+  border-radius: 12px;
+}
+.ep-seccion-icono svg { width: 20px; height: 20px; }
+.ep .ep-seccion-info h2 { margin: 0 0 4px; font: 600 1.08rem 'Outfit', system-ui, sans-serif; color: var(--marca); }
+.ep .ep-seccion-info p { margin: 0; font-size: 0.85rem; line-height: 1.45; color: var(--texto-suave); }
+
+/* Campos: una columna, con filas de dos donde corresponde */
+.ep-campos { display: grid; gap: 4px; min-width: 0; }
+.ep-fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.ep-campos .campo { margin-bottom: 12px; }
+.ep-campos fieldset.campo-fecha, .ep-campos fieldset.campo-opciones { margin-bottom: 14px; }
+/* La fecha y el género ocupan el mismo ancho que el resto, no la mitad */
+.ep-campos .campo-fecha-partes, .ep-campos .campo-opciones-lista { max-width: none; }
+
+/* ---------- Barra de guardar: al final del formulario; con cambios sin guardar, pegada al fondo de la pantalla ---------- */
+.ep-barra {
+  position: static;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 12px 20px;
+  background: color-mix(in srgb, var(--tarjeta) 92%, transparent);
+  border: 1px solid var(--ep-linea);
+  border-radius: 18px;
+  box-shadow: 0 12px 30px -16px rgb(11 31 58 / 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.ep-barra.con-cambios { position: sticky; border-color: color-mix(in srgb, var(--primario) 45%, transparent); box-shadow: 0 14px 34px -14px rgb(15 118 110 / 0.45); }
+.ep .ep-barra-texto { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--texto-suave); }
+.ep-barra.con-cambios .ep-barra-texto { color: var(--texto); }
+.ep .ep-barra-texto.exito { color: var(--exito); }
+.ep .ep-barra-texto.alerta { color: var(--error); }
+/* Sin el recuadro que traen .exito y .alerta en otras páginas: aquí es solo el texto de la barra */
+.ep .ep-barra-texto.exito, .ep .ep-barra-texto.alerta { padding: 0; background: none; border: 0; }
+.ep-barra-acciones { display: flex; gap: 10px; }
+.ep-boton.boton { min-height: 42px; margin: 0; padding: 10px 22px; }
+.ep-boton.boton:disabled { cursor: default; }
+@media (max-width: 520px) {
+  .ep-largo { display: none; }
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 799px) {
+  .ep-seccion { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 20px 18px; }
+  .ep-cabecera { padding: 18px; }
+}
+@media (max-width: 899px) {
+  /* Encima de la barra de navegación inferior */
+  .ep-barra { bottom: calc(84px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 520px) {
+  .ep-fila { grid-template-columns: minmax(0, 1fr); }
+  .ep-barra { padding: 12px; }
+  .ep-barra-acciones { width: 100%; }
+  .ep-barra-acciones > * { flex: 1; }
+}

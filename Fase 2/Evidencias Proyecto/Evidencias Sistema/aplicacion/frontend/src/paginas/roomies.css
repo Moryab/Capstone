@@ -135,7 +135,7 @@
   border-radius: 22px;
   box-shadow: var(--rm-sombra);
 }
-.rm-vacio h2 { margin: 0; font-size: 1.25rem; color: var(--marca); }
+.rm-pagina .rm-vacio h2 { margin: 0; font-size: 1.25rem; color: var(--marca); }
 .rm-vacio p { margin: 0 0 8px; color: var(--texto-suave); }
 
 .rm-silueta { gap: 12px; animation: none; }
