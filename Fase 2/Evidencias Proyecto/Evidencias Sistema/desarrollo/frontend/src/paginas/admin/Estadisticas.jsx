@@ -203,6 +203,22 @@ const MODULOS = {
       ]),
     ],
   },
+  // Product Vision (EP-02, EP-06, EP-07): reportes bajo el 5 % del total de anuncios
+  reportes: {
+    titulo: 'Tasa de reportes',
+    ancho: 'tercio',
+    vacio: (d) => d.reportes.tasa_reportes == null,
+    textoVacio: 'No hay anuncios publicados.',
+    ver: (d) => (
+      <Meta valor={d.reportes.tasa_reportes} meta={d.reportes.meta_tasa_reportes_max} maximo escala={15}
+        detalle={`${d.reportes.publicaciones_reportadas} de ${d.reportes.anuncios} anuncios reportados`} />
+    ),
+    csv: (d) => [
+      ['Indicador', 'Valor', 'Meta'],
+      ['Tasa de reportes', pct(d.reportes.tasa_reportes), `Bajo ${d.reportes.meta_tasa_reportes_max} %`],
+      ['Anuncios', d.reportes.anuncios, ''], ['Anuncios reportados', d.reportes.publicaciones_reportadas, ''],
+    ],
+  },
   // EP-08: la mejora continua general. La plataforma ajusta sola los pesos; aquí solo se muestra
   aprendizaje: {
     titulo: 'Aprendizaje del algoritmo',
@@ -227,22 +243,6 @@ const MODULOS = {
         a.validacion ? pct(a.validacion.tasa_exito_base) : '', a.validacion ? pct(a.validacion.tasa_exito_propuesta) : '',
         a.observaciones ?? '',
       ]),
-    ],
-  },
-  // Product Vision (EP-02, EP-06, EP-07): reportes bajo el 5 % del total de anuncios
-  reportes: {
-    titulo: 'Tasa de reportes',
-    ancho: 'tercio',
-    vacio: (d) => d.reportes.tasa_reportes == null,
-    textoVacio: 'No hay anuncios publicados.',
-    ver: (d) => (
-      <Meta valor={d.reportes.tasa_reportes} meta={d.reportes.meta_tasa_reportes_max} maximo escala={15}
-        detalle={`${d.reportes.publicaciones_reportadas} de ${d.reportes.anuncios} anuncios reportados`} />
-    ),
-    csv: (d) => [
-      ['Indicador', 'Valor', 'Meta'],
-      ['Tasa de reportes', pct(d.reportes.tasa_reportes), `Bajo ${d.reportes.meta_tasa_reportes_max} %`],
-      ['Anuncios', d.reportes.anuncios, ''], ['Anuncios reportados', d.reportes.publicaciones_reportadas, ''],
     ],
   },
 }
