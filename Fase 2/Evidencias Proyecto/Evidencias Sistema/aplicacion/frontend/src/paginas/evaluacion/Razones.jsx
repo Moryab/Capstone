@@ -126,7 +126,7 @@ export default function Razones() {
 
   return (
     <main className="pagina-evaluacion">
-      <Link to={`/evaluacion/${matchId}`} className="volver">← Volver a la evaluación</Link>
+      <Link to={`/evaluacion/${matchId}`} className="volver">Volver a la evaluación</Link>
       <header className="evaluacion-cabecera">
         <div>
           <p className="publicacion-meta">Tu convivencia en «{resultado.datos.publicacion.titulo}»</p>

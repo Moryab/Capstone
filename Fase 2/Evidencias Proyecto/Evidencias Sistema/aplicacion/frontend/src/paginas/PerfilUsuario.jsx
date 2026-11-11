@@ -65,7 +65,7 @@ export default function PerfilUsuario() {
   return (
     <div className="contenedor-perfil">
       {/* Desde «Posibles roomies» o un alojamiento se vuelve a esa misma página */}
-      <Link to={state?.desde ?? '/'} className="volver">← Volver</Link>
+      <Link to={state?.desde ?? '/'} className="volver">Volver</Link>
       <PaginaPerfil perfil={perfil} modo="otro"
         acciones={(
           <>

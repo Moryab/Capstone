@@ -165,7 +165,7 @@ export default function Terminar() {
 
   return (
     <main className="pagina-evaluacion">
-      <Link to="/propuestas" className="volver">← Volver a mis propuestas</Link>
+      <Link to="/propuestas" className="volver">Volver a mis propuestas</Link>
       <header className="evaluacion-cabecera">
         <div>
           <p className="publicacion-meta">Tu convivencia en «{datos.publicacion.titulo}»</p>

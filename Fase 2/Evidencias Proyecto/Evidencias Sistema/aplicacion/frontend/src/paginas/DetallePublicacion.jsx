@@ -44,7 +44,7 @@ export default function DetallePublicacion() {
   return (
     <main className="detalle-publicacion">
       {/* CA-12.5: desde el listado se vuelve con los mismos filtros */}
-      <Link to={state?.desde ?? (pub.es_propia ? '/perfil' : '/alojamientos')} className="volver">← Volver</Link>
+      <Link to={state?.desde ?? (pub.es_propia ? '/perfil' : '/alojamientos')} className="volver">Volver</Link>
 
       {pub.es_propia && pub.estado !== 'activa' && (
         <p className="alerta">

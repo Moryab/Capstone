@@ -32,7 +32,7 @@ export default function VistaPublica() {
   return (
     <div className="contenedor-perfil">
       <div className="p2-vista-previa-barra">
-        <Link to="/perfil" viewTransition onClick={marcarTransicionPerfil} className="volver">← Volver a mi perfil</Link>
+        <Link to="/perfil" viewTransition onClick={marcarTransicionPerfil} className="volver">Volver a mi perfil</Link>
         <span className="p2-vista-previa-etiqueta"><IconoOjo /> Vista previa: así te ven otros estudiantes</span>
       </div>
       {error && <p className="alerta" role="alert">{error}</p>}

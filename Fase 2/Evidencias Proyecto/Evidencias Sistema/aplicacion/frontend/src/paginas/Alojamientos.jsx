@@ -4,6 +4,7 @@ import { api } from '../api.js'
 import { useAvisoBreve } from '../componentes/AvisoBreve.jsx'
 import Buscador from '../componentes/Buscador.jsx'
 import Campo from '../componentes/Campo.jsx'
+import IlustracionHabitacion from '../componentes/IlustracionHabitacion.jsx'
 import { IconoCamara, IconoPersona, IconoUbicacion } from '../componentes/Iconos.jsx'
 import '../componentes/mapa.css'
 import {
@@ -82,7 +83,7 @@ function TarjetaAlojamiento({ pub, desde, orden }) {
               ref={(img) => { if (img?.complete && img.naturalWidth) img.setAttribute('data-cargada', '') }}
               onLoad={(e) => e.currentTarget.setAttribute('data-cargada', '')}
               onError={(e) => e.currentTarget.setAttribute('data-cargada', '')} />
-          : <span className="al-sin-foto"><IconoCamara />Sin fotos</span>}
+          : <IlustracionHabitacion className="al-sin-foto" />}
         <span className="al-insignias">
           <span className="al-insignia">{textoDe(TIPOS, pub.tipo)}</span>
           {pub.es_propia && <span className="al-insignia propia">Tu publicación</span>}
@@ -158,19 +159,19 @@ export default function Alojamientos() {
   const [params, setParams] = useSearchParams()
   const { pathname, search } = useLocation()
   const { avisar } = useAvisoBreve()
-  // «vista=mapa» y «orden=cercania» van en la dirección para volver igual desde un detalle, pero no
-  // son filtros: no cuentan como filtro aplicado. El orden sí se envía a la API; la vista, no
+  // «vista=mapa» va en la dirección para volver igual desde un detalle, pero no es un filtro ni se
+  // envía a la API. Ya no hay selector de orden: con «Cerca de mi institución» los resultados se
+  // ordenan del más cercano al más lejano; sin él, del más reciente al más antiguo
   const enMapa = params.get('vista') === 'mapa'
-  const porCercania = params.get('orden') === 'cercania'
   const buscarURL = params.get('buscar') ?? ''
   const filtrosURL = new URLSearchParams(params)
   filtrosURL.delete('vista')
-  filtrosURL.delete('orden')
+  filtrosURL.delete('orden') // direcciones guardadas de antes, con el orden elegido a mano
   const claveFiltros = filtrosURL.toString()
-  const consultaAPI = new URLSearchParams(filtrosURL)
-  if (porCercania) consultaAPI.set('orden', 'cercania')
-  const clave = consultaAPI.toString()
   const aplicados = desdeURL(params)
+  const consultaAPI = new URLSearchParams(filtrosURL)
+  if (aplicados.cerca_institucion) consultaAPI.set('orden', 'cercania')
+  const clave = consultaAPI.toString()
 
   const [opciones, setOpciones] = useState(null) // comunas con publicaciones e institución del perfil
   const [borrador, setBorrador] = useState(() => desdeURL(params))
@@ -230,12 +231,11 @@ export default function Alojamientos() {
     setBorrador({ ...borrador, comunas: marcar ? [...resto, ...ids] : resto })
   }
 
-  // Aplica filtros (o cambia de página) manteniendo la búsqueda, la vista y el orden elegidos
+  // Aplica filtros (o cambia de página) manteniendo la búsqueda y la vista elegidas
   const ir = (filtros, { pagina = 1, buscar = buscarURL } = {}) => {
     const destino = aURL(filtros, pagina)
     if (buscar) destino.set('buscar', buscar)
     if (enMapa) destino.set('vista', 'mapa')
-    if (porCercania) destino.set('orden', 'cercania')
     setParams(destino)
     if (pagina > 1 || window.scrollY > (listado.current?.offsetTop ?? 0)) {
       listado.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
@@ -251,15 +251,6 @@ export default function Alojamientos() {
       nuevos.delete('vista')
     }
     setParams(nuevos, { replace: true })
-  }
-
-  const cambiarOrden = (e) => {
-    const nuevos = new URLSearchParams(params)
-    if (e.target.value === 'cercania') nuevos.set('orden', 'cercania')
-    else nuevos.delete('orden')
-    nuevos.delete('pagina') // con otro orden se parte desde la primera página
-    setErrores({ ...errores, orden: undefined })
-    setParams(nuevos)
   }
 
   const aplicar = (e) => {
@@ -377,7 +368,7 @@ export default function Alojamientos() {
           opciones={[{ valor: 'lista', texto: 'Lista', icono: <IconoLista /> }, { valor: 'mapa', texto: 'Mapa', icono: <IconoMapa /> }]} />
       </header>
 
-      {/* Barra de búsqueda: texto libre, tipo, filtros y orden, todo a la vista */}
+      {/* Barra de búsqueda: texto libre, tipo y filtros, todo a la vista */}
       <section className="al-barra" aria-label="Buscar y filtrar">
         <div className="al-barra-buscar">
           <Buscador valor={buscarURL} etiqueta="Buscar alojamientos" placeholder="Busca por título, comuna o sector"
@@ -389,25 +380,15 @@ export default function Alojamientos() {
           <IconoFiltros /> Filtros
           {chips.length > 0 && <span key={chips.length} className="al-contador" aria-label={`${chips.length} aplicados`}>{chips.length}</span>}
         </button>
-        {!enMapa && (
-          <label className="al-orden">
-            <span className="visualmente-oculto">Ordenar por</span>
-            <select value={porCercania ? 'cercania' : 'reciente'} onChange={cambiarOrden}
-              aria-describedby={errores.orden || (opciones && !institucion) ? 'orden-ayuda' : undefined}>
-              <option value="reciente">Más recientes</option>
-              <option value="cercania" disabled={opciones && !institucion}>Más cerca de mi sede</option>
-            </select>
-          </label>
-        )}
       </section>
 
       {/* La fila de chips está siempre, aunque esté vacía: así el listado no salta al filtrar */}
       <div className="al-chips" aria-label="Filtros aplicados">
         {chips.length === 0 ? (
           <span className="al-chips-ninguno">
-            {!enMapa && opciones && !institucion
-              ? <span id="orden-ayuda"><Link to="/perfil/editar">Indica tu institución y sede</Link> para ordenar o filtrar por cercanía.</span>
-              : 'Sin filtros: estás viendo todos los alojamientos.'}
+            {opciones && !institucion
+              ? <span><Link to="/perfil/editar">Indica tu institución y sede</Link> para ver los alojamientos cerca de tu sede.</span>
+              : 'Sin filtros: estás viendo todos los alojamientos, los más recientes primero.'}
           </span>
         ) : (
           <>
@@ -420,7 +401,6 @@ export default function Alojamientos() {
             <button type="button" className="al-chips-limpiar" onClick={limpiar}>Limpiar todo</button>
           </>
         )}
-        {errores.orden && !enMapa && <span className="campo-error" id="orden-ayuda">{errores.orden}</span>}
       </div>
 
       <section ref={listado} className="al-resultados" aria-labelledby="titulo-resultados" aria-busy={cargando}>

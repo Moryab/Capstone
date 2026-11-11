@@ -3,6 +3,7 @@ import { api } from '../api.js'
 import { MAX_DESCRIPCION, MOTIVOS_PERFIL, MOTIVOS_PUBLICACION } from '../reportes.js'
 import Campo from './Campo.jsx'
 import './reportar.css'
+import { IconoBandera } from '../inicio/iconos.jsx'
 
 const VACIO = { motivo: '', descripcion: '' }
 
@@ -90,8 +91,8 @@ export default function BotonReportar({ tipo, id, nombre }) {
 
   return (
     <>
-      <button type="button" className="boton peligro-suave" onClick={() => setAbierto(true)}>
-        {textos.boton}
+      <button type="button" className="boton peligro-suave boton-reportar" onClick={() => setAbierto(true)}>
+        <IconoBandera /> {textos.boton}
       </button>
 
       {/* onCancel: Escape cierra el diálogo y limpia el formulario */}

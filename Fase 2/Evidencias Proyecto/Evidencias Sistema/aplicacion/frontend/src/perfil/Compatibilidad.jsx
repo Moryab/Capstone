@@ -96,12 +96,15 @@ export default function Compatibilidad({ estado, datos, nombre, yoCompleto, otro
           <span />
           <span>Tú</span>
           <span>{n}</span>
+          <span>Compatibilidad</span>
           <span />
         </li>
-        {detalle.map((d) => {
+        {detalle.map((d, i) => {
           const { clase, texto } = claseComparacion(d)
+          // Qué tan compatibles son en este hábito (el puntaje del cálculo, de 0 a 1)
+          const porcentaje = Math.round(d.puntaje * 100)
           return (
-            <li key={d.categoria} className={`p2-comparacion-fila ${clase}`}>
+            <li key={d.categoria} className={`p2-comparacion-fila ${clase}`} style={{ '--i': i }}>
               <span className="p2-comparacion-categoria">
                 <span className="p2-comparacion-icono"><IconoHabito clave={d.categoria} tamano={20} /></span>
                 {tituloCategoria(d.categoria)}
@@ -113,6 +116,10 @@ export default function Compatibilidad({ estado, datos, nombre, yoCompleto, otro
               <span className="p2-comparacion-valor">
                 <span className="p2-movil-etiqueta">{n}: </span>{corto(d.categoria, d.su_respuesta)}
                 {d.su_importancia === 'imprescindible' && <span className="p2-sello-mini" title={`Imprescindible para ${n}`}><IconoSello tamano={13} /></span>}
+              </span>
+              <span className="p2-medidor" role="img" aria-label={`${porcentaje} % de compatibilidad en ${tituloCategoria(d.categoria).toLowerCase()}`}>
+                <span className="p2-medidor-pista"><span className="p2-medidor-relleno" style={{ '--avance': d.puntaje }} /></span>
+                <span className="p2-medidor-cifra" aria-hidden="true">{porcentaje} %</span>
               </span>
               <span className="p2-comparacion-estado">{texto}</span>
             </li>

@@ -156,7 +156,7 @@ export default function Evaluacion() {
 
   return (
     <main className="pagina-evaluacion">
-      <Link to="/propuestas" className="volver">← Volver</Link>
+      <Link to="/propuestas" className="volver">Volver</Link>
 
       <header className="evaluacion-cabecera">
         {otro && <Avatar nombre={otro.nombre} apellido={otro.ap_paterno} foto={otro.foto_url} tamano={56} />}

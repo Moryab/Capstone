@@ -128,7 +128,7 @@ html.tema-oscuro .al-segmentos button[aria-pressed='true'] { color: #fff; }
 html.tema-oscuro .al-encabezado .al-segmentos-pildora { background: var(--primario); }
 html.tema-oscuro .al-encabezado .al-segmentos button[aria-pressed='true'] { color: var(--sobre-primario); }
 
-.al-boton-filtros, .al-orden select {
+.al-boton-filtros {
   min-height: 46px;
   font: 600 0.9rem 'Work Sans', system-ui, sans-serif;
   color: var(--texto);
@@ -139,9 +139,9 @@ html.tema-oscuro .al-encabezado .al-segmentos button[aria-pressed='true'] { colo
   transition: border-color 180ms var(--al-curva), transform 120ms var(--al-curva);
 }
 .al-boton-filtros { display: inline-flex; gap: 8px; align-items: center; padding: 0 18px; }
-.al-boton-filtros:hover, .al-orden select:hover { border-color: var(--primario); }
+.al-boton-filtros:hover { border-color: var(--primario); }
 .al-boton-filtros:active { transform: scale(0.97); }
-.al-boton-filtros:focus-visible, .al-orden select:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+.al-boton-filtros:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
 .al-contador {
   display: grid;
   place-items: center;
@@ -155,11 +155,6 @@ html.tema-oscuro .al-encabezado .al-segmentos button[aria-pressed='true'] { colo
   border-radius: 999px;
 }
 html.tema-oscuro .al-contador { color: var(--sobre-primario); }
-.al-orden select {
-  padding: 0 40px 0 18px;
-  appearance: none;
-  background: var(--tarjeta) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E") right 14px center / 16px no-repeat;
-}
 
 /* ---------- Chips de los filtros aplicados (la fila siempre ocupa su lugar) ---------- */
 .al-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 34px; margin: 14px 4px 20px; }
@@ -232,7 +227,9 @@ html.tema-oscuro .al-contador { color: var(--sobre-primario); }
 .al-tarjeta:hover .al-foto img { transform: scale(1.045); }
 /* Sombra suave abajo de la foto, para que se lea lo que va encima */
 .al-foto::after { position: absolute; inset: 55% 0 0; content: ''; background: linear-gradient(transparent, rgb(11 31 58 / 0.38)); pointer-events: none; }
-.al-sin-foto { display: grid; gap: 6px; place-content: center; justify-items: center; height: 100%; font-size: 0.85rem; color: var(--texto-suave); }
+/* Sin fotos: la ilustración de una habitación, completa (el fondo de la caja rellena el resto) */
+.al-foto:has(.al-sin-foto) { background: #e3f1ef; }
+.al-sin-foto { display: block; width: 100%; height: 100%; }
 .al-insignias { position: absolute; top: 12px; left: 12px; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; }
 .al-insignia, .al-fotos-n, .al-distancia {
   display: inline-flex;
@@ -459,8 +456,6 @@ html.tema-oscuro .al-comuna input:checked + span, html.tema-oscuro .al-comuna in
   .al-barra .a-buscador-campo input[type='search'] { padding-right: 46px; }
   .al-barra .a-buscador-extremo { min-width: 32px; }
   .al-barra > .al-segmentos { flex: 1 1 auto; }
-  .al-orden { flex: 1 1 160px; }
-  .al-orden select { width: 100%; }
   .al-panel { width: 100%; border-radius: 0; }
   .al-reglas { grid-template-columns: minmax(0, 1fr); }
   .al-grilla { gap: 18px; }

@@ -170,7 +170,7 @@ export default function DetallePublicacionAdmin() {
 
   return (
     <PaginaAdmin className="a-detalle admin-publicacion">
-      <Link to={volver} className="volver">← Volver a las publicaciones</Link>
+      <Link to={volver} className="volver">Volver a las publicaciones</Link>
 
       {aviso.id === id && aviso.texto && <p className="exito" role="status">{aviso.texto}</p>}
       {pub.estado !== 'activa' && (
