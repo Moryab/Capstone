@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
@@ -161,6 +161,29 @@ export default function Conversacion({ id, alCambiar }) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) enviar(e)
   }
 
+  // Las burbujas solo se vuelven a dibujar cuando cambian los mensajes, no con cada letra que se escribe
+  const otroConv = conv?.otro
+  const burbujas = useMemo(() => otroConv && mensajes.map((m, i) => {
+    const anterior = mensajes[i - 1]
+    const nuevoDia = !anterior || !mismoDia(anterior.fecha_envio, m.fecha_envio)
+    // Varios seguidos de la misma persona van juntos, como un solo bloque
+    const seguido = !nuevoDia && anterior.es_mio === m.es_mio
+    const clases = ['chat-burbuja', m.es_mio && 'mia', seguido && 'seguida', !yaVistos.current.has(m.id) && 'entra']
+    return (
+      <Fragment key={m.id}>
+        {nuevoDia && (
+          <li className="chat-dia" aria-hidden="true"><span>{tituloDia(m.fecha_envio)}</span></li>
+        )}
+        <li className={clases.filter(Boolean).join(' ')}>
+          <span className="visualmente-oculto">{m.es_mio ? 'Tú' : mayuscula(otroConv.nombre)}, {tituloDia(m.fecha_envio)}:</span>
+          {m.publicacion && <TarjetaPublicacion pub={m.publicacion} />}
+          <p>{m.texto}</p>
+          <time dateTime={m.fecha_envio}>{horaDe(m.fecha_envio)}</time>
+        </li>
+      </Fragment>
+    )
+  }), [mensajes, otroConv])
+
   if (error) {
     return (
       <div className="chat-estado">
@@ -207,26 +230,7 @@ export default function Conversacion({ id, alCambiar }) {
         )}
         {/* role="log": los lectores de pantalla anuncian los mensajes que llegan */}
         <ol className="chat-burbujas" role="log" aria-live="polite" aria-label={`Mensajes con ${nombreDe(otro)}`}>
-          {mensajes.map((m, i) => {
-            const anterior = mensajes[i - 1]
-            const nuevoDia = !anterior || !mismoDia(anterior.fecha_envio, m.fecha_envio)
-            // Varios seguidos de la misma persona van juntos, como un solo bloque
-            const seguido = !nuevoDia && anterior.es_mio === m.es_mio
-            const clases = ['chat-burbuja', m.es_mio && 'mia', seguido && 'seguida', !yaVistos.current.has(m.id) && 'entra']
-            return (
-            <Fragment key={m.id}>
-              {nuevoDia && (
-                <li className="chat-dia" aria-hidden="true"><span>{tituloDia(m.fecha_envio)}</span></li>
-              )}
-              <li className={clases.filter(Boolean).join(' ')}>
-                <span className="visualmente-oculto">{m.es_mio ? 'Tú' : mayuscula(otro.nombre)}, {tituloDia(m.fecha_envio)}:</span>
-                {m.publicacion && <TarjetaPublicacion pub={m.publicacion} />}
-                <p>{m.texto}</p>
-                <time dateTime={m.fecha_envio}>{horaDe(m.fecha_envio)}</time>
-              </li>
-            </Fragment>
-            )
-          })}
+          {burbujas}
         </ol>
       </div>
 
