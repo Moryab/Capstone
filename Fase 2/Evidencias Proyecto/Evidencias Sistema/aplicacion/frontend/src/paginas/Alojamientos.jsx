@@ -5,6 +5,7 @@ import { useAvisoBreve } from '../componentes/AvisoBreve.jsx'
 import Buscador from '../componentes/Buscador.jsx'
 import Campo from '../componentes/Campo.jsx'
 import { IconoCamara, IconoPersona, IconoUbicacion } from '../componentes/Iconos.jsx'
+import SinFoto from '../componentes/SinFoto.jsx'
 import '../componentes/mapa.css'
 import {
   aPreferencias, aURL, desdePreferencias, desdeURL, EXTRAS_FILTRO, FILTROS_VACIOS, hayFiltros,
@@ -82,7 +83,7 @@ function TarjetaAlojamiento({ pub, desde, orden }) {
               ref={(img) => { if (img?.complete && img.naturalWidth) img.setAttribute('data-cargada', '') }}
               onLoad={(e) => e.currentTarget.setAttribute('data-cargada', '')}
               onError={(e) => e.currentTarget.setAttribute('data-cargada', '')} />
-          : <span className="al-sin-foto"><IconoCamara />Sin fotos</span>}
+          : <SinFoto />}{/* Sin fotos: la habitación dibujada, igual que en el resto de la app */}
         <span className="al-insignias">
           <span className="al-insignia">{textoDe(TIPOS, pub.tipo)}</span>
           {pub.es_propia && <span className="al-insignia propia">Tu publicación</span>}
