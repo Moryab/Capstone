@@ -76,7 +76,6 @@ class UsuarioPerfilOut(BaseModel):
     anio_ingreso: int | None = None
     ciudad_origen: str | None = None
     region_origen: str | None = None
-    direccion: str | None = None
     descripcion: str | None = None
     verificacion_estado: str
     estado_cuenta: str

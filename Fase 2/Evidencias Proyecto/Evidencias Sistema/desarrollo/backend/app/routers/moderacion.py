@@ -284,11 +284,12 @@ async def reactivar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict 
     return {"mensaje": "Cuenta reactivada"}
 
 
-@router.post("/usuarios/{usuario_id}/suspender")
-async def suspender_directo(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
-    """Suspensión desde la ficha del usuario (HU-28), tenga reportes o no. Bloquea la cuenta: no puede
-    ingresar y, como el registro sigue existiendo, su correo, RUT y teléfono no sirven para otra cuenta.
-    También se puede suspender una cuenta eliminada, para que no vuelva a registrarse."""
+def nombre_propio(usuario: dict) -> str:
+    """Para los mensajes al administrador: los nombres se guardan como se escribieron (a veces en minúscula)."""
+    return " ".join(p[:1].upper() + p[1:] for p in nombre_completo(usuario).split())
+
+
+async def cuenta_estudiante(usuario_id: str) -> dict:
     try:
         oid = ObjectId(usuario_id)
     except InvalidId:
@@ -298,25 +299,61 @@ async def suspender_directo(usuario_id: str, datos: JustificacionIn, admin: dict
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
     if usuario["rol"] == "administrador":
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta acción no se aplica a un administrador")
-    if usuario["estado_cuenta"] not in ("activa", "eliminada"):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Esta cuenta ya está suspendida")
+    return usuario
 
-    accion, resolucion = ACCIONES["suspender"]
+
+async def accion_directa(accion: str, usuario: dict, admin: dict, justificacion: str) -> None:
+    """Acción desde la ficha del usuario (HU-28), tenga reportes o no. Igual que en la HU-30: sus
+    reportes abiertos quedan vinculados a esta acción y resueltos, y queda registrada (CA-27.4)."""
+    oid = usuario["_id"]
+    nombre_accion, resolucion = ACCIONES[accion]
     accion_id, ahora = ObjectId(), datetime.now(timezone.utc)
-    # Igual que en la HU-30: sus reportes abiertos quedan vinculados a esta acción y resueltos
     cerrados = await cerrar_abiertos("usuario", oid, cierre_de_reporte(resolucion, admin, accion_id, ahora))
-    await suspender_cuenta(usuario, admin, datos.justificacion, accion_id, ahora)
+    estados = await aplicar_sobre_perfil(accion, usuario, admin, justificacion, accion_id, ahora)
     avisar = usuario["estado_cuenta"] == "activa"  # una cuenta eliminada ya no ve sus avisos
     await registrar_accion(
-        accion_id, accion, admin, ("usuario", oid), datos.justificacion,
-        (usuario["estado_cuenta"], "suspendida"), [r["_id"] for r in cerrados], ahora, afectado_notificado=avisar,
+        accion_id, nombre_accion, admin, ("usuario", oid), justificacion, estados, [r["_id"] for r in cerrados],
+        ahora, afectado_notificado=avisar,
     )
-    if avisar:
-        titulo, texto = AVISOS["suspender"]
-        await notificar(oid, "accion_moderacion", titulo, f"{texto}. Motivo: {datos.justificacion.rstrip('.')}.",
+    # Quitar la verificación avisa por su cuenta (quitar_verificacion)
+    if avisar and accion in AVISOS:
+        titulo, texto = AVISOS[accion]
+        await notificar(oid, "accion_moderacion", titulo, f"{texto}. Motivo: {justificacion.rstrip('.')}.",
                         ("usuario", oid))
     await avisar_reportantes(cerrados)
-    return {"mensaje": f"La cuenta de {nombre_completo(usuario)} fue suspendida"}
+
+
+@router.post("/usuarios/{usuario_id}/suspender")
+async def suspender_directo(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
+    """Bloquea la cuenta: no puede ingresar y, como el registro sigue existiendo, su correo, RUT y
+    teléfono no sirven para otra cuenta. También se puede suspender una cuenta eliminada, para que no
+    vuelva a registrarse."""
+    usuario = await cuenta_estudiante(usuario_id)
+    if usuario["estado_cuenta"] not in ("activa", "eliminada"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta cuenta ya está suspendida")
+    await accion_directa("suspender", usuario, admin, datos.justificacion)
+    return {"mensaje": f"La cuenta de {nombre_propio(usuario)} fue suspendida"}
+
+
+@router.post("/usuarios/{usuario_id}/advertir")
+async def advertir_directo(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
+    """CA-27.1 desde la ficha: suma una advertencia y la persona recibe el motivo."""
+    usuario = await cuenta_estudiante(usuario_id)
+    if usuario["estado_cuenta"] != "activa":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Solo se puede advertir a una cuenta activa")
+    await accion_directa("advertir", usuario, admin, datos.justificacion)
+    return {"mensaje": f"Se envió una advertencia a {nombre_propio(usuario)}"}
+
+
+@router.post("/usuarios/{usuario_id}/quitar_verificacion")
+async def quitar_verificacion_directo(usuario_id: str, datos: JustificacionIn, admin: dict = Depends(solo_admin)):
+    """CA-23.4 desde la ficha: sirve también para quien se verificó con su correo institucional,
+    que no tiene una solicitud desde donde revocarla."""
+    usuario = await cuenta_estudiante(usuario_id)
+    if usuario.get("verificacion", {}).get("estado") != "verificado":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este perfil no tiene una verificación vigente")
+    await accion_directa("quitar_verificacion", usuario, admin, datos.justificacion)
+    return {"mensaje": f"Se quitó la verificación a {nombre_propio(usuario)}"}
 
 
 async def terminar_convivencias(oid: ObjectId, ahora: datetime) -> None:
@@ -417,7 +454,7 @@ async def eliminar_cuenta(usuario_id: str, datos: JustificacionIn, admin: dict =
         accion_id, "eliminar_usuario", admin, ("usuario", oid), datos.justificacion,
         (usuario["estado_cuenta"], "eliminada"), [], ahora, afectado_notificado=False,
     )
-    return {"mensaje": f"La cuenta de {nombre_completo(usuario)} fue eliminada. Sus datos se conservan"}
+    return {"mensaje": f"La cuenta de {nombre_propio(usuario)} fue eliminada. Sus datos se conservan"}
 
 
 # ---------- HU-30: gestión directa de publicaciones, tengan reportes o no ----------

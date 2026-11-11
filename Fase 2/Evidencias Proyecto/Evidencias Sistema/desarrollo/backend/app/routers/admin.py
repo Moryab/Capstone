@@ -217,7 +217,7 @@ async def listar_usuarios(
                 id=str(u["_id"]),
                 nombre=nombre_completo(u),
                 correo=u["correo"],
-                rut=u.get("rut"),
+                rut=rut_parcial(u.get("rut")),
                 modo=u.get("modo"),
                 genero=u.get("genero"),
                 verificacion_estado=u.get("verificacion", {}).get("estado", "no_verificado"),
@@ -230,13 +230,22 @@ async def listar_usuarios(
     }
 
 
+def rut_parcial(rut: str | None) -> str | None:
+    """12345678-K → ••.•••.678-K. Para gestionar la cuenta basta con reconocerlo; el RUT completo
+    solo se muestra al revisar una solicitud de verificación, donde se compara con el comprobante."""
+    if not rut or "-" not in rut:
+        return rut
+    cuerpo, dv = rut.rsplit("-", 1)
+    return f"••.•••.{cuerpo[-3:]}-{dv}"
+
+
 def perfil_de(usuario: dict, institucion: str | None) -> UsuarioPerfilOut:
     perfil = usuario.get("perfil", {})
     suspension = usuario.get("suspension")
     fecha_nac = usuario.get("fecha_nac")
     return UsuarioPerfilOut(
         id=str(usuario["_id"]),
-        rut=usuario.get("rut"),
+        rut=rut_parcial(usuario.get("rut")),
         modo=usuario.get("modo"),
         nombre=usuario["nombre"],
         ap_paterno=usuario.get("ap_paterno"),
@@ -252,7 +261,6 @@ def perfil_de(usuario: dict, institucion: str | None) -> UsuarioPerfilOut:
         anio_ingreso=perfil.get("anio_ingreso"),
         ciudad_origen=perfil.get("ciudad_origen"),
         region_origen=perfil.get("region_origen"),
-        direccion=perfil.get("direccion"),
         descripcion=perfil.get("descripcion"),
         verificacion_estado=usuario.get("verificacion", {}).get("estado", "no_verificado"),
         estado_cuenta=usuario["estado_cuenta"],

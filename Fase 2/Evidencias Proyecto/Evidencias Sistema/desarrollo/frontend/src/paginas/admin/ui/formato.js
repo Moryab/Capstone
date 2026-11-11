@@ -33,9 +33,10 @@ export function haceCuanto(fechaIso, ahora = Date.now()) {
   return relativo.format(Math.round(horas / 24), 'day')
 }
 
-/** 12345678-K → 12.345.678-K, como se escribe en Chile */
+/** 12345678-K → 12.345.678-K, como se escribe en Chile. El de Usuarios ya llega parcial (••.•••.678-K) */
 export function rut(valor) {
   if (!valor) return 'Sin RUT'
+  if (valor.includes('•')) return valor
   const [cuerpo, dv] = valor.split('-')
   return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`
 }

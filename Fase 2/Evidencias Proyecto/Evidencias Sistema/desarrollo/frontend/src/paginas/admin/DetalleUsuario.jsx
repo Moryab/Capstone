@@ -134,7 +134,6 @@ export default function DetalleUsuario() {
             <Dato etiqueta="Origen">
               {[perfil.ciudad_origen, perfil.region_origen].filter(Boolean).join(', ') || null}
             </Dato>
-            <Dato etiqueta="Dirección">{perfil.direccion}</Dato>
             <Dato etiqueta="Sobre mí">{perfil.descripcion}</Dato>
           </dl>
         </section>
@@ -195,14 +194,24 @@ export default function DetalleUsuario() {
           alTerminar={alTerminar} />
       )}
       {perfil.estado_cuenta === 'suspendida' && <ReactivarCuenta usuarioId={perfil.id} alTerminar={alTerminar} />}
+      {/* De la más leve a la más grave: advertir, quitar la verificación, suspender y eliminar */}
+      {perfil.estado_cuenta === 'activa' && (
+        <AccionCuenta key={`advertir-${id}`} accion="advertir" usuarioId={perfil.id}
+          nombre={nombrePropio(perfil.nombre_completo)} alTerminar={alTerminar} />
+      )}
+      {/* También para quien se verificó con su correo institucional, que no tiene solicitud */}
+      {perfil.verificacion_estado === 'verificado' && perfil.estado_cuenta !== 'eliminada' && (
+        <AccionCuenta key={`quitar-${id}`} accion="quitar_verificacion" usuarioId={perfil.id}
+          nombre={nombrePropio(perfil.nombre_completo)} alTerminar={alTerminar} />
+      )}
       {/* Una cuenta eliminada también se puede suspender, para que no vuelva a registrarse */}
       {['activa', 'eliminada'].includes(perfil.estado_cuenta) && (
         <AccionCuenta key={`suspender-${id}`} accion="suspender" usuarioId={perfil.id}
-          nombre={perfil.nombre_completo} alTerminar={alTerminar} />
+          nombre={nombrePropio(perfil.nombre_completo)} alTerminar={alTerminar} />
       )}
       {/* Una suspendida no: eliminada podría volver a registrarse y se perdería el bloqueo */}
       {perfil.estado_cuenta === 'activa' && (
-        <AccionCuenta key={`eliminar-${id}`} accion="eliminar" usuarioId={perfil.id} nombre={perfil.nombre_completo}
+        <AccionCuenta key={`eliminar-${id}`} accion="eliminar" usuarioId={perfil.id} nombre={nombrePropio(perfil.nombre_completo)}
           alTerminar={(texto) => navegar(volver, { replace: true, state: { aviso: texto } })} />
       )}
     </div>

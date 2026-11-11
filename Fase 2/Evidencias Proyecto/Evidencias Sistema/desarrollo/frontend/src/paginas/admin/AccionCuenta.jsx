@@ -4,9 +4,32 @@ import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import { MAX_JUSTIFICACION } from '../../reportes.js'
 
-// Acciones sobre la cuenta desde la ficha del usuario (HU-28): suspender o eliminar. Exigen una
-// justificación, que queda registrada en las acciones de moderación, y una confirmación
+// Acciones sobre la cuenta desde la ficha del usuario (HU-28): advertir, quitar la verificación,
+// suspender o eliminar. Exigen una justificación, que queda registrada en las acciones de moderación,
+// y una confirmación. Las de advertir, quitar la verificación y suspender también resuelven sus
+// reportes abiertos y le avisan a la persona con el motivo (CA-27.1)
 const ACCIONES = {
+  advertir: {
+    leve: true,
+    titulo: 'Advertir',
+    descripcion: 'Para faltas menores. La persona recibe un aviso con el motivo y la advertencia suma a su historial. '
+      + 'Su cuenta sigue funcionando con normalidad.',
+    boton: 'Enviar advertencia',
+    confirmar: 'Sí, advertir',
+    ocupado: 'Enviando…',
+    pregunta: '¿Enviar una advertencia?',
+    mensaje: (nombre) => `${nombre} recibirá un aviso con el motivo que escribiste.`,
+  },
+  quitar_verificacion: {
+    titulo: 'Quitar la verificación',
+    descripcion: 'Su perfil deja de mostrarse como estudiante verificado y pierde las funciones que lo exigen. '
+      + 'Recibe el motivo y puede volver a verificarse con un comprobante actualizado.',
+    boton: 'Quitar verificación',
+    confirmar: 'Sí, quitarla',
+    ocupado: 'Quitando…',
+    pregunta: '¿Quitar la verificación?',
+    mensaje: (nombre) => `${nombre} dejará de aparecer como estudiante verificado.`,
+  },
   suspender: {
     titulo: 'Suspender la cuenta',
     descripcion: 'Para faltas graves. La persona no podrá ingresar y sus publicaciones se ocultan. Como su registro '
@@ -54,6 +77,10 @@ export default function AccionCuenta({ accion, usuarioId, nombre, alTerminar }) 
         metodo: 'POST', datos: { justificacion },
       })
       await alTerminar(`${respuesta.mensaje}.`)
+      // Advertir puede repetirse: el formulario sigue en la ficha y queda listo para otra vez
+      setJustificacion('')
+      setConfirmando(false)
+      setEnviando(false)
     } catch (err) {
       setError(err.errores?.justificacion ?? err.message)
       setConfirmando(false)
@@ -69,7 +96,7 @@ export default function AccionCuenta({ accion, usuarioId, nombre, alTerminar }) 
         value={justificacion} onChange={(e) => { setJustificacion(e.target.value); setError('') }}
         error={error} maxLength={MAX_JUSTIFICACION} required />
       <div className="acciones">
-        <button type="submit" className="boton peligro" disabled={enviando}>{textos.boton}</button>
+        <button type="submit" className={textos.leve ? 'boton' : 'boton peligro'} disabled={enviando}>{textos.boton}</button>
       </div>
       <Confirmar
         abierto={confirmando}
