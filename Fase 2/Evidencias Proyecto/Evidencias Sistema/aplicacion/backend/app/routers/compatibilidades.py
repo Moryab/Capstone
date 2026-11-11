@@ -62,6 +62,30 @@ async def rol_complementario(usuario: dict) -> dict | None:
     return None
 
 
+async def alojamientos_de(oferentes: list[ObjectId]) -> dict[ObjectId, dict]:
+    """El alojamiento más reciente con cupos de cada oferente (y cuántos tiene), para mostrarlo en
+    su tarjeta de «Posibles roomies»: a quien busca le importa tanto la persona como el lugar."""
+    alojamientos: dict[ObjectId, dict] = {}
+    async for p in db.publicaciones.find(
+        {"oferente_id": {"$in": oferentes}, "estado": "activa", "cupos_disponibles": {"$gt": 0}},
+        {"oferente_id": 1, "titulo": 1, "costo_mensual": 1, "tipo": 1, "fotos": 1, "ubicacion.comuna_nombre": 1},
+    ).sort("fecha_publicacion", -1):
+        if p["oferente_id"] in alojamientos:
+            alojamientos[p["oferente_id"]]["cantidad"] += 1
+            continue
+        fotos = p.get("fotos", [])
+        alojamientos[p["oferente_id"]] = {
+            "id": str(p["_id"]),
+            "titulo": p["titulo"],
+            "tipo": p["tipo"],
+            "costo_mensual": p["costo_mensual"],
+            "comuna": p["ubicacion"]["comuna_nombre"],
+            "foto_url": next((f["url"] for f in fotos if f["es_principal"]), fotos[0]["url"] if fotos else None),
+            "cantidad": 1,
+        }
+    return alojamientos
+
+
 @router.get("")
 async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict = Depends(estudiante_verificado)):
     """HU-14: estudiantes compatibles con el rol opuesto, del más al menos compatible, de a 10.
@@ -101,10 +125,14 @@ async def posibles_roomies(pagina: int = Query(default=1, ge=1), usuario: dict =
     pagina_actual = calculos[(pagina - 1) * TAMANO_PAGINA : pagina * TAMANO_PAGINA]
 
     tarjetas = await resumenes([otros[el_otro(c, yo)] for c in pagina_actual])
+    # Al buscador se le muestra además el alojamiento de cada oferente
+    alojamientos = await alojamientos_de([el_otro(c, yo) for c in pagina_actual]) if modo == "buscador" else {}
 
     def resumen(c: dict) -> dict:
+        otro = el_otro(c, yo)
         return {
-            "usuario": tarjetas[el_otro(c, yo)],
+            "usuario": {**tarjetas[otro], "descripcion": otros[otro].get("perfil", {}).get("descripcion")},
+            "alojamiento": alojamientos.get(otro),
             "porcentaje": c["porcentaje"],
             "nivel": c["nivel"],
             "categorias_coincidentes": c["categorias_coincidentes"],
