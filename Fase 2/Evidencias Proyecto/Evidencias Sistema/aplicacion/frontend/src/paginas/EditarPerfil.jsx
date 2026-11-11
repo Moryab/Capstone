@@ -6,6 +6,7 @@ import FechaNacimiento, { OpcionesBoton } from '../componentes/FechaNacimiento.j
 import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { describirFaltantes, GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { formatearTelefono } from '../formatos.js'
 
 const MAX_DESCRIPCION = 300
 const ANIO_ACTUAL = new Date().getFullYear()
@@ -17,8 +18,11 @@ const CAMPOS = [
   'direccion', 'ciudad_origen', 'region_origen', 'descripcion',
 ]
 
-const aFormulario = (perfil) =>
-  Object.fromEntries(CAMPOS.map((campo) => [campo, perfil[campo] == null ? '' : String(perfil[campo])]))
+// El teléfono llega como +56912345678 y se muestra separado: 9 1234 5678
+const aFormulario = (perfil) => Object.fromEntries(CAMPOS.map((campo) => {
+  const valor = perfil[campo] == null ? '' : String(perfil[campo])
+  return [campo, campo === 'telefono' ? formatearTelefono(valor) : valor]
+}))
 
 // HU-03 (completar perfil) y HU-04 (editar perfil). Es la pestaña «Editar perfil» de Mi perfil
 export default function EditarPerfil() {
@@ -49,7 +53,8 @@ export default function EditarPerfil() {
 
   const cambiar = (e) => {
     const { name, value } = e.target
-    const nuevos = { ...datos, [name]: value }
+    // El teléfono se separa solo mientras se escribe y no acepta letras
+    const nuevos = { ...datos, [name]: name === 'telefono' ? formatearTelefono(value) : value }
     if (name === 'institucion_id') {
       // Al cambiar de institución la sede anterior deja de servir; si hay una sola, se elige sola
       const elegida = catalogo.instituciones.find((i) => i.id === value)
@@ -134,7 +139,7 @@ export default function EditarPerfil() {
           <OpcionesBoton etiqueta="Género" nombre="genero" valor={datos.genero} opciones={GENEROS}
             error={errores.genero} alCambiar={(v) => cambiarValor('genero', v)} />
           <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
-            onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
+            onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678" inputMode="numeric" maxLength={11}
             autoComplete="tel" required />
         </fieldset>
 

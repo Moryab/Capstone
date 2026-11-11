@@ -5,6 +5,7 @@ import { GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import Campo from './Campo.jsx'
 import FechaNacimiento, { OpcionesBoton } from './FechaNacimiento.jsx'
+import { formatearRut, formatearTelefono } from '../formatos.js'
 
 const VACIO = {
   rut: '', nombre: '', ap_paterno: '', ap_materno: '', fecha_nac: '', genero: '',
@@ -64,9 +65,12 @@ export default function FormRegistro() {
 
   const cambiar = (e) => {
     // Si la primera carga falló (p. ej. la API aún no partía), se reintenta al escribir el dominio
-    if (e.target.name === 'correo' && e.target.value.includes('@') && !institucionales) cargarDominios()
-    setDatos({ ...datos, [e.target.name]: e.target.value })
-    setErrores({ ...errores, [e.target.name]: undefined })
+    const { name, value } = e.target
+    if (name === 'correo' && value.includes('@') && !institucionales) cargarDominios()
+    // RUT y teléfono se separan solos mientras se escriben (y el teléfono no acepta letras)
+    const valor = name === 'rut' ? formatearRut(value) : name === 'telefono' ? formatearTelefono(value) : value
+    setDatos({ ...datos, [name]: valor })
+    setErrores({ ...errores, [name]: undefined })
   }
 
   // Para los campos que no son un <input> (fecha en partes y género)
@@ -111,7 +115,7 @@ export default function FormRegistro() {
         <Campo etiqueta="Nombre" nombre="nombre" value={datos.nombre} onChange={cambiar}
           error={errores.nombre} autoComplete="given-name" maxLength={60} required />
         <Campo etiqueta="RUT" nombre="rut" value={datos.rut} onChange={cambiar}
-          error={errores.rut} placeholder="12.345.678-9" maxLength={12} required />
+          error={errores.rut} placeholder="12.345.678-9" maxLength={12} autoComplete="off" required />
       </div>
       <div className="fila">
         <Campo etiqueta="Apellido paterno" nombre="ap_paterno" value={datos.ap_paterno}
@@ -132,7 +136,7 @@ export default function FormRegistro() {
           aria-describedby={['reg-correo-sugerencia', errores.correo && 'reg-correo-error'].filter(Boolean).join(' ')} />
         <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
           onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
-          autoComplete="tel" required />
+          inputMode="numeric" maxLength={11} autoComplete="tel-national" required />
       </div>
       {/* Fuera de la fila para que el correo y el teléfono sigan alineados */}
       <p id="reg-correo-sugerencia" className={`sugerencia-correo ${sugerencia.tipo}`} aria-live="polite">
