@@ -20,7 +20,7 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 
 ## Cómo ejecutar el proyecto
 
-El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/aplicacion/`:
+El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/Aplicación/`:
 - `backend/`: API en FastAPI + MongoDB, corre en Docker.
 - `frontend/`: interfaz en React + Vite, corre con Node.
 
@@ -30,9 +30,9 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/aplicacion/`:
 - [Python](https://www.python.org/) 3, para crear y completar el `.env` (`preparar.py`)
 
 ### Solo la primera vez
-1. Crear el archivo `.env` con el script `preparar.py`, en la carpeta `aplicacion`. Copia `.env.example` y genera claves aleatorias para la base de datos, las sesiones y la cuenta de administrador, así que no hay que reemplazar nada a mano. Al terminar muestra el correo y la clave del administrador. El `.env` no se sube a git porque contiene contraseñas.
+1. Crear el archivo `.env` con el script `preparar.py`, en la carpeta `Aplicación`. Copia `.env.example` y genera claves aleatorias para la base de datos, las sesiones y la cuenta de administrador, así que no hay que reemplazar nada a mano. Al terminar muestra el correo y la clave del administrador. El `.env` no se sube a git porque contiene contraseñas.
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\aplicacion"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación"
    python preparar.py
    ```
    Si el `.env` ya existe, el script no cambia sus claves (la de la base queda fijada al levantarla por primera vez); solo le agrega las variables nuevas que falten. Por eso conviene volver a ejecutarlo después de un `git pull` que cambie `.env.example`. Para empezar de cero, borrar el `.env`, ejecutar `docker compose down -v` (borra los datos locales) y volver a correr el script.
@@ -40,7 +40,7 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/aplicacion/`:
    La cuenta de administrador se crea al levantar la API. Su correo y su clave quedan en el `.env` (`ADMIN_CORREO` y `ADMIN_PASSWORD`); al iniciar sesión con ella se entra al panel de administración.
 2. Instalar las dependencias del frontend:
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\aplicacion\frontend"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación\frontend"
    npm install
    ```
 
@@ -48,12 +48,12 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/aplicacion/`:
 1. Abrir **Docker Desktop** y esperar a que diga que está corriendo.
 2. Levantar la base de datos y la API (terminal 1):
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\aplicacion"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación"
    docker compose up -d --build
    ```
 3. Levantar el frontend (terminal 2):
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\aplicacion\frontend"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación\frontend"
    npm run dev
    ```
 4. Abrir http://localhost:5173 en el navegador.
@@ -67,11 +67,11 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/aplicacion/`:
 
 ### Para detener
 - Frontend: `Ctrl + C` en su terminal.
-- API y base de datos: `docker compose down` en la carpeta `aplicacion`. Los datos se conservan para la próxima vez.
+- API y base de datos: `docker compose down` en la carpeta `Aplicación`. Los datos se conservan para la próxima vez.
 
 ### Si algo falla
 - **`failed to connect to the docker API`**: Docker Desktop no está abierto.
-- **La API no responde**: revisar el error con `docker compose logs api` (en la carpeta `aplicacion`).
+- **La API no responde**: revisar el error con `docker compose logs api` (en la carpeta `Aplicación`).
 - **Se cambió código del backend o `requirements.txt`**: volver a ejecutar `docker compose up -d --build`; sin `--build` sigue corriendo la versión anterior.
 - **Error de módulos en el frontend** (por ejemplo después de un `git pull`): ejecutar `npm install` en la carpeta `frontend`.
 
@@ -84,7 +84,7 @@ La evaluación de la convivencia se habilita 30 días después de que ambos estu
 - Se necesita una convivencia confirmada: un estudiante buscador y un oferente que hayan aceptado la misma propuesta de match.
 
 ### 1. Abrir la consola de la base de datos
-En la carpeta `aplicacion`:
+En la carpeta `Aplicación`:
 ```Terminal
 docker compose exec mongo sh -c 'mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin roommatch'
 ```
