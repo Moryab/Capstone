@@ -12,6 +12,8 @@ from app.matching import ABIERTAS, VIGENCIA, MatchNoDisponible, generar_propuest
 from app.routers.compatibilidades import el_otro, resumenes
 from app.routers.evaluaciones import estado_evaluacion
 from app.routers.perfil import datos_invalidos
+from app.routers.publicaciones import sede_del_perfil
+from app.ubicacion import distancia_km
 from app.schemas.seguimiento import TerminoIn
 from app.seguimiento import NoSePuedeTerminar, avisar_evaluaciones, terminar_convivencia
 
@@ -30,16 +32,39 @@ class RechazoIn(BaseModel):
 
 
 async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
-    """Cada propuesta vista desde quien consulta: la otra persona, el alojamiento y las respuestas."""
-    otros = [u async for u in db.usuarios.find({"_id": {"$in": [el_otro(m, yo) for m in matches]}})]
+    """Cada propuesta vista desde quien consulta: la otra persona, el alojamiento y las respuestas.
+
+    Para decidir sin abrir la publicación, también trae en qué hábitos coinciden, lo que incluye el
+    alojamiento y la distancia de su zona a la sede de quien consulta (si la tiene en su perfil).
+    """
+    ids_otros = [el_otro(m, yo) for m in matches]
+    otros = [u async for u in db.usuarios.find({"_id": {"$in": ids_otros}})]
     tarjetas = await resumenes(otros)
     publicaciones = {
         p["_id"]: p
         async for p in db.publicaciones.find(
             {"_id": {"$in": [m["publicacion_id"] for m in matches]}},
-            {"titulo": 1, "tipo": 1, "costo_mensual": 1, "ubicacion.comuna_nombre": 1, "fotos": 1, "estado": 1},
+            {"titulo": 1, "tipo": 1, "costo_mensual": 1, "ubicacion.comuna_nombre": 1, "ubicacion.coordenadas": 1,
+             "fotos": 1, "estado": 1, "cupos_disponibles": 1, "cupos_totales": 1, "caracteristicas": 1,
+             "gastos.todos_incluidos": 1},
         )
     }
+    # Hábitos en común según el cálculo vigente con cada persona
+    coinciden = {
+        el_otro(c, yo): c.get("categorias_coincidentes", [])
+        async for c in db.compatibilidades.find({
+            "vigente": True,
+            "$or": [{"usuario_a_id": yo, "usuario_b_id": {"$in": ids_otros}},
+                    {"usuario_b_id": yo, "usuario_a_id": {"$in": ids_otros}}],
+        }, {"usuario_a_id": 1, "usuario_b_id": 1, "categorias_coincidentes": 1})
+    } if matches else {}
+    sede = await sede_del_perfil(await db.usuarios.find_one({"_id": yo}, {"perfil": 1})) if matches else None
+
+    def distancia(pub: dict) -> float | None:
+        coordenadas = pub.get("ubicacion", {}).get("coordenadas")
+        if not sede or not coordenadas:
+            return None
+        return round(distancia_km(coordenadas["coordinates"], sede["coordenadas"]), 1)
 
     def una(m: dict) -> dict:
         soy_a = m["usuario_a_id"] == yo
@@ -57,10 +82,16 @@ async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
                 "tipo": pub.get("tipo"),
                 "costo_mensual": pub.get("costo_mensual"),
                 "comuna": pub.get("ubicacion", {}).get("comuna_nombre"),
+                "cupos_disponibles": pub.get("cupos_disponibles"),
+                "cupos_totales": pub.get("cupos_totales"),
+                "caracteristicas": pub.get("caracteristicas", {}),
+                "gastos_incluidos": bool(pub.get("gastos", {}).get("todos_incluidos")),
+                "distancia_km": distancia(pub),
                 "foto_url": principal,
                 "visible": pub.get("estado") == "activa",
             },
             "porcentaje": m["pctj_compatibilidad"],
+            "categorias_coincidentes": coinciden.get(el_otro(m, yo), []),
             "nivel": nivel_de(m["pctj_compatibilidad"]),
             "mi_respuesta": m["respuesta_a" if soy_a else "respuesta_b"]["estado"],
             "su_respuesta": m["respuesta_b" if soy_a else "respuesta_a"]["estado"],

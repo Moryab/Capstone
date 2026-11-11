@@ -1,0 +1,26 @@
+/* Anillo de compatibilidad de las tarjetas (componentes/AnilloCompatibilidad.jsx).
+   Toma el color del nivel (--compat-color de .compat-alta / media / baja en index.css) */
+.anillo-compat {
+  --compat-color: var(--primario);
+  display: grid;
+  flex: none;
+  grid-template-columns: 56px;
+  justify-items: center;
+  gap: 2px;
+  width: 60px;
+  text-align: center;
+}
+.anillo-compat.compat-media { --compat-color: #975a16; }
+.anillo-compat.compat-baja { --compat-color: #b45309; }
+.anillo-compat svg, .anillo-compat strong { grid-area: 1 / 1; }
+.anillo-compat svg { width: 56px; height: 56px; transform: rotate(-90deg); }
+.anillo-compat circle { fill: none; stroke-width: 6; }
+.anillo-fondo { stroke: color-mix(in srgb, var(--compat-color) 14%, transparent); }
+.anillo-valor { stroke: var(--compat-color); stroke-linecap: round; }
+.anillo-compat strong {
+  align-self: center;
+  font: 700 0.84rem 'Outfit', system-ui, sans-serif;
+  color: var(--compat-color);
+  font-variant-numeric: tabular-nums;
+}
+.anillo-compat > span { font-size: 0.72rem; font-weight: 600; line-height: 1.2; color: var(--compat-color); }
