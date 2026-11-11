@@ -77,11 +77,12 @@ async def avisar_evaluaciones() -> None:
                                 ("match", match["_id"]))
 
 
-async def aprender_de_razones(usuario: dict, razones: list[dict]) -> dict:
+async def aprender_de_razones(usuario: dict, razones: list[dict], intensidad: float = 1.0) -> dict:
     """CA-19.4: sube el peso personal de las categorías que causaron problemas en la convivencia.
 
     Solo cuentan las categorías del cuestionario; gastos, comunicación u otra quedan registradas
-    para las estadísticas (HU-20) pero no cambian el cálculo. Devuelve el usuario actualizado.
+    para las estadísticas (HU-20) pero no cambian el cálculo. `intensidad` es menor que 1 para los
+    roces de una convivencia que igual funciona (INTENSIDAD_ROCE). Devuelve el usuario actualizado.
     """
     ahora = datetime.now(timezone.utc)
     ajuste = usuario.get("ajuste_recomendacion") or {}
@@ -103,7 +104,8 @@ async def aprender_de_razones(usuario: dict, razones: list[dict]) -> dict:
         })
         a["veces_problema_convivencia"] += 1
         a["peso_personal"] = min(
-            AJUSTE_PERSONAL_MAX, round(a["peso_personal"] + INCREMENTO_POR_RAZON * FACTOR_GRAVEDAD[r["gravedad"]], 2)
+            AJUSTE_PERSONAL_MAX,
+            round(a["peso_personal"] + INCREMENTO_POR_RAZON * FACTOR_GRAVEDAD[r["gravedad"]] * intensidad, 2),
         )
         a["tendencia"] = "menos_tolerante"  # en esto le cuesta más ceder de lo que respondió
         a["confianza"] = round(min(1.0, a["veces_problema_convivencia"] / 3), 2)

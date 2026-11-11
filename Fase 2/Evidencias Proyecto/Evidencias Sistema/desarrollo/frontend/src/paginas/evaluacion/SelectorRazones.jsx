@@ -1,5 +1,5 @@
-// HU-19: selector de razones de la incompatibilidad, con la gravedad de cada una. Lo usan la
-// pantalla de razones (al evaluar) y la de terminar la convivencia
+// HU-19: selector de hábitos con problemas, con la gravedad de cada uno. Lo usan el formulario de
+// evaluación (razones si no funciona, roces si funciona), la pantalla de razones y la de terminar
 
 // CA-19.1: las categorías del cuestionario, más gastos, comunicación u otra (modelo de datos)
 export const RAZONES = [
@@ -36,7 +36,10 @@ export function erroresRazones(elegidas, detalle) {
   return null
 }
 
-export default function SelectorRazones({ elegidas, setElegidas, detalle, setDetalle, errores, alCambiar }) {
+export default function SelectorRazones({
+  elegidas, setElegidas, detalle, setDetalle, errores, alCambiar,
+  leyenda = '¿Qué no funcionó? Elige una o más razones', ayuda = null, antes = null, etiquetaOtra = '¿Cuál fue la otra razón?',
+}) {
   const alternar = (razon) => {
     setElegidas(({ [razon]: actual, ...resto }) => (actual ? resto : { ...resto, [razon]: 'moderada' }))
     alCambiar()
@@ -44,8 +47,10 @@ export default function SelectorRazones({ elegidas, setElegidas, detalle, setDet
 
   return (
     <>
-      <fieldset aria-describedby={errores.razones ? 'error-razones' : undefined}>
-        <legend>¿Qué no funcionó? Elige una o más razones</legend>
+      <fieldset aria-describedby={[ayuda && 'ayuda-razones', errores.razones && 'error-razones'].filter(Boolean).join(' ') || undefined}>
+        <legend>{leyenda}</legend>
+        {ayuda && <p id="ayuda-razones" className="campo-ayuda razones-ayuda">{ayuda}</p>}
+        {antes}
         <ul className="razones-lista">
           {RAZONES.map(({ valor, texto }) => {
             const gravedad = elegidas[valor]
@@ -75,7 +80,7 @@ export default function SelectorRazones({ elegidas, setElegidas, detalle, setDet
 
       {elegidas.otra && (
         <div className="campo">
-          <label htmlFor="detalle-otra">¿Cuál fue la otra razón?</label>
+          <label htmlFor="detalle-otra">{etiquetaOtra}</label>
           <textarea id="detalle-otra" rows={3} maxLength={MAX_DETALLE} value={detalle}
             onChange={(e) => {
               setDetalle(e.target.value)

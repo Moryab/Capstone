@@ -104,3 +104,10 @@
 .terminar-motivos .evaluacion-opcion span { display: grid; gap: 2px; }
 .terminar-motivos .evaluacion-opcion small { font-weight: 400; color: var(--texto-suave); }
 .evaluacion-form > .casilla { font-weight: 600; }
+
+/* Formulario de los 30 días: hábitos con problemas (razones si no funciona, roces si funciona) */
+.evaluacion-habitos { display: grid; gap: 16px; }
+.razones-ayuda { margin: -4px 0 12px; }
+.evaluacion-ninguno { margin-bottom: 10px; }
+.evaluacion-enviada dd .razones-resumen { margin-top: 2px; }
+.evaluacion-detalle { margin: 6px 0 0; font-weight: 400; color: var(--texto-suave); }

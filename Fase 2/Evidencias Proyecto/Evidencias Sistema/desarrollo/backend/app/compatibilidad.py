@@ -51,6 +51,8 @@ NIVEL_MEDIO = 50
 # esa categoría para el estudiante, según su gravedad, hasta un máximo
 INCREMENTO_POR_RAZON = 0.25
 FACTOR_GRAVEDAD = {"leve": 0.5, "moderada": 1.0, "grave": 2.0}
+# Un hábito con problemas en una convivencia que igual funciona (un roce) cuenta la mitad
+INTENSIDAD_ROCE = 0.5
 AJUSTE_PERSONAL_MAX = 2.0
 
 # EP-08: peso general de cada hábito, igual para todos. En la v1 todos valen 1; la plataforma los

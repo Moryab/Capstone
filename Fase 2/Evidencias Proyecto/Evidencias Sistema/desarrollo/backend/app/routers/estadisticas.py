@@ -104,13 +104,11 @@ async def estadisticas(
         fila = por_mes.setdefault(mes, {"mes": mes, "exitosos": 0, "no_exitosos": 0})
         fila["exitosos" if m["resultado"] == "exitoso" else "no_exitosos"] += 1
 
-    # CA-20.3: razones de incompatibilidad, de la más a la menos frecuente
-    razones = Counter(
-        r["razon"]
-        for m in matches for e in m.get("evaluacion", [])
-        if en_rango(e["fecha_eval"], inicio, fin)
-        for r in e.get("razones", [])
-    )
+    # CA-20.3: razones de incompatibilidad (convivencias que no funcionaron), de la más a la menos
+    # frecuente. Los roces (hábitos con problemas en convivencias que sí funcionan) van aparte
+    en_periodo = [e for m in matches for e in m.get("evaluacion", []) if en_rango(e["fecha_eval"], inicio, fin)]
+    razones = Counter(r["razon"] for e in en_periodo if not e["funciona"] for r in e.get("razones", []))
+    roces = Counter(r["razon"] for e in en_periodo if e["funciona"] for r in e.get("razones", []))
 
     # Además: por qué terminan las convivencias
     motivos = Counter(
@@ -191,7 +189,7 @@ async def estadisticas(
     return {
         "periodo": {"desde": desde, "hasta": hasta, "ciudad": ciudad},
         # CA-20.5: sin evaluaciones no hay nada que mostrar
-        "hay_datos": bool(evaluadas or avisos or razones or motivos),
+        "hay_datos": bool(evaluadas or avisos or razones or roces or motivos),
         "resumen": {
             "evaluadas": len(evaluadas),
             "exitosas": exitosas,
@@ -223,6 +221,7 @@ async def estadisticas(
         },
         # CA-20.3: de la más a la menos frecuente; a igual cantidad, por nombre (orden estable)
         "razones": [{"razon": r, "cantidad": n} for r, n in sorted(razones.items(), key=lambda x: (-x[1], x[0]))],
+        "roces": [{"razon": r, "cantidad": n} for r, n in sorted(roces.items(), key=lambda x: (-x[1], x[0]))],
         "motivos_fin": [{"motivo": r, "cantidad": n} for r, n in sorted(motivos.items(), key=lambda x: (-x[1], x[0]))],
         "analisis_categorias": analisis_categorias,
     }

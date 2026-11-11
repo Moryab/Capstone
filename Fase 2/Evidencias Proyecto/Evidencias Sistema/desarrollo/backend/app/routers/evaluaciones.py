@@ -1,4 +1,9 @@
-"""EP-08 · HU-18 y HU-19: evaluación de la convivencia al mes y razones cuando no funcionó.
+"""EP-08 · HU-18 y HU-19: evaluación de la convivencia al mes, con los hábitos que dieron problemas.
+
+En el mismo formulario el estudiante marca los hábitos con problemas y su gravedad: si la convivencia
+no funciona son sus razones (HU-19) y, si funciona, los roces que hubo (o «Ningún problema»). Ambos
+ajustan sus próximas recomendaciones; los roces, con menos intensidad (INTENSIDAD_ROCE).
+La ruta /razones queda para las evaluaciones antiguas, que pedían las razones en un paso aparte.
 
 Archivo de esta área: solo lo edita quien tiene estas historias. Las rutas de administración usan
 Depends(solo_admin) (app/deps.py) y los avisos al usuario se envían con app.notificaciones.notificar.
@@ -9,33 +14,20 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, field_validator
 from pymongo import ReturnDocument
 
 from app.aprendizaje import programar_revision
+from app.compatibilidad import INTENSIDAD_ROCE
 from app.db import db
 from app.deps import usuario_actual
 from app.routers.compatibilidades import el_otro, resumenes
 from app.routers.perfil import datos_invalidos
-from app.schemas.seguimiento import RazonesIn
+from app.schemas.seguimiento import EvaluacionIn, RazonesIn
 from app.seguimiento import MOMENTO, aprender_de_razones, avisar_evaluaciones, evaluacion_de
 
 router = APIRouter(prefix="/api/evaluaciones", tags=["Seguimiento post-match"])
 
 NO_ENCONTRADA = HTTPException(status.HTTP_404_NOT_FOUND, "No encontramos esa convivencia")
-
-
-class EvaluacionIn(BaseModel):
-    """CA-18.3: si funciona (sí o no), una nota de 1 a 5 y un comentario opcional."""
-
-    funciona: bool
-    calificacion: int = Field(ge=1, le=5)
-    comentario: str | None = Field(default=None, max_length=300)
-
-    @field_validator("comentario")
-    @classmethod
-    def comentario_opcional(cls, v):
-        return (v or "").strip() or None
 
 
 async def convivencia_de(match_id: str, usuario: dict) -> dict:
@@ -99,8 +91,11 @@ async def ver_evaluacion(match_id: str, usuario: dict = Depends(usuario_actual))
         "fecha_inicio": match["fecha_inicio_convivencia"],
         "fecha_fin": match.get("fecha_fin_convivencia"),
         "motivo_fin": match.get("motivo_fin"),
-        # Si ya explicó qué no funcionó (al mes o al terminar), no se le vuelve a preguntar
-        "razones_indicadas": any(e["evaluador_id"] == yo and e.get("razones") for e in match.get("evaluacion", [])),
+        # Si ya explicó qué no funcionó (al mes o al terminar), no se le vuelve a preguntar. Los roces de
+        # una evaluación en que la convivencia funcionaba no cuentan: si después la termina, se le piden
+        "razones_indicadas": any(
+            e["evaluador_id"] == yo and not e["funciona"] and e.get("razones") for e in match.get("evaluacion", [])
+        ),
         **estado_evaluacion(match, yo),
         "mi_evaluacion": evaluacion_out(mia),
         # CA-18.5: si no funciona, se piden las razones (HU-19)
@@ -118,6 +113,10 @@ async def evaluar(match_id: str, datos: EvaluacionIn, usuario: dict = Depends(us
     if not estado_evaluacion(match, yo)["habilitada"]:
         fecha = match["fecha_habilitacion_evaluacion"].astimezone().strftime("%d-%m-%Y")
         raise HTTPException(status.HTTP_409_CONFLICT, f"Podrás evaluar esta convivencia desde el {fecha}")
+    if errores := datos.errores_evaluacion():
+        return datos_invalidos(errores)
+    razones = datos.sin_repetir()  # hábitos con problemas, con su gravedad
+    con_otra = any(r["razon"] == "otra" for r in razones)
 
     evaluacion = {
         "evaluador_id": yo,
@@ -126,8 +125,8 @@ async def evaluar(match_id: str, datos: EvaluacionIn, usuario: dict = Depends(us
         "funciona": datos.funciona,
         "calificacion": datos.calificacion,
         "comentario": datos.comentario,
-        "razones": [],  # HU-19
-        "razon_otra_detalle": None,
+        "razones": razones,  # HU-19: razones si no funciona; roces si funciona
+        "razon_otra_detalle": datos.razon_otra_detalle if con_otra else None,
         "fecha_eval": ahora,
     }
     # Solo si aún no evaluó: así dos envíos seguidos no crean dos evaluaciones (CA-18.6)
@@ -153,10 +152,17 @@ async def evaluar(match_id: str, datos: EvaluacionIn, usuario: dict = Depends(us
     await db.matches.update_one({"_id": match["_id"]}, {"$set": {"resultado": resultado}})
     programar_revision()  # EP-08: con cada convivencia evaluada la plataforma revisa si ajustar sus pesos
 
+    # CA-19.4: los hábitos con problemas ajustan sus próximas compatibilidades y propuestas
+    if razones:
+        await aprender_de_razones(usuario, razones, 1.0 if not datos.funciona else INTENSIDAD_ROCE)
+
     return {
-        "mensaje": "¡Gracias por tu evaluación!",
+        "mensaje": (
+            "¡Gracias por tu evaluación! Usaremos lo que nos contaste para mejorar tus próximas recomendaciones"
+            if razones else "¡Gracias por tu evaluación!"
+        ),
         "evaluacion": evaluacion_out(evaluacion),
-        "pedir_razones": not datos.funciona,
+        "pedir_razones": False,  # las razones ya vienen en la evaluación
     }
 
 

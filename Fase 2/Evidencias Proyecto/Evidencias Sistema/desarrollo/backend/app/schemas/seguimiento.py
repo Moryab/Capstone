@@ -44,6 +44,32 @@ class RazonesIn(BaseModel):
         return None
 
 
+class EvaluacionIn(RazonesIn):
+    """CA-18.3: si funciona (sí o no), una nota de 1 a 5, un comentario opcional y los hábitos con
+    problemas (con su gravedad). Si funciona, marca los hábitos con roces o «Ningún problema»."""
+
+    funciona: bool
+    calificacion: int = Field(ge=1, le=5)
+    comentario: str | None = Field(default=None, max_length=300)
+    sin_problemas: bool = False
+
+    @field_validator("comentario")
+    @classmethod
+    def comentario_opcional(cls, v):
+        return texto_opcional(v)
+
+    def errores_evaluacion(self) -> dict | None:
+        if self.razones and self.sin_problemas:
+            return {"razones": "Marca los hábitos con problemas o «Ningún problema», no ambos"}
+        if not self.funciona:
+            return self.errores()  # CA-19.2: al menos una razón, y «otra» con su detalle
+        if not self.razones and not self.sin_problemas:
+            return {"razones": "Marca los hábitos con problemas o «Ningún problema»"}
+        if any(r.razon == "otra" for r in self.razones) and not self.razon_otra_detalle:
+            return {"razon_otra_detalle": "Cuéntanos cuál fue el otro problema"}
+        return None
+
+
 class TerminoIn(RazonesIn):
     """Terminar una convivencia. Las razones se piden solo si terminó por incompatibilidad."""
 

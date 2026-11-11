@@ -5,6 +5,8 @@ import Avatar from '../../componentes/Avatar.jsx'
 import { mayusculaInicial } from '../../inicio/utilidades.js'
 import { formatearFecha } from '../../publicaciones.js'
 import './evaluacion.css'
+import { ResumenRazones } from './Razones.jsx'
+import SelectorRazones, { aRazones, erroresRazones } from './SelectorRazones.jsx'
 
 const MAX_COMENTARIO = 300
 const NOTAS = [
@@ -16,8 +18,10 @@ const NOTAS = [
 ]
 const VACIO = { funciona: null, calificacion: null, comentario: '' }
 
+const NINGUNO = 'Marca los hábitos con problemas o «Ningún problema»'
+
 // Resumen de una evaluación ya enviada (CA-18.6: no se puede volver a evaluar)
-function Enviada({ evaluacion, matchId, pedirRazones }) {
+function Enviada({ evaluacion, matchId, pedirRazones, activa }) {
   const nota = NOTAS.find((n) => n.valor === evaluacion.calificacion)
   return (
     <section className="evaluacion-enviada" aria-labelledby="titulo-enviada">
@@ -27,6 +31,11 @@ function Enviada({ evaluacion, matchId, pedirRazones }) {
         <dd>{evaluacion.funciona ? 'Sí' : 'No'}</dd>
         <dt>Calificación</dt>
         <dd>{evaluacion.calificacion} de 5 ({nota?.texto})</dd>
+        <dt>{evaluacion.funciona ? 'Hábitos con roces' : 'Hábitos con problemas'}</dt>
+        <dd>
+          {evaluacion.razones.length ? <ResumenRazones razones={evaluacion.razones} /> : 'Ninguno'}
+          {evaluacion.razon_otra_detalle && <p className="evaluacion-detalle">Otra: {evaluacion.razon_otra_detalle}</p>}
+        </dd>
         {evaluacion.comentario && (
           <>
             <dt>Comentario</dt>
@@ -34,7 +43,7 @@ function Enviada({ evaluacion, matchId, pedirRazones }) {
           </>
         )}
       </dl>
-      {/* CA-18.5: si no funciona, se piden las razones (HU-19) */}
+      {/* Evaluaciones antiguas: las razones se pedían en un paso aparte (HU-19) */}
       {pedirRazones ? (
         <div className="evaluacion-razones">
           <p>Cuéntanos qué no funcionó: así RoomMatch te recomendará mejores opciones la próxima vez.</p>
@@ -42,8 +51,9 @@ function Enviada({ evaluacion, matchId, pedirRazones }) {
         </div>
       ) : (
         <div className="evaluacion-acciones">
-          {!evaluacion.funciona && (
-            <Link to={`/evaluacion/${matchId}/razones`} className="propuesta-evaluacion">Ver las razones que indicaste</Link>
+          {/* Si no funciona, puede terminarla y quedar libre para un nuevo match */}
+          {!evaluacion.funciona && activa && (
+            <Link to={`/evaluacion/${matchId}/terminar`} className="boton peligro-suave">Terminar la convivencia</Link>
           )}
           <Link to="/propuestas" className="boton secundario">Volver a mis propuestas</Link>
         </div>
@@ -57,6 +67,9 @@ export default function Evaluacion() {
   const { matchId } = useParams()
   const [resultado, setResultado] = useState({ id: null, datos: null, error: '' })
   const [form, setForm] = useState(VACIO)
+  const [habitos, setHabitos] = useState({}) // hábito → gravedad
+  const [detalle, setDetalle] = useState('')
+  const [sinProblemas, setSinProblemas] = useState(false)
   const [errores, setErrores] = useState({})
   const [enviando, setEnviando] = useState(false)
   const [mensaje, setMensaje] = useState('')
@@ -88,6 +101,27 @@ export default function Evaluacion() {
   const cambiar = (campo, valor) => {
     setForm((f) => ({ ...f, [campo]: valor }))
     setErrores((e) => ({ ...e, [campo]: undefined }))
+    if (campo === 'funciona' && !valor) setSinProblemas(false) // si no funciona, algo hubo
+  }
+  const limpiarErroresHabitos = () => setErrores((e) => ({ ...e, razones: undefined, razon_otra_detalle: undefined }))
+  // Marcar un hábito quita «Ningún problema», y al revés
+  const elegirHabitos = (cambio) => {
+    setHabitos(cambio)
+    setSinProblemas(false)
+  }
+  const alternarSinProblemas = () => {
+    setSinProblemas((v) => !v)
+    setHabitos({})
+    limpiarErroresHabitos()
+  }
+
+  // Mismos mensajes que el backend: si no funciona, al menos un hábito (CA-19.2); si funciona,
+  // los hábitos con roces o «Ningún problema»
+  const erroresHabitos = () => {
+    if (form.funciona === false) return erroresRazones(habitos, detalle)
+    if (!Object.keys(habitos).length && !sinProblemas) return { razones: NINGUNO }
+    if (habitos.otra && !detalle.trim()) return { razon_otra_detalle: 'Cuéntanos cuál fue el otro problema' }
+    return null
   }
 
   const enviar = async (e) => {
@@ -96,6 +130,7 @@ export default function Evaluacion() {
     const faltan = {}
     if (form.funciona === null) faltan.funciona = 'Este campo es obligatorio'
     if (form.calificacion === null) faltan.calificacion = 'Este campo es obligatorio'
+    if (form.funciona !== null) Object.assign(faltan, erroresHabitos())
     if (Object.keys(faltan).length) {
       setErrores(faltan)
       setMensaje('Revisa los campos marcados')
@@ -104,7 +139,8 @@ export default function Evaluacion() {
     setEnviando(true)
     setMensaje('')
     try {
-      const r = await api(`/evaluaciones/${matchId}`, { metodo: 'POST', datos: form })
+      const datosEnvio = { ...form, ...aRazones(habitos, detalle), sin_problemas: Boolean(form.funciona && sinProblemas) }
+      const r = await api(`/evaluaciones/${matchId}`, { metodo: 'POST', datos: datosEnvio })
       setResultado((res) => ({
         ...res,
         datos: { ...res.datos, mi_evaluacion: r.evaluacion, evaluada: true, pedir_razones: r.pedir_razones },
@@ -134,7 +170,8 @@ export default function Evaluacion() {
       {mensaje && datos.mi_evaluacion && <p className="exito" role="status">{mensaje}</p>}
 
       {datos.mi_evaluacion ? (
-        <Enviada evaluacion={datos.mi_evaluacion} matchId={matchId} pedirRazones={datos.pedir_razones} />
+        <Enviada evaluacion={datos.mi_evaluacion} matchId={matchId} pedirRazones={datos.pedir_razones}
+          activa={datos.estado === 'confirmado'} />
       ) : !datos.habilitada ? (
         // CA-18.2
         <section className="evaluacion-espera">
@@ -176,6 +213,25 @@ export default function Evaluacion() {
             {errores.calificacion && <p id="error-calificacion" className="campo-error">{errores.calificacion}</p>}
           </fieldset>
 
+          {/* Hábitos con problemas: razones si no funciona (HU-19), roces si funciona */}
+          {form.funciona !== null && (
+            <div className="evaluacion-habitos">
+              <SelectorRazones elegidas={habitos} setElegidas={elegirHabitos} detalle={detalle} setDetalle={setDetalle}
+                errores={errores} alCambiar={limpiarErroresHabitos}
+                leyenda={form.funciona ? '¿Hubo roces con algún hábito?' : '¿Con qué hábitos hubo problemas?'}
+                ayuda={form.funciona
+                  ? 'Aunque la convivencia funcione, cuéntanos si algo costó. Marca cada hábito y qué tan grave fue.'
+                  : 'Marca uno o más y qué tan grave fue cada uno.'}
+                etiquetaOtra="¿Cuál fue el otro problema?"
+                antes={form.funciona && (
+                  <label className={`evaluacion-opcion evaluacion-ninguno${sinProblemas ? ' elegida' : ''}`}>
+                    <input type="checkbox" checked={sinProblemas} onChange={alternarSinProblemas} />
+                    Ningún problema: nos llevamos bien en todo
+                  </label>
+                )} />
+            </div>
+          )}
+
           <div className="campo">
             <label htmlFor="comentario">Comentario (opcional)</label>
             <textarea id="comentario" rows={4} maxLength={MAX_COMENTARIO} value={form.comentario}
@@ -186,8 +242,8 @@ export default function Evaluacion() {
           </div>
 
           <p className="campo-ayuda">
-            {nombreOtro} no ve tu evaluación. La usamos para medir qué tan bien funcionan los match y mejorar
-            las recomendaciones.
+            {nombreOtro} no ve tu evaluación. La usamos para medir qué tan bien funcionan los match y para que
+            tus próximas recomendaciones consideren los hábitos que te costaron.
           </p>
           {mensaje && <p className="alerta" role="alert">{mensaje}</p>}
           <button type="submit" className="boton" disabled={enviando}>
