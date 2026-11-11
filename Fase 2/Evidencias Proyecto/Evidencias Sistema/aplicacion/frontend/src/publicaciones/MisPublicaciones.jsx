@@ -13,6 +13,9 @@ import {
 } from '../publicaciones.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { estaVerificado } from '../sesion/verificacion.js'
+// Los botones l-boton y los colores --l-* vienen de los estilos de la presentación: se cargan aquí
+// también, para que estén aunque se entre (o se recargue) directo en esta página
+import '../landing/landing.css'
 import './misPublicaciones.css'
 
 // Cómo ve su dueño cada estado
@@ -412,7 +415,7 @@ export default function MisPublicaciones() {
           <h1>Mis publicaciones</h1>
           <p className="mp-resumen">{publicaciones === null ? 'Cargando…' : resumen}</p>
           {verificado && oferente && (
-            <Link to="/publicaciones/nueva" className="l-boton l-boton-luz mp-publicar"><IconoMas tamano={18} /> Publicar otro espacio</Link>
+            <Link to="/publicaciones/nueva" className="l-boton l-boton-luz mp-publicar"><IconoMas tamano={18} /> Publicar alojamiento</Link>
           )}
         </div>
         <Casas />
