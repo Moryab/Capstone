@@ -20,9 +20,16 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 
 ## Cómo ejecutar el proyecto
 
-El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/Aplicación/`:
-- `backend/`: API en FastAPI + MongoDB, corre en Docker.
-- `frontend/`: interfaz en React + Vite, corre con Node.
+El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
+- `Aplicación/backend/`: API en FastAPI, corre en Docker.
+- `Aplicación/frontend/`: interfaz en React + Vite, corre con Node.
+- `Base de datos/`: todo lo de MongoDB. Se levanta junto con la API (el `docker-compose.yml` de `Aplicación` lo incluye), así que no hay que hacer nada aparte.
+  - `docker-compose.yml`: el servicio `mongo` y el servicio `inicializar-bd`, que en cada arranque crea las colecciones, los índices y los catálogos antes de que parta la API.
+  - `scripts/roommatch.mongodb`: el modelo de datos completo (colecciones con validador `$jsonSchema`, contadores e índices), para ejecutarlo en mongosh, Compass o DbSchema sobre una base **vacía** (borra las colecciones antes de crearlas).
+  - `scripts/colecciones.js`: los mismos validadores, aplicados a la base de la plataforma sin borrar nada. Están en modo `warn`: si la API guarda algo que no cumple el modelo, se guarda igual y queda anotado en `docker compose logs mongo` («Document would fail validation»). **Si se agrega o cambia un campo, hay que actualizar el esquema aquí y en `roommatch.mongodb`.**
+  - `scripts/indices.js`: índices de todas las colecciones. **Los índices nuevos se agregan aquí**, en el bloque de cada épica (ya no en el backend).
+  - `scripts/datos_iniciales.js`: comunas e instituciones del Gran Concepción. Solo inserta las que faltan, no pisa cambios.
+  - `respaldo.py`: respaldo y restauración de la base (ver «Respaldar la base de datos»).
 
 ### Requisitos
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
@@ -74,6 +81,24 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/Aplicación/`
 - **La API no responde**: revisar el error con `docker compose logs api` (en la carpeta `Aplicación`).
 - **Se cambió código del backend o `requirements.txt`**: volver a ejecutar `docker compose up -d --build`; sin `--build` sigue corriendo la versión anterior.
 - **Error de módulos en el frontend** (por ejemplo después de un `git pull`): ejecutar `npm install` en la carpeta `frontend`.
+- **La API no arranca y `inicializar-bd` falló**: revisar el error con `docker compose logs inicializar-bd`. Suele ser un índice que se cambió en `scripts/indices.js` y ya existía con otra definición: hay que borrarlo antes de crearlo de nuevo (como se hace con `rut_1`).
+
+## Publicar en Azure
+
+La plataforma se publica en una máquina virtual de Azure con HTTPS. La guía paso a paso (crear la VM, prepararla, levantar, prender y apagar, actualizar) está en [`Aplicación/DESPLIEGUE_AZURE.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20Sistema/Aplicación/DESPLIEGUE_AZURE.md).
+
+## Respaldar la base de datos
+
+Con la base levantada, en la carpeta `Base de datos`:
+```Terminal
+cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Base de datos"
+python respaldo.py crear
+```
+Deja el respaldo en `Base de datos/respaldos/` (no se sube a git porque tiene datos de los usuarios). Para volver a ese estado, reemplazando los datos actuales:
+```Terminal
+python respaldo.py restaurar "respaldos/roommatch-AAAA-MM-DD_HHMM.archive.gz"
+```
+Solo respalda la base: las fotos y los comprobantes están en los volúmenes de Docker de la API.
 
 ## Probar la evaluación de la convivencia (30 días)
 

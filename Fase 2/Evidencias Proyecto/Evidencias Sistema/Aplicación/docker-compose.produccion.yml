@@ -1,0 +1,26 @@
+# Producción (servidor): se usa junto al docker-compose.yml normal.
+#   docker compose -f docker-compose.yml -f docker-compose.produccion.yml up -d --build
+# Agrega el servidor web (Caddy con el frontend compilado y HTTPS) y deja la API solo dentro de Docker.
+
+services:
+  api:
+    ports: !reset []   # la API ya no se expone directo: se entra por Caddy en /api
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      DOMINIO: ${DOMINIO}
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data     # certificados HTTPS: no se piden de nuevo al reiniciar
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

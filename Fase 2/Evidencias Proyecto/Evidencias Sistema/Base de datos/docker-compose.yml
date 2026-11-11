@@ -1,0 +1,42 @@
+# Servicios de la base de datos. No se levanta solo: lo incluye el docker-compose.yml de la carpeta
+# «Aplicación», que forma un único proyecto con la API (mismo nombre, red y volúmenes).
+# Las variables (${MONGO_USER}, etc.) vienen del .env de «Aplicación».
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    # Caché de WiredTiger acotada para que entre en un servidor chico (1 a 2 GB de RAM).
+    # 0.25 GB es el mínimo de Mongo y sobra para el volumen de datos del proyecto
+    command: ["--wiredTigerCacheSizeGB", "${MONGO_CACHE_GB:-0.25}"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      TZ: America/Santiago   # hora de Chile en los registros; Mongo igual guarda las fechas en UTC
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Sin "ports": Mongo solo es accesible dentro de la red de Docker
+
+  # Crea las colecciones con su validador, los índices y los catálogos (comunas e instituciones), y termina.
+  # Corre en cada «docker compose up»: los scripts no repiten ni pisan lo que ya existe.
+  # La API espera a que termine bien antes de arrancar
+  inicializar-bd:
+    image: mongo:7
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      MONGO_DB: ${MONGO_DB:-roommatch}
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: ["sh", "-c", "mongosh \"$$MONGO_URI\" --quiet --file /scripts/colecciones.js --file /scripts/indices.js --file /scripts/datos_iniciales.js"]
+
+volumes:
+  mongo_data:

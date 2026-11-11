@@ -7,10 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.administrador import crear_administrador
 from app.compatibilidad import asegurar_parametros
 from app.config import settings
-from app.datos_iniciales import cargar_datos_iniciales
-from app.db import client, crear_indices
+from app.db import client
 from app.media import CARPETA_FOTOS, URL_MEDIA
 from app.modos import migrar_modos
 from app.routers.verificacion import migrar_revocaciones
@@ -37,8 +37,8 @@ from app.seguimiento import revisar_periodicamente
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await crear_indices()
-    await cargar_datos_iniciales()
+    # Índices y catálogos ya los cargó el servicio inicializar-bd (carpeta «Base de datos»)
+    await crear_administrador()
     await asegurar_parametros()  # EP-08: versión v1 de los pesos del algoritmo
     await migrar_modos()  # rol buscador/oferente de las cuentas anteriores a ese cambio
     await migrar_revocaciones()  # revocaciones anteriores a guardarse en la solicitud

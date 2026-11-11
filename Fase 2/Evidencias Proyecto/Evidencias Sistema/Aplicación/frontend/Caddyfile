@@ -1,0 +1,17 @@
+# Servidor web de producción. DOMINIO viene del .env (por ejemplo roommatch.brazilsouth.cloudapp.azure.com).
+# Con un dominio real, Caddy obtiene y renueva solo el certificado HTTPS (Let's Encrypt).
+{$DOMINIO} {
+	encode zstd gzip
+
+	# La API (incluye las fotos, que se sirven bajo /api/media)
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# El frontend compilado. Las rutas de React (/perfil, /inicio...) devuelven index.html
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

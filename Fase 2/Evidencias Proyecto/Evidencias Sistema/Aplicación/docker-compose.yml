@@ -2,18 +2,12 @@
 # contenedores y los volúmenes (la base de datos). Si se cambia, la API parte con una base vacía.
 name: desarrollo
 
-services:
-  mongo:
-    image: mongo:7
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-      TZ: America/Santiago   # hora de Chile en los registros; Mongo igual guarda las fechas en UTC
-    volumes:
-      - mongo_data:/data/db
-    # Sin "ports": Mongo solo es accesible dentro de la red de Docker
+# MongoDB y su inicialización (índices y catálogos) están en la carpeta «Base de datos»
+include:
+  - path: ../Base de datos/docker-compose.yml
+    env_file: .env
 
+services:
   api:
     build: ./backend
     restart: unless-stopped
@@ -23,7 +17,9 @@ services:
       # Las fechas se siguen guardando en UTC y el navegador las muestra en la hora local
       TZ: America/Santiago
     depends_on:
-      - mongo
+      # Arranca cuando la base ya tiene sus índices y catálogos
+      inicializar-bd:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"   # en el servidor esto lo reemplazará Nginx
     volumes:
@@ -31,6 +27,5 @@ services:
       - privado_data:/app/privado   # comprobantes de estudiante: no se publican como archivos estáticos
 
 volumes:
-  mongo_data:
   media_data:
   privado_data:
