@@ -1,3 +1,7 @@
+# Nombre fijo del proyecto: la carpeta antes se llamaba «desarrollo» y Docker nombra con él los
+# contenedores y los volúmenes (la base de datos). Si se cambia, la API parte con una base vacía.
+name: desarrollo
+
 services:
   mongo:
     image: mongo:7
