@@ -97,8 +97,9 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
 .acceso {
   position: relative;
-  width: min(880px, calc(100% - 32px));
+  width: min(960px, calc(100% - 32px));
   min-height: 720px;
+  transition: min-height var(--duracion) var(--curva);
   margin: auto;
   overflow: hidden;
   background: var(--tarjeta);
@@ -138,6 +139,12 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   0%, 49.99% { opacity: 0; z-index: 1; }
   50%, 100% { opacity: 1; z-index: 5; }
 }
+
+/* Registro: la tarjeta crece para que el formulario completo se vea sin usar la rueda; si la
+   pantalla es más baja, crece hasta donde alcanza y el resto se recorre como siempre */
+.acceso.registro-activo { min-height: min(900px, calc(100dvh - 32px)); }
+.panel-registro .form-acceso { padding: 26px 40px; }
+.panel-registro .form-acceso .subtitulo { margin-bottom: 18px; }
 
 /* margin auto centra en vertical, pero si el formulario no cabe deja hacer scroll desde arriba */
 .form-acceso {
@@ -248,7 +255,7 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
 
 /* En pantallas chicas no caben dos columnas: se muestra solo el formulario activo */
 @media (max-width: 768px) {
-  .acceso { min-height: 0; }
+  .acceso, .acceso.registro-activo { min-height: 0; }
   .panel-form {
     position: static;
     width: 100%;
