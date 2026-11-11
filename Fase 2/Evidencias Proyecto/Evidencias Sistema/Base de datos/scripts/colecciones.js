@@ -2,8 +2,8 @@
 // Corre en cada «docker compose up», antes de indices.js: crea las colecciones que falten y, en las
 // que ya existen, actualiza el validador sin tocar los datos (nunca se borra nada).
 //
-// Los esquemas son los de roommatch.mongodb, ajustados a lo que guarda la API. Si se cambia un
-// esquema aquí, conviene cambiarlo también allá (y en el modelo de datos), para que no se separen.
+// Es el modelo de datos de la plataforma: si la API agrega o cambia un campo, se actualiza su esquema
+// aquí (y en el documento del modelo de datos), para que no se separen.
 
 db = db.getSiblingDB(process.env.MONGO_DB || "roommatch");
 

@@ -25,8 +25,7 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
 - `Aplicación/frontend/`: interfaz en React + Vite, corre con Node.
 - `Base de datos/`: todo lo de MongoDB. Se levanta junto con la API (el `docker-compose.yml` de `Aplicación` lo incluye), así que no hay que hacer nada aparte.
   - `docker-compose.yml`: el servicio `mongo` y el servicio `inicializar-bd`, que en cada arranque crea las colecciones, los índices y los catálogos antes de que parta la API.
-  - `scripts/roommatch.mongodb`: el modelo de datos completo (colecciones con validador `$jsonSchema`, contadores e índices), para ejecutarlo en mongosh, Compass o DbSchema sobre una base **vacía** (borra las colecciones antes de crearlas).
-  - `scripts/colecciones.js`: los mismos validadores, aplicados a la base de la plataforma sin borrar nada. Están en modo `warn`: si la API guarda algo que no cumple el modelo, se guarda igual y queda anotado en `docker compose logs mongo` («Document would fail validation»). **Si se agrega o cambia un campo, hay que actualizar el esquema aquí y en `roommatch.mongodb`.**
+  - `scripts/colecciones.js`: el modelo de datos, es decir, cada colección con su validador `$jsonSchema`. Se aplica a la base sin borrar nada. Está en modo `warn`: si la API guarda algo que no cumple el modelo, se guarda igual y queda anotado en `docker compose logs mongo` («Document would fail validation»). **Si se agrega o cambia un campo, hay que actualizar su esquema aquí.**
   - `scripts/indices.js`: índices de todas las colecciones. **Los índices nuevos se agregan aquí**, en el bloque de cada épica (ya no en el backend).
   - `scripts/datos_iniciales.js`: comunas e instituciones del Gran Concepción. Solo inserta las que faltan, no pisa cambios.
   - `respaldo.py`: respaldo y restauración de la base (ver «Respaldar la base de datos»).
