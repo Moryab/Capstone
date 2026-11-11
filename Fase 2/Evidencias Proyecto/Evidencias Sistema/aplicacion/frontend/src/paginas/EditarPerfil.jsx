@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import Avatar from '../componentes/Avatar.jsx'
 import Campo from '../componentes/Campo.jsx'
 import FechaNacimiento, { OpcionesBoton } from '../componentes/FechaNacimiento.jsx'
+import { IconoUbicacion } from '../componentes/Iconos.jsx'
+import { IconoSede } from '../componentes/IconosAlojamiento.jsx'
+import { IconoMensajes, IconoUsuario } from '../inicio/iconos.jsx'
+import { mayusculaInicial } from '../inicio/utilidades.js'
+import { IconoTelefono } from '../perfil/iconos.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
 import { describirFaltantes, GENEROS } from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import './editarPerfil.css'
 
 const MAX_DESCRIPCION = 300
 const ANIO_ACTUAL = new Date().getFullYear()
@@ -20,6 +27,22 @@ const CAMPOS = [
 const aFormulario = (perfil) =>
   Object.fromEntries(CAMPOS.map((campo) => [campo, perfil[campo] == null ? '' : String(perfil[campo])]))
 
+// Una sección del formulario: a la izquierda qué es y para qué se usa; a la derecha, sus campos
+function Seccion({ id, Icono, titulo, descripcion, children }) {
+  return (
+    <section className="ep-seccion" aria-labelledby={id}>
+      <div className="ep-seccion-info">
+        <span className="ep-seccion-icono" aria-hidden="true"><Icono /></span>
+        <div>
+          <h2 id={id}>{titulo}</h2>
+          <p>{descripcion}</p>
+        </div>
+      </div>
+      <div className="ep-campos">{children}</div>
+    </section>
+  )
+}
+
 // HU-03 (completar perfil) y HU-04 (editar perfil). Es la pestaña «Editar perfil» de Mi perfil
 export default function EditarPerfil() {
   const { recargarUsuario } = useSesion()
@@ -29,6 +52,8 @@ export default function EditarPerfil() {
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [enviando, setEnviando] = useState(false)
+  // Cambia al descartar o guardar: la fecha guarda sus partes por dentro y así vuelve a leer el valor
+  const [version, setVersion] = useState(0)
 
   useEffect(() => {
     Promise.all([api('/perfil'), api('/catalogos/perfil')])
@@ -39,6 +64,24 @@ export default function EditarPerfil() {
       })
       .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
   }, [])
+
+  // Hay cambios sin guardar: lo que se ve no es lo que tiene la API
+  const sinGuardar = Boolean(datos && perfil) && JSON.stringify(datos) !== JSON.stringify(aFormulario(perfil))
+
+  // Si se cierra o recarga la pestaña con cambios pendientes, el navegador pregunta antes
+  useEffect(() => {
+    if (!sinGuardar) return undefined
+    const avisar = (e) => e.preventDefault()
+    window.addEventListener('beforeunload', avisar)
+    return () => window.removeEventListener('beforeunload', avisar)
+  }, [sinGuardar])
+
+  // El aviso de «guardado» se va solo después de unos segundos
+  useEffect(() => {
+    if (mensaje.tipo !== 'exito') return undefined
+    const t = setTimeout(() => setMensaje({ tipo: '', texto: '' }), 4000)
+    return () => clearTimeout(t)
+  }, [mensaje])
 
   if (!datos || !catalogo) {
     return <CargandoPerfil texto={mensaje.texto} />
@@ -65,6 +108,13 @@ export default function EditarPerfil() {
     setErrores((e) => ({ ...e, [nombre]: undefined }))
   }
 
+  const descartar = () => {
+    setDatos(aFormulario(perfil))
+    setErrores({})
+    setMensaje({ tipo: '', texto: '' })
+    setVersion((v) => v + 1)
+  }
+
   const enviar = async (e) => {
     e.preventDefault()
     setEnviando(true)
@@ -81,81 +131,97 @@ export default function EditarPerfil() {
       setPerfil(respuesta.perfil)
       setDatos(aFormulario(respuesta.perfil))
       setErrores({})
+      setVersion((v) => v + 1)
       setMensaje({ tipo: 'exito', texto: 'Tu perfil se guardó correctamente.' }) // CA-03.2 y CA-04.1
       await recargarUsuario()
     } catch (err) {
       // CA-03.3 y CA-04.2: no se guarda nada y se marcan los campos a corregir
       setErrores(err.errores ?? {})
-      setMensaje({ tipo: 'alerta', texto: err.errores ? 'Revisa los campos marcados' : err.message })
+      setMensaje({ tipo: 'alerta', texto: err.errores ? 'Revisa los campos marcados en rojo' : err.message })
+      // Se lleva la vista al primer campo con error
+      requestAnimationFrame(() => document.querySelector('.ep [aria-invalid="true"]')?.focus())
     } finally {
       setEnviando(false)
     }
   }
 
+  // «Duoc UC (Duoc UC)» se ve repetido: la sigla solo va si es distinta del nombre
   const opcionesInstitucion = catalogo.instituciones.map((i) => ({
     valor: i.id,
-    texto: `${i.nombre} (${i.sigla})`,
+    texto: i.nombre === i.sigla ? i.nombre : `${i.nombre} (${i.sigla})`,
   }))
   const opcionesSede = sedes.map((sede) => ({ valor: sede, texto: sede }))
   const opcionesRegion = catalogo.regiones.map((region) => ({ valor: region, texto: region }))
+  const nombreCompleto = [perfil.nombre, perfil.ap_paterno].filter(Boolean).map(mayusculaInicial).join(' ')
 
   return (
-    <main className="tarjeta pagina-perfil">
-      <h1>Editar perfil</h1>
-      <p className="subtitulo">
-        {perfil.rut ? `RUT ${perfil.rut}` : 'Mantén tus datos al día para encontrar roomies compatibles'}
-      </p>
+    <main className="ep">
+      <header className="ep-cabecera">
+        <Avatar nombre={perfil.nombre} apellido={perfil.ap_paterno} foto={perfil.foto_url} tamano={64} />
+        <div className="ep-quien">
+          <h1>{nombreCompleto}</h1>
+          <p>{perfil.rut ? `RUT ${perfil.rut} · no se puede cambiar` : 'Mantén tus datos al día para encontrar roomies compatibles'}</p>
+        </div>
+        <span className={`ep-estado${perfil.perfil_completo ? ' completo' : ''}`}>
+          {perfil.perfil_completo ? '✓ Perfil completo' : 'Perfil incompleto'}
+        </span>
+      </header>
 
       {!perfil.perfil_completo && (
-        <p className="alerta">
-          Para completar tu perfil falta: {describirFaltantes(perfil.campos_faltantes)}.
+        <p className="ep-falta" role="note">
+          <strong>Para completar tu perfil falta:</strong> {describirFaltantes(perfil.campos_faltantes)}.
         </p>
       )}
 
-      <form onSubmit={enviar} noValidate>
-        <fieldset>
-          <legend>Datos personales</legend>
-          <div className="fila">
-            <Campo etiqueta="Nombre" nombre="nombre" value={datos.nombre} onChange={cambiar}
-              error={errores.nombre} autoComplete="given-name" maxLength={60} required />
-            <Campo etiqueta="Correo" nombre="correo" type="email" value={datos.correo}
-              onChange={cambiar} error={errores.correo} autoComplete="email" required />
-          </div>
-          <div className="fila">
+      <form id="ep-formulario" onSubmit={enviar} noValidate>
+        <Seccion id="ep-personales" Icono={IconoUsuario} titulo="Datos personales"
+          descripcion="Tu nombre y tu edad aparecen en tu perfil. La fecha exacta no se muestra.">
+          <Campo etiqueta="Nombre" nombre="nombre" value={datos.nombre} onChange={cambiar}
+            error={errores.nombre} autoComplete="given-name" maxLength={60} required />
+          <div className="ep-fila">
             <Campo etiqueta="Apellido paterno" nombre="ap_paterno" value={datos.ap_paterno}
-              onChange={cambiar} error={errores.ap_paterno} autoComplete="family-name"
-              maxLength={60} required />
+              onChange={cambiar} error={errores.ap_paterno} autoComplete="family-name" maxLength={60} required />
             <Campo etiqueta="Apellido materno" nombre="ap_materno" value={datos.ap_materno}
               onChange={cambiar} error={errores.ap_materno} maxLength={60} required />
           </div>
           {/* Mismo diseño que en el registro: fecha en día, mes y año, y género como opciones visibles */}
-          <FechaNacimiento valor={datos.fecha_nac} error={errores.fecha_nac}
+          <FechaNacimiento key={`fecha-${version}`} valor={datos.fecha_nac} error={errores.fecha_nac}
             alCambiar={(v) => cambiarValor('fecha_nac', v)} />
           <OpcionesBoton etiqueta="Género" nombre="genero" valor={datos.genero} opciones={GENEROS}
             error={errores.genero} alCambiar={(v) => cambiarValor('genero', v)} />
-          <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
-            onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
-            autoComplete="tel" required />
-        </fieldset>
+        </Seccion>
 
-        <fieldset>
-          <legend>Datos de estudiante</legend>
+        <Seccion id="ep-contacto" Icono={IconoTelefono} titulo="Contacto"
+          descripcion="Tu teléfono solo lo ven las personas con las que confirmas un match.">
+          <div className="ep-fila">
+            <Campo etiqueta="Correo" nombre="correo" type="email" value={datos.correo}
+              onChange={cambiar} error={errores.correo} autoComplete="email" required
+              ayuda="Lo usas para iniciar sesión." />
+            <Campo etiqueta="Teléfono" nombre="telefono" type="tel" value={datos.telefono}
+              onChange={cambiar} error={errores.telefono} placeholder="9 1234 5678"
+              autoComplete="tel" required />
+          </div>
+        </Seccion>
+
+        <Seccion id="ep-estudios" Icono={IconoSede} titulo="Datos de estudiante"
+          descripcion="Con tu sede calculamos qué tan lejos está cada alojamiento.">
           <Campo etiqueta="Institución" nombre="institucion_id" value={datos.institucion_id}
             onChange={cambiar} error={errores.institucion_id} opciones={opcionesInstitucion} required />
-          <div className="fila">
+          <div className="ep-fila">
             <Campo etiqueta="Sede" nombre="sede" value={datos.sede} onChange={cambiar}
-              error={errores.sede} opciones={opcionesSede} disabled={!institucion} required />
+              error={errores.sede} opciones={opcionesSede} disabled={!institucion} required
+              ayuda={!institucion ? 'Primero elige tu institución.' : undefined} />
             <Campo etiqueta="Año de ingreso (opcional)" nombre="anio_ingreso" type="number"
               value={datos.anio_ingreso} onChange={cambiar} error={errores.anio_ingreso}
-              min={1980} max={ANIO_ACTUAL} />
+              min={1980} max={ANIO_ACTUAL} inputMode="numeric" />
           </div>
           <Campo etiqueta="Carrera" nombre="carrera" value={datos.carrera} onChange={cambiar}
             error={errores.carrera} maxLength={100} required />
-        </fieldset>
+        </Seccion>
 
-        <fieldset>
-          <legend>Origen y residencia</legend>
-          <div className="fila">
+        <Seccion id="ep-origen" Icono={IconoUbicacion} titulo="Origen y residencia"
+          descripcion="Ayuda a otros estudiantes a conocerte. La dirección no se muestra en tu perfil.">
+          <div className="ep-fila">
             <Campo etiqueta="Ciudad de origen" nombre="ciudad_origen" value={datos.ciudad_origen}
               onChange={cambiar} error={errores.ciudad_origen} maxLength={80} required />
             <Campo etiqueta="Región de origen" nombre="region_origen" value={datos.region_origen}
@@ -165,27 +231,33 @@ export default function EditarPerfil() {
             value={datos.direccion} onChange={cambiar} error={errores.direccion} maxLength={150}
             autoComplete="street-address" required
             ayuda="Si aún no tienes alojamiento, indica dónde te estás quedando." />
-        </fieldset>
+        </Seccion>
 
-        <fieldset>
-          <legend>Sobre ti</legend>
+        <Seccion id="ep-sobre" Icono={IconoMensajes} titulo="Sobre ti"
+          descripcion="Lo primero que leen los demás en tu perfil y en «Encontrar roomie».">
           <Campo etiqueta="Descripción breve (opcional)" nombre="descripcion" multilinea rows={4}
             value={datos.descripcion} onChange={cambiar} error={errores.descripcion}
-            maxLength={MAX_DESCRIPCION}
+            maxLength={MAX_DESCRIPCION} placeholder="Por ejemplo: estudio de día, me gusta cocinar y soy ordenada."
             ayuda={`${datos.descripcion.length}/${MAX_DESCRIPCION} caracteres`} />
-        </fieldset>
+        </Seccion>
 
-        {mensaje.texto && (
-          <p className={mensaje.tipo} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>
-            {mensaje.texto}
+        {/* Siempre a la vista al fondo de la pantalla; se destaca cuando hay cambios sin guardar */}
+        <div className={`ep-barra${sinGuardar ? ' con-cambios' : ''}`}>
+          <p className={`ep-barra-texto ${mensaje.tipo}`} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>
+            {mensaje.texto || (sinGuardar ? 'Tienes cambios sin guardar' : 'Todo está guardado')}
           </p>
-        )}
-
-        <div className="acciones">
-          <Link to="/perfil" className="boton secundario">Ver mi perfil</Link>
-          <button type="submit" className="boton" disabled={enviando}>
-            {enviando ? 'Guardando…' : 'Guardar cambios'}
-          </button>
+          <div className="ep-barra-acciones">
+            {sinGuardar ? (
+              <button type="button" className="boton secundario ep-boton" onClick={descartar} disabled={enviando}>
+                Descartar
+              </button>
+            ) : (
+              <Link to="/perfil" className="boton secundario ep-boton">Ver mi perfil</Link>
+            )}
+            <button type="submit" className="boton ep-boton" disabled={enviando || !sinGuardar}>
+              {enviando ? 'Guardando…' : <>Guardar<span className="ep-largo"> cambios</span></>}
+            </button>
+          </div>
         </div>
       </form>
     </main>

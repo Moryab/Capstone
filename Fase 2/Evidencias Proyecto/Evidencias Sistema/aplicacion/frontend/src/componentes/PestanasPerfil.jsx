@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import './pestanasPerfil.css'
 
 const PESTANAS = [
   { a: '/perfil', texto: 'Ver perfil' },
