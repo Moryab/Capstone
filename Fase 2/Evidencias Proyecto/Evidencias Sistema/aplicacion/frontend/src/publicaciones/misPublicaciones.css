@@ -33,9 +33,32 @@
 .mp-ojo { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--l-teal-claro); }
 .mp-cabecera h1 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.05; color: #fff; }
 .mp-resumen { font-size: 1rem; color: rgb(255 255 255 / 0.82); }
-.mp-publicar { margin-top: 8px; transition: transform 200ms var(--mp-curva), background-color 200ms ease, border-color 200ms ease; }
-.mp-publicar:active { transform: scale(0.97); }
-.mp-publicar:focus-visible { outline: 3px solid var(--l-teal-claro); outline-offset: 3px; }
+/* «Publicar otro espacio»: botón blanco sobre el degradado. Lleva su propio estilo porque las clases
+   l-boton vienen de landing.css, que solo se carga al pasar por el inicio: si se entraba directo a
+   esta página (o se recargaba), se veía como un enlace azul subrayado */
+.mp-cabecera .mp-publicar {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 10px 22px;
+  font: 600 0.95rem/1 'Work Sans', system-ui, sans-serif;
+  color: var(--l-noche);
+  text-decoration: none;
+  cursor: pointer;
+  background: #fff;
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 14px 34px -12px rgb(0 0 0 / 0.5);
+  transition: transform 200ms var(--mp-curva), background-color 200ms ease, border-color 200ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mp-cabecera .mp-publicar:hover { color: var(--l-noche); background: var(--l-teal-claro); border-color: var(--l-teal-claro); }
+}
+.mp-cabecera .mp-publicar:active { transform: scale(0.97); }
+.mp-cabecera .mp-publicar:focus-visible { outline: 3px solid var(--l-teal-claro); outline-offset: 3px; }
 .mp-casas { width: clamp(180px, 22vw, 260px); align-self: center; }
 
 .mp-cifras {
@@ -452,6 +475,28 @@ a.mp-senal:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2
 .mp-vacio > div { display: grid; justify-items: start; gap: 12px; }
 .mp-vacio h2 { font-size: 1.4rem; color: var(--i-titulo); }
 .mp-vacio p { max-width: 52ch; line-height: 1.55; color: var(--i-suave); }
+/* «Publicar alojamiento» sin publicaciones: botón verde con su propio estilo (mismo motivo que .mp-publicar) */
+.mp-vacio .l-boton {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 22px;
+  font: 600 0.95rem/1 'Work Sans', system-ui, sans-serif;
+  color: #fff;
+  text-decoration: none;
+  background: var(--l-teal, #12766b);
+  border: 1.5px solid var(--l-teal, #12766b);
+  border-radius: 999px;
+  box-shadow: 0 8px 20px -10px rgb(18 118 107 / 0.7);
+  transition: transform 200ms var(--mp-curva), background-color 200ms ease, border-color 200ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mp-vacio .l-boton:hover { background: var(--l-teal-oscuro, #0f5f56); border-color: var(--l-teal-oscuro, #0f5f56); }
+}
+.mp-vacio .l-boton:active { transform: scale(0.97); }
+.mp-vacio .l-boton:focus-visible { outline: 3px solid var(--foco); outline-offset: 3px; }
 
 /* ---------- Pantallas chicas ---------- */
 @media (max-width: 719px) {
