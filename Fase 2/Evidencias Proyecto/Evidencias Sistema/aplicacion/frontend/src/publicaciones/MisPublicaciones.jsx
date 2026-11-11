@@ -412,7 +412,7 @@ export default function MisPublicaciones() {
           <h1>Mis publicaciones</h1>
           <p className="mp-resumen">{publicaciones === null ? 'Cargando…' : resumen}</p>
           {verificado && oferente && (
-            <Link to="/publicaciones/nueva" className="l-boton l-boton-luz mp-publicar"><IconoMas tamano={18} /> {publicaciones?.length ? 'Publicar otro espacio' : 'Publicar un espacio'}</Link>
+            <Link to="/publicaciones/nueva" className="l-boton l-boton-luz mp-publicar"><IconoMas tamano={18} /> Publicar alojamiento</Link>
           )}
         </div>
         <Casas />
