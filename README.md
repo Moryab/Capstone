@@ -74,3 +74,64 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/desarrollo/`:
 - **La API no responde**: revisar el error con `docker compose logs api` (en la carpeta `desarrollo`).
 - **Se cambió código del backend o `requirements.txt`**: volver a ejecutar `docker compose up -d --build`; sin `--build` sigue corriendo la versión anterior.
 - **Error de módulos en el frontend** (por ejemplo después de un `git pull`): ejecutar `npm install` en la carpeta `frontend`.
+
+## Probar la evaluación de la convivencia (30 días)
+
+La evaluación de la convivencia se habilita 30 días después de que ambos estudiantes confirman el match (HU-18 y HU-19). Para probarla sin esperar un mes, se adelanta esa fecha directamente en la base de datos.
+
+### Antes de empezar
+- La API y la base de datos deben estar levantadas (ver «Cada vez que se trabaja»).
+- Se necesita una convivencia confirmada: un estudiante buscador y un oferente que hayan aceptado la misma propuesta de match.
+
+### 1. Abrir la consola de la base de datos
+En la carpeta `desarrollo`:
+```Terminal
+docker compose exec mongo sh -c 'mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin roommatch'
+```
+El comando usa el usuario y la clave que ya tiene el contenedor, así que no hay que escribirlos. Para salir de la consola, escribir `exit`.
+
+### 2. Ver las convivencias confirmadas
+```js
+db.matches.find({ estado: "confirmado" }, { codigo: 1, fecha_habilitacion_evaluacion: 1, resultado: 1 })
+```
+Anotar el `codigo` del match que se va a probar y su `fecha_habilitacion_evaluacion`, para poder dejarla como estaba al final.
+
+### 3. Habilitar la evaluación
+Reemplazar `1` por el código del match:
+```js
+db.matches.updateOne({ codigo: 1 }, { $set: { fecha_habilitacion_evaluacion: new Date(Date.now() - 60000) } })
+```
+
+### 4. Evaluar en la aplicación
+1. Iniciar sesión como uno de los dos estudiantes del match.
+2. En **Propuestas** aparece el botón **Evaluar convivencia**, en lugar de «Podrás evaluar la convivencia desde el…».
+3. Al abrir el formulario, llega la notificación «Cuéntanos cómo va tu convivencia». Si nadie abre el formulario, la API la envía sola en un máximo de 30 minutos.
+
+### Qué revisar
+| Prueba | Resultado esperado |
+|---|---|
+| Antes del paso 3 | Se muestra «Podrás evaluar desde el…» y no se puede evaluar |
+| Responder «Sí, está funcionando» sin marcar nada | Pide marcar los hábitos con roces o «Ningún problema» |
+| Responder «Sí» y marcar hábitos con roces | Se guarda; los roces ajustan a media intensidad las recomendaciones del estudiante |
+| Responder «No, no está funcionando» | Exige marcar al menos un hábito con problemas, cada uno con su gravedad |
+| Marcar «Otra» sin escribir el detalle | No deja enviar |
+| Intentar evaluar de nuevo | No se puede: hay una sola evaluación por estudiante |
+| Iniciar sesión con el otro estudiante | También puede evaluar; cada uno evalúa por su cuenta |
+| Panel de administración → Estadísticas | Aparece en «Convivencias evaluadas», y los hábitos marcados en «Razones de incompatibilidad» (si no funciona) o en «Roces en convivencias que funcionan» (si funciona) |
+
+### Recordatorio a los 7 días (opcional)
+Después del paso 4, sin evaluar, simular que el aviso se envió hace 8 días:
+```js
+db.matches.updateOne({ codigo: 1 }, { $set: { "seguimiento.$[].fecha_aviso": new Date(Date.now() - 8 * 24 * 3600 * 1000) } })
+```
+El recordatorio «Aún no evalúas tu convivencia» llega cuando alguno de los dos abre la evaluación, o en un máximo de 30 minutos.
+
+### Volver a dejarlo como estaba
+Para repetir la prueba, borrar las evaluaciones y los avisos, y restaurar la fecha anotada en el paso 2:
+```js
+db.matches.updateOne({ codigo: 1 }, { $set: {
+  fecha_habilitacion_evaluacion: ISODate("2026-11-29T02:36:11.171Z"),
+  evaluacion: [], seguimiento: [], resultado: "pendiente"
+} })
+```
+Esto no borra las notificaciones ya enviadas ni el ajuste de recomendaciones del estudiante (`ajuste_recomendacion` en `usuarios`), que queda guardado aunque se borre la evaluación.

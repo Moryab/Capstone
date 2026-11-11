@@ -44,6 +44,7 @@ const MOTIVOS = [
 ]
 
 const razonesDe = (d) => d.razones.map((f) => ({ etiqueta: textoDe(RAZONES, f.razon), cantidad: f.cantidad }))
+const rocesDe = (d) => d.roces.map((f) => ({ etiqueta: textoDe(RAZONES, f.razon), cantidad: f.cantidad }))
 const motivosDe = (d) => d.motivos_fin.map((f) => ({ etiqueta: textoDe(MOTIVOS, f.motivo), cantidad: f.cantidad }))
 const categoriasDe = (d) => d.analisis_categorias.map((f) => ({ ...f, etiqueta: textoDe(RAZONES, f.categoria) }))
 
@@ -169,17 +170,29 @@ const MODULOS = {
     ),
     csv: (d) => [['Mes', 'Exitosos', 'No exitosos'], ...d.por_mes.map((m) => [m.mes, m.exitosos, m.no_exitosos])],
   },
+  // Razones, roces y motivos van en una misma fila (un tercio cada una)
   razones: {
     titulo: 'Razones de incompatibilidad',
-    ancho: 'mitad',
+    descripcion: 'Hábitos con problemas en convivencias que no funcionaron',
+    ancho: 'tercio',
     vacio: (d) => d.razones.length === 0,
     textoVacio: 'Nadie indicó razones de incompatibilidad.',
     ver: (d) => <Ranking filas={razonesDe(d)} />,
     csv: (d) => filasRanking('Razón', razonesDe(d)),
   },
+  // Evaluación de los 30 días: hábitos que costaron aunque la convivencia funcione
+  roces: {
+    titulo: 'Roces en convivencias que funcionan',
+    descripcion: 'Hábitos que costaron aunque la convivencia siga bien',
+    ancho: 'tercio',
+    vacio: (d) => !d.roces?.length,
+    textoVacio: 'Nadie marcó roces en convivencias que funcionan.',
+    ver: (d) => <Ranking filas={rocesDe(d)} />,
+    csv: (d) => filasRanking('Hábito', rocesDe(d)),
+  },
   motivos: {
     titulo: 'Por qué terminan las convivencias',
-    ancho: 'mitad',
+    ancho: 'tercio',
     vacio: (d) => d.motivos_fin.length === 0,
     textoVacio: 'Ninguna convivencia terminó.',
     ver: (d) => <Ranking filas={motivosDe(d)} />,
