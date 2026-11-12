@@ -6,6 +6,7 @@ from app.compatibilidad import CANDIDATOS
 from app.db import db
 from app.deps import estudiante_verificado
 from app.schemas.busqueda import TAMANO_PAGINA
+from app.schemas.perfil import calcular_edad
 
 router = APIRouter(prefix="/api/compatibilidades", tags=["Compatibilidad"])
 
@@ -40,6 +41,10 @@ async def resumenes(usuarios: list[dict]) -> dict[ObjectId, dict]:
             "carrera": u.get("perfil", {}).get("carrera"),
             "institucion_sigla": siglas.get(u.get("perfil", {}).get("institucion_id")),
             "verificado": u.get("verificacion", {}).get("estado") == "verificado",
+            # Lo principal de la persona, como en su perfil público (la edad, nunca la fecha)
+            "edad": calcular_edad(u.get("fecha_nac")),
+            "genero": u.get("genero"),
+            "descripcion": u.get("perfil", {}).get("descripcion"),
         }
         for u in usuarios
     }

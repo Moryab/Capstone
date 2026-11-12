@@ -47,7 +47,7 @@ async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
             {"_id": {"$in": [m["publicacion_id"] for m in matches]}},
             {"titulo": 1, "tipo": 1, "costo_mensual": 1, "ubicacion.comuna_nombre": 1, "ubicacion.coordenadas": 1,
              "fotos": 1, "estado": 1, "cupos_disponibles": 1, "cupos_totales": 1, "caracteristicas": 1,
-             "gastos.todos_incluidos": 1},
+             "gastos": 1, "ubicacion.sector": 1, "genero_preferido": 1, "reglas": 1, "descripcion": 1},
         )
     }
     # Hábitos en común según el cálculo vigente con cada persona
@@ -87,6 +87,20 @@ async def vista(matches: list[dict], yo: ObjectId) -> list[dict]:
                 "cupos_totales": pub.get("cupos_totales"),
                 "caracteristicas": pub.get("caracteristicas", {}),
                 "gastos_incluidos": bool(pub.get("gastos", {}).get("todos_incluidos")),
+                # Para decidir sin abrir la publicación: lo que se paga aparte, para quién es y sus reglas
+                "gastos_aparte": sum(
+                    (g.get("monto_estimado") or 0) for g in pub.get("gastos", {}).values()
+                    if isinstance(g, dict) and not g.get("incluido")
+                ),
+                "sector": pub.get("ubicacion", {}).get("sector"),
+                "genero_preferido": pub.get("genero_preferido") or "indiferente",
+                "reglas": {
+                    clave: pub.get("reglas", {}).get(clave)
+                    for clave in ("permite_fumar", "permite_mascotas", "permite_visitas")
+                },
+                "horario_silencio": (pub.get("reglas", {}).get("horario_silencio") or {}).get("aplica"),
+                "descripcion": pub.get("descripcion") or "",
+                "cantidad_fotos": len(pub.get("fotos", [])),
                 "distancia_km": distancia(pub),
                 "foto_url": principal,
                 "visible": pub.get("estado") == "activa",

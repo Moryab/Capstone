@@ -1,5 +1,6 @@
-/* «Propuestas de match» (paginas/Propuestas.jsx). Mismo lenguaje que «Alojamientos» y «Posibles
-   roomies»: tarjetas con la foto arriba, sombras suaves y tipografía Outfit. Tokens de index.css */
+/* «Propuestas de match» (paginas/Propuestas.jsx). Como son 3 como máximo, cada propuesta es una
+   tarjeta ancha con el alojamiento y la persona lado a lado. Mismo lenguaje que «Alojamientos» y
+   «Posibles roomies»: sombras suaves y tipografía Outfit. Tokens de index.css */
 
 .pp-pagina {
   --pp-tinte: rgb(15 118 110 / 0.09);
@@ -52,19 +53,20 @@
   border-radius: 999px;
 }
 
+/* Una propuesta por fila (son 3 como máximo): cada tarjeta usa todo el ancho */
 .pp-grilla {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
-  gap: 22px;
+  gap: 18px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* ---------- Tarjeta ---------- */
+/* ---------- Tarjeta: el alojamiento y la persona, lado a lado ----------
+   Buscador: [foto | alojamiento | persona]. Oferente: [persona (lo que decide) | su alojamiento, en chico] */
 .pp-tarjeta {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: clamp(220px, 23%, 320px) minmax(0, 1.1fr) minmax(0, 1.2fr);
   overflow: hidden;
   background: var(--tarjeta);
   border: 1px solid color-mix(in srgb, var(--borde) 60%, transparent);
@@ -74,50 +76,59 @@
   animation: pp-entrar 320ms var(--pp-curva) backwards;
   animation-delay: calc(var(--orden, 0) * 50ms);
 }
+.pp-tarjeta[data-rol='oferente'] { grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.75fr); }
 @keyframes pp-entrar {
   from { opacity: 0; transform: translateY(8px); }
 }
 @media (hover: hover) and (pointer: fine) {
-  .pp-tarjeta:hover { transform: translateY(-3px); box-shadow: var(--pp-sombra-alta); }
+  .pp-tarjeta:hover { transform: translateY(-2px); box-shadow: var(--pp-sombra-alta); }
 }
 .pp-tarjeta.pp-confirmado { border-color: color-mix(in srgb, var(--primario) 45%, transparent); }
 
-/* Foto 16:10 con el tipo, el estado y el plazo encima */
-.pp-foto { position: relative; flex: none; aspect-ratio: 16 / 10; overflow: hidden; background: var(--campo); }
-.pp-foto img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.pp-foto::after { position: absolute; inset: 55% 0 0; content: ''; background: linear-gradient(transparent, rgb(11 31 58 / 0.4)); pointer-events: none; }
-.pp-tipo, .pp-estado, .pp-vence {
+/* Lado del alojamiento. En el buscador, foto e información son dos columnas de la tarjeta */
+.pp-lado-alojamiento { display: contents; }
+.pp-tarjeta[data-rol='oferente'] .pp-lado-alojamiento {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--campo) 65%, var(--tarjeta));
+  border-left: 1px solid var(--pp-linea);
+}
+
+/* Foto: en el buscador llena el alto de la tarjeta (proporción cercana a 4:3); en el oferente, 16:10 */
+.pp-foto { position: relative; min-height: 220px; overflow: hidden; background: var(--campo); }
+.pp-foto img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Sin fotos: el dibujo entero, apoyado abajo; el fondo de la caja es su mismo color */
+.pp-foto:has(.pp-sin-foto) { background: #e3f1ef; }
+.pp-foto .pp-sin-foto { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.pp-tarjeta[data-rol='oferente'] .pp-foto { min-height: 0; aspect-ratio: 16 / 10; border-radius: 14px; }
+.pp-tipo {
   position: absolute;
+  top: 12px;
+  left: 12px;
   z-index: 1;
-  display: inline-flex;
-  align-items: center;
   padding: 5px 10px;
   font-size: 0.74rem;
   font-weight: 600;
   line-height: 1;
+  color: #0b1f3a;
+  background: var(--pp-vidrio);
   border-radius: 999px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.pp-tipo { top: 12px; left: 12px; color: #0b1f3a; background: var(--pp-vidrio); }
-.pp-estado { top: 12px; right: 12px; color: #0b1f3a; background: var(--pp-vidrio); }
-.pp-vence { bottom: 12px; left: 12px; color: #fff; background: rgb(11 31 58 / 0.5); }
-/* El color del estado dice qué hacer: verde si ya está listo, ámbar si falta tu respuesta */
-.pp-urgente .pp-estado { color: #fff; background: #b45309; }
-.pp-confirmado .pp-estado { color: #fff; background: var(--primario); }
-.pp-esperando .pp-estado { color: #0b1f3a; background: var(--pp-vidrio); }
 
-.pp-cuerpo { display: flex; flex: 1; flex-direction: column; gap: 14px; padding: 16px 18px 18px; }
-
-.pp-alojamiento { display: grid; gap: 3px; }
-.pp-precio { margin: 0; font: 700 1.35rem/1.1 'Outfit', system-ui, sans-serif; letter-spacing: -0.01em; color: var(--marca); font-variant-numeric: tabular-nums; }
+.pp-alojamiento { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 20px 22px; }
+.pp-tarjeta[data-rol='oferente'] .pp-alojamiento { padding: 0; }
+.pp-precio { margin: 0; font: 700 1.6rem/1.1 'Outfit', system-ui, sans-serif; letter-spacing: -0.01em; color: var(--marca); font-variant-numeric: tabular-nums; }
+.pp-tarjeta[data-rol='oferente'] .pp-precio { font-size: 1.15rem; }
 .pp-precio span { font: 400 0.82rem 'Work Sans', system-ui, sans-serif; color: var(--texto-suave); }
 .pp-titulo {
   display: -webkit-box;
-  min-height: 2.7em;
-  margin: 2px 0 0;
+  margin: 2px 0 6px;
   overflow: hidden;
-  font: 600 1.02rem/1.35 'Outfit', system-ui, sans-serif;
+  font: 600 1.15rem/1.3 'Outfit', system-ui, sans-serif;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -125,13 +136,72 @@
 .pp-titulo a { color: var(--texto); text-decoration: none; }
 .pp-titulo a:hover { color: var(--primario); }
 .pp-titulo a:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
-/* Comuna y cupos, cada uno con su ícono */
-.pp-datos { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 0; padding: 0; list-style: none; }
-.pp-datos li { display: inline-flex; gap: 5px; align-items: center; font-size: 0.86rem; color: var(--texto-suave); }
+/* Lo que se paga en total, bajo el precio */
+.pp-total { margin: -2px 0 2px; font-size: 0.86rem; color: var(--texto-suave); }
+.pp-total strong { color: var(--texto); font-variant-numeric: tabular-nums; }
+.pp-total.incluidos { font-weight: 600; color: var(--primario); }
+.pp-lugar { display: flex; gap: 6px; align-items: center; margin: -4px 0 4px; font-size: 0.9rem; color: var(--texto-suave); }
+.pp-lugar svg { flex: none; width: 15px; height: 15px; color: var(--primario); }
+
+/* Ficha breve: distancia, cupos y para quién, con nombre y valor */
+.pp-ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 4px 0 0; }
+.pp-ficha > div { display: grid; gap: 2px; padding: 9px 11px; background: var(--campo); border-radius: 12px; }
+.pp-ficha dt { display: flex; gap: 5px; align-items: center; font-size: 0.74rem; color: var(--texto-suave); }
+.pp-ficha dt svg { flex: none; width: 13px; height: 13px; color: var(--primario); }
+.pp-ficha dd { margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--marca); }
+
+/* Reglas de la casa en breve: lo permitido en verde, lo que no, en gris */
+.pp-reglas { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+.pp-reglas li { display: inline-flex; gap: 5px; align-items: center; padding: 4px 9px; font-size: 0.76rem; font-weight: 600; color: var(--texto-suave); background: var(--campo); border-radius: 999px; }
+.pp-reglas li[data-permite] { color: var(--primario); background: var(--pp-tinte); }
+.pp-reglas svg { flex: none; }
+/* La descripción, en dos líneas */
+.pp-descripcion {
+  display: -webkit-box;
+  margin: 6px 0 0;
+  overflow: hidden;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--texto);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* «Ver alojamiento» y «Ver perfil»: botones suaves que llevan al detalle */
+.pp-ver {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 8px 10px 8px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--primario);
+  text-decoration: none;
+  background: var(--tarjeta);
+  border: 1px solid color-mix(in srgb, var(--primario) 35%, transparent);
+  border-radius: 999px;
+  transition: background-color 160ms ease, transform 140ms ease-out;
+}
+.pp-alojamiento > .pp-ver { margin-top: auto; }
+.pp-alojamiento > :nth-last-child(2) { margin-bottom: 10px; }
+.pp-ver svg { width: 16px; height: 16px; transition: transform 200ms var(--pp-curva); }
+.pp-ver-extra { padding: 2px 7px; font-size: 0.72rem; color: var(--texto-suave); background: var(--campo); border-radius: 999px; }
+.pp-ver:hover { background: var(--pp-tinte); }
+.pp-ver:hover svg { transform: translateX(2px); }
+.pp-ver:active { transform: scale(0.97); }
+.pp-ver:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+.pp-ver-perfil { margin: 0 0 0 auto; padding: 5px 8px 5px 12px; font-size: 0.8rem; }
+
+/* Comuna y cupos del alojamiento propio (vista del oferente): uno por línea */
+.pp-datos { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pp-datos li { display: inline-flex; gap: 7px; align-items: center; font-size: 0.88rem; color: var(--texto-suave); }
 .pp-datos svg { flex: none; width: 15px; height: 15px; color: var(--primario); }
 
 /* Lo que incluye: etiquetas suaves */
-.pp-incluye { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.pp-incluye { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
 .pp-incluye li {
   display: inline-flex;
   gap: 5px;
@@ -145,9 +215,44 @@
 }
 .pp-incluye svg { flex: none; width: 14px; height: 14px; color: var(--primario); }
 
+/* Lado de la persona: su estado, quién es, por qué se propone, respuestas y acciones */
+.pp-lado-persona { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 18px 22px 20px; }
+.pp-tarjeta[data-rol='buscador'] .pp-lado-persona { border-left: 1px solid var(--pp-linea); }
+
+/* Estado de la propuesta y plazo: el color dice qué hacer (ámbar si falta tu respuesta) */
+.pp-estado-linea { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pp-estado, .pp-vence { display: inline-flex; align-items: center; padding: 5px 10px; font-size: 0.76rem; font-weight: 600; line-height: 1; border-radius: 999px; }
+.pp-estado { color: var(--primario); background: var(--pp-tinte); }
+.pp-urgente .pp-estado { color: #fff; background: #b45309; }
+.pp-confirmado .pp-estado { color: #fff; background: var(--primario); }
+.pp-esperando .pp-estado { color: var(--texto-suave); background: var(--campo); }
+.pp-vence { color: var(--texto-suave); background: var(--campo); }
+
+.pp-persona { display: flex; gap: 14px; align-items: center; }
+.pp-persona .avatar { flex: none; }
+.pp-persona-datos { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.pp-rol { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--texto-suave); }
+.pp-nombre { overflow: hidden; font: 600 1.08rem 'Outfit', system-ui, sans-serif; color: var(--texto); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.pp-tarjeta[data-rol='oferente'] .pp-nombre { font-size: 1.25rem; }
+.pp-nombre:hover { color: var(--primario); }
+.pp-detalle { margin: 0; overflow: hidden; font-size: 0.86rem; color: var(--texto-suave); text-overflow: ellipsis; white-space: nowrap; }
+.pp-persona-datos .insignia-verificado, .pp-persona-datos .insignia-sin-verificar { justify-self: start; margin-top: 3px; font-size: 0.7rem; }
+/* «Sobre mí» de quien busca, en dos líneas */
+.pp-sobre {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--texto);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
 /* Por qué te lo proponemos: hábitos en común (como en «Posibles roomies») */
 .pp-porque { display: grid; gap: 8px; }
-.pp-rotulo { margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
+.pp-rotulo { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--texto-suave); }
 .pp-porque ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .pp-porque li {
   display: inline-flex;
@@ -162,17 +267,8 @@
 }
 .pp-porque li.pp-mas { color: var(--texto-suave); background: var(--campo); cursor: help; }
 
-/* Persona con su compatibilidad */
-.pp-persona { display: flex; gap: 12px; align-items: center; padding-top: 14px; border-top: 1px solid var(--pp-linea); }
-.pp-persona .avatar { flex: none; }
-.pp-persona-datos { display: grid; flex: 1; gap: 2px; min-width: 0; }
-.pp-rol { margin: 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
-.pp-nombre { overflow: hidden; font: 600 1rem 'Outfit', system-ui, sans-serif; color: var(--texto); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.pp-nombre:hover { color: var(--primario); }
-.pp-persona-datos .insignia-verificado, .pp-persona-datos .insignia-sin-verificar { justify-self: start; margin-top: 2px; font-size: 0.7rem; }
-
-/* Quién respondió */
-.pp-respuestas { display: grid; gap: 6px; margin: 0; padding: 12px 14px; list-style: none; background: var(--campo); border-radius: 14px; }
+/* Quién respondió: en una línea */
+.pp-respuestas { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 10px 14px; list-style: none; background: var(--campo); border-radius: 12px; }
 .pp-respuestas li { display: flex; gap: 8px; align-items: center; font-size: 0.86rem; color: var(--texto-suave); }
 .pp-respuestas li.ok { font-weight: 600; color: var(--texto); }
 .pp-punto {
@@ -189,20 +285,43 @@
 }
 .pp-respuestas li.ok .pp-punto { background: var(--primario); border-color: var(--primario); }
 
-.pp-confirmado { margin: 0; padding: 10px 14px; font-size: 0.88rem; font-weight: 600; color: var(--primario); background: var(--pp-tinte); border-radius: 14px; }
+.pp-confirmado { margin: 0; padding: 10px 14px; font-size: 0.88rem; font-weight: 600; color: var(--primario); background: var(--pp-tinte); border-radius: 12px; }
 .pp-nota { margin: 0; font-size: 0.85rem; color: var(--texto-suave); }
-.pp-cuerpo .alerta { margin: 0; }
+.pp-lado-persona .alerta { margin: 0; }
 
-/* Acciones al fondo de la tarjeta */
-.pp-acciones { display: grid; gap: 10px; justify-items: center; margin-top: auto; }
-.pp-botones { display: flex; gap: 10px; width: 100%; }
-.pp-botones > * { flex: 1; }
-.pp-boton.boton { width: 100%; min-height: 42px; margin: 0; padding: 10px 16px; }
-.pp-rechazo { display: grid; gap: 10px; width: 100%; }
+/* Acciones al fondo: los botones a la izquierda y «Escribirle» a su lado */
+.pp-acciones { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: auto; }
+.pp-botones { display: flex; gap: 10px; }
+.pp-boton.boton { min-width: 130px; min-height: 42px; margin: 0; padding: 10px 20px; }
+.pp-rechazo { display: grid; gap: 10px; width: 100%; max-width: 420px; }
 .pp-rechazo .campo { margin: 0; }
 .pp-mensaje.enlace-boton { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
 .pp-enlace { font-size: 0.9rem; font-weight: 600; color: var(--primario); }
 .pp-terminar { font-size: 0.85rem; color: var(--error); }
+
+/* Tablet: en el buscador, foto e información arriba y la persona a lo ancho debajo */
+@media (max-width: 1023px) {
+  .pp-tarjeta { grid-template-columns: minmax(200px, 0.8fr) minmax(0, 1fr); }
+  .pp-tarjeta[data-rol='buscador'] .pp-lado-persona { grid-column: 1 / -1; border-top: 1px solid var(--pp-linea); border-left: 0; }
+  .pp-foto { min-height: 200px; }
+}
+/* Oferente angosto y celular: todo en una columna */
+@media (max-width: 760px) {
+  .pp-tarjeta[data-rol='oferente'] { grid-template-columns: minmax(0, 1fr); }
+  .pp-tarjeta[data-rol='oferente'] .pp-lado-alojamiento { flex-direction: row; align-items: center; border-top: 1px solid var(--pp-linea); border-left: 0; }
+  .pp-tarjeta[data-rol='oferente'] .pp-foto { flex: none; width: 112px; }
+  .pp-tarjeta[data-rol='oferente'] .pp-tipo { display: none; } /* la miniatura es chica: el tipo la tapaba */
+  .pp-detalle { white-space: normal; }
+}
+@media (max-width: 599px) {
+  .pp-tarjeta { grid-template-columns: minmax(0, 1fr); }
+  .pp-foto { min-height: 0; aspect-ratio: 16 / 10; }
+  .pp-alojamiento { padding: 16px 18px 4px; }
+  .pp-lado-persona { padding: 16px 18px 18px; }
+  .pp-botones { width: 100%; }
+  .pp-botones > * { flex: 1; }
+  .pp-boton.boton { min-width: 0; }
+}
 
 /* ---------- Sin propuestas ---------- */
 .pp-vacio {

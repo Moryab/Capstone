@@ -7,13 +7,15 @@ import Avatar from '../componentes/Avatar.jsx'
 import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import Confirmar from '../componentes/Confirmar.jsx'
 import { IconoPersona, IconoUbicacion } from '../componentes/Iconos.jsx'
-import { IconoAuto, IconoDucha, IconoGastos, IconoSede, IconoCama } from '../componentes/IconosAlojamiento.jsx'
+import { IconoAuto, IconoCama, IconoDucha, IconoPostular, IconoSede, IconoSiguiente } from '../componentes/IconosAlojamiento.jsx'
+import IlustracionHabitacion from '../componentes/IlustracionHabitacion.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import SinFoto from '../componentes/SinFoto.jsx'
 import { tituloCategoria } from '../cuestionario.js'
 import { mayusculaInicial } from '../inicio/utilidades.js'
+import { textoGenero } from '../perfil.js'
 import { IconoHabito } from '../perfil/iconos.jsx'
-import { formatearFecha, formatearPesos, textoDe, textoDistancia, TIPOS } from '../publicaciones.js'
+import { formatearFecha, formatearPesos, GENEROS_PREFERIDOS, textoDe, TIPOS } from '../publicaciones.js'
 import { MOTIVOS_FIN } from './evaluacion/Terminar.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { estaVerificado } from '../sesion/verificacion.js'
@@ -93,7 +95,6 @@ function PorQue({ categorias }) {
 function Incluye({ pub }) {
   const c = pub.caracteristicas ?? {}
   const datos = [
-    pub.gastos_incluidos && { clave: 'gastos', icono: <IconoGastos />, texto: 'Gastos incluidos' },
     c.amoblado && { clave: 'amoblado', icono: <IconoCama />, texto: 'Amoblado' },
     c.banio_privado && { clave: 'banio', icono: <IconoDucha />, texto: 'Baño privado' },
     c.estacionamiento && { clave: 'auto', icono: <IconoAuto />, texto: 'Estacionamiento' },
@@ -102,6 +103,27 @@ function Incluye({ pub }) {
   return (
     <ul className="pp-incluye" aria-label="Incluye">
       {datos.map((d) => <li key={d.clave}>{d.icono}{d.texto}</li>)}
+    </ul>
+  )
+}
+
+// Reglas de la casa en breve, con el ícono del hábito: lo que más pesa para convivir
+const REGLAS_BREVES = [
+  { clave: 'permite_fumar', habito: 'fumar', si: 'Se puede fumar', no: 'Sin fumar' },
+  { clave: 'permite_mascotas', habito: 'mascotas', si: 'Acepta mascotas', no: 'Sin mascotas' },
+  { clave: 'permite_visitas', habito: 'visitas', si: 'Visitas permitidas', no: 'Sin visitas' },
+]
+function ReglasBreves({ pub }) {
+  const reglas = REGLAS_BREVES.filter(({ clave }) => pub.reglas?.[clave] != null)
+  if (!reglas.length && !pub.horario_silencio) return null
+  return (
+    <ul className="pp-reglas" aria-label="Reglas de la casa">
+      {reglas.map(({ clave, habito, si, no }) => (
+        <li key={clave} data-permite={pub.reglas[clave] || undefined}>
+          <IconoHabito clave={habito} tamano={14} />{pub.reglas[clave] ? si : no}
+        </li>
+      ))}
+      {pub.horario_silencio && <li><IconoHabito clave="horario_sueno" tamano={14} />Horario de silencio</li>}
     </ul>
   )
 }
@@ -144,29 +166,62 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
     }
   }
 
-  return (
-    <li className={`pp-tarjeta pp-${estado.tono}`} style={{ '--orden': Math.min(orden, 9) }}>
-      <div className="pp-foto">
-        {pub.foto_url ? <img src={pub.foto_url} alt="" loading="lazy" /> : <SinFoto />}
-        <span className="pp-tipo">{textoDe(TIPOS, pub.tipo)}</span>
-        <span className="pp-estado">{estado.texto}</span>
-        {abierta && <span className="pp-vence">{textoVence(p.vence)}</span>}
-      </div>
+  const soyBuscador = p.rol === 'buscador'
+  const personales = [otro.edad && `${otro.edad} años`, textoGenero(otro.genero)].filter(Boolean).join(', ')
+  const estudios = [otro.carrera, otro.institucion_sigla].filter(Boolean).join(' · ')
 
-      <div className="pp-cuerpo">
-        <div className="pp-alojamiento">
-          {pub.costo_mensual != null && (
-            <p className="pp-precio">{formatearPesos(pub.costo_mensual)}<span> / mes</span></p>
-          )}
-          <h3 className="pp-titulo">
-            {enlazable
-              ? <Link to={`/alojamientos/${pub.id}`} state={{ desde: '/propuestas' }}>{pub.titulo}</Link>
-              : pub.titulo}
-          </h3>
+  // El alojamiento: al buscador se le muestra completo (es lo que elige); al oferente, en chico (es suyo)
+  const alojamiento = (
+    <div className="pp-lado-alojamiento">
+      <div className="pp-foto">
+        {/* Sin fotos, la habitación dibujada: entera a cualquier tamaño (no se agranda ni se recorta) */}
+        {pub.foto_url ? <img src={pub.foto_url} alt="" loading="lazy" /> : <IlustracionHabitacion className="pp-sin-foto" />}
+        <span className="pp-tipo">{textoDe(TIPOS, pub.tipo)}</span>
+      </div>
+      <div className="pp-alojamiento">
+        {!soyBuscador && <p className="pp-rotulo">Para tu alojamiento</p>}
+        {pub.costo_mensual != null && (
+          <p className="pp-precio">{formatearPesos(pub.costo_mensual)}<span> / mes</span></p>
+        )}
+        {/* Lo que de verdad se paga: el arriendo más los gastos que van aparte */}
+        {soyBuscador && pub.costo_mensual != null && (
+          pub.gastos_aparte > 0
+            ? <p className="pp-total">Unos <strong>{formatearPesos(pub.costo_mensual + pub.gastos_aparte)}</strong> al mes con gastos</p>
+            : pub.gastos_incluidos && <p className="pp-total incluidos">Gastos incluidos en el arriendo</p>
+        )}
+        <h3 className="pp-titulo">
+          {enlazable
+            ? <Link to={`/alojamientos/${pub.id}`} state={{ desde: '/propuestas' }}>{pub.titulo}</Link>
+            : pub.titulo}
+        </h3>
+        {pub.comuna && (
+          <p className="pp-lugar"><IconoUbicacion /> {[pub.comuna, pub.sector].filter(Boolean).join(', ')}</p>
+        )}
+
+        {soyBuscador ? (
+          <>
+            {/* Lo clave para decidir, con nombre y valor */}
+            <dl className="pp-ficha">
+              {pub.distancia_km != null && (
+                <div><dt><IconoSede /> Tu sede</dt><dd>{`${pub.distancia_km.toLocaleString('es-CL')} km`}</dd></div>
+              )}
+              {pub.cupos_disponibles != null && (
+                <div>
+                  <dt><IconoPersona /> Cupos</dt>
+                  <dd>{pub.cupos_disponibles === 0 ? 'Sin cupos' : `${pub.cupos_disponibles} de ${pub.cupos_totales}`}</dd>
+                </div>
+              )}
+              <div>
+                <dt><IconoPostular /> Para</dt>
+                <dd>{pub.genero_preferido === 'indiferente' ? 'Cualquier género' : textoDe(GENEROS_PREFERIDOS, pub.genero_preferido)}</dd>
+              </div>
+            </dl>
+            <ReglasBreves pub={pub} />
+            {pub.descripcion && <p className="pp-descripcion">{pub.descripcion}</p>}
+            <Incluye pub={pub} />
+          </>
+        ) : (
           <ul className="pp-datos">
-            {pub.comuna && <li><IconoUbicacion /> {pub.comuna}</li>}
-            {/* Distancia a la sede: le importa a quien busca, no al oferente de su propio alojamiento */}
-            {p.rol === 'buscador' && pub.distancia_km != null && <li><IconoSede /> {textoDistancia(pub.distancia_km)}</li>}
             {pub.cupos_disponibles != null && (
               <li>
                 <IconoPersona />
@@ -176,18 +231,48 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
               </li>
             )}
           </ul>
-          <Incluye pub={pub} />
+        )}
+
+        {enlazable && (
+          <Link to={`/alojamientos/${pub.id}`} state={{ desde: '/propuestas' }} className="pp-ver">
+            {soyBuscador ? 'Ver alojamiento' : 'Ver tu publicación'}
+            {soyBuscador && pub.cantidad_fotos > 1 && <span className="pp-ver-extra">{pub.cantidad_fotos} fotos</span>}
+            <IconoSiguiente />
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+
+  return (
+    <li className={`pp-tarjeta pp-${estado.tono}`} data-rol={p.rol} style={{ '--orden': Math.min(orden, 9) }}>
+      {soyBuscador && alojamiento}
+
+      <div className="pp-lado-persona">
+        {/* En qué va la propuesta y cuánto le queda */}
+        <div className="pp-estado-linea">
+          <span className="pp-estado">{estado.texto}</span>
+          {abierta && <span className="pp-vence">{textoVence(p.vence)}</span>}
+          <Link to={`/usuarios/${otro.id}`} state={{ desde: '/propuestas' }} className="pp-ver pp-ver-perfil">
+            Ver perfil <IconoSiguiente />
+          </Link>
         </div>
 
         <div className="pp-persona">
-          <Avatar nombre={otro.nombre} apellido={otro.ap_paterno} foto={otro.foto_url} tamano={44} />
+          <Avatar nombre={otro.nombre} apellido={otro.ap_paterno} foto={otro.foto_url} tamano={soyBuscador ? 52 : 72} />
           <div className="pp-persona-datos">
-            <p className="pp-rol">{p.rol === 'buscador' ? 'Oferente' : 'Busca alojamiento'}</p>
+            <p className="pp-rol">{soyBuscador ? 'Ofrece el alojamiento' : 'Busca alojamiento'}</p>
             <Link to={`/usuarios/${otro.id}`} state={{ desde: '/propuestas' }} className="pp-nombre">{nombreDe(otro)}</Link>
+            {!soyBuscador && (estudios || personales) && (
+              <p className="pp-detalle">{[estudios, personales].filter(Boolean).join(' · ')}</p>
+            )}
             <InsigniaVerificacion verificado={otro.verificado} />
           </div>
           <AnilloCompatibilidad porcentaje={p.porcentaje} nivel={p.nivel} />
         </div>
+
+        {/* El oferente decide por la persona: se ve lo que cuenta de sí */}
+        {!soyBuscador && otro.descripcion && <p className="pp-sobre">{otro.descripcion}</p>}
 
         <PorQue categorias={p.categorias_coincidentes} />
 
@@ -202,7 +287,7 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
         )}
         {error && <p className="alerta" role="alert">{error}</p>}
 
-        {/* Acciones: siempre al fondo, así las tarjetas de una fila terminan alineadas */}
+        {/* Acciones: siempre al fondo */}
         <div className="pp-acciones">
           {abierta && p.mi_respuesta === 'pendiente' && !rechazando && (
             <div className="pp-botones">
@@ -262,6 +347,8 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
           )}
         </div>
       </div>
+
+      {!soyBuscador && alojamiento}
     </li>
   )
 }
