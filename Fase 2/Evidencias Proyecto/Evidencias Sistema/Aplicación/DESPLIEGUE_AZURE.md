@@ -40,6 +40,17 @@ python3 preparar.py   # solo agrega variables nuevas del .env.example, si las ha
 sudo docker compose -f docker-compose.yml -f docker-compose.produccion.yml up -d --build
 ```
 
+## Activar el envío de correos (código de verificación)
+
+Mientras `SMTP_HOST` esté vacío, en el servidor los códigos **no llegan** a los usuarios (solo quedan en `sudo docker compose logs api`). Para activarlo, entrar al servidor y editar el `.env` de la carpeta `Aplicación`:
+```bash
+nano .env
+```
+Completar las líneas `SMTP_HOST`, `SMTP_USUARIO` y `SMTP_PASSWORD` (ver «Verificación del correo» en el README; con Gmail, `SMTP_HOST=smtp.gmail.com`). Guardar con `Ctrl+O`, `Enter`, y salir con `Ctrl+X`. Luego:
+```bash
+sudo docker compose -f docker-compose.yml -f docker-compose.produccion.yml up -d
+```
+
 ## Entrar al servidor
 
 Desde PowerShell en el computador donde está la clave:

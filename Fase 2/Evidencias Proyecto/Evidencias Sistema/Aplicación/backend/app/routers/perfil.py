@@ -13,7 +13,7 @@ from app.db import db
 from app.deps import usuario_actual
 from app.media import borrar_foto, guardar_foto, tipo_imagen
 from app.modos import CambioNoPermitido, Modo, cambiar_modo, resumen_cambio
-from app.routers.auth import campos_duplicados, datos_en_uso
+from app.routers.auth import campos_duplicados, datos_en_uso, enviar_codigo_sin_fallar
 from app.routers.catalogos import comunas_cerca_de, ids_comunas
 from app.schemas.busqueda import Preferencias, PreferenciasIn, error_rango
 from app.schemas.perfil import DescripcionIn, EstudiosIn, OrigenIn, PerfilIn, PerfilOut, calcular_faltantes
@@ -91,6 +91,11 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
         return datos_en_uso(campos_duplicados(e))
 
     actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
+    if datos.correo != usuario["correo"]:
+        # Hasta ingresar el código, la cuenta queda bloqueada como al registrarse (deps.usuario_actual)
+        await enviar_codigo_sin_fallar(actualizado)
+        return {"mensaje": f"Perfil guardado. Te enviamos un código a {datos.correo} para verificarlo",
+                "perfil": PerfilOut.desde_doc(actualizado), "verificar_correo": True}
     return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}
 
 

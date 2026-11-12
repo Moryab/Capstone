@@ -82,6 +82,25 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
 - **Error de módulos en el frontend** (por ejemplo después de un `git pull`): ejecutar `npm install` en la carpeta `frontend`.
 - **La API no arranca y `inicializar-bd` falló**: revisar el error con `docker compose logs inicializar-bd`. Suele ser un índice que se cambió en `scripts/indices.js` y ya existía con otra definición: hay que borrarlo antes de crearlo de nuevo (como se hace con `rut_1`).
 
+## Verificación del correo
+
+Al registrarse (o al cambiar el correo en el perfil) llega un código de 6 dígitos al correo, y hasta escribirlo en la plataforma la cuenta no puede hacer nada más (la API responde 403 a todo lo demás). El código vence en 15 minutos, admite 5 intentos y se puede pedir otro cada 60 segundos.
+
+**En desarrollo** no se envían correos de verdad (`SMTP_HOST` vacío en el `.env`): el código aparece en los registros de la API.
+```Terminal
+docker compose logs api | findstr "código"
+```
+Las cuentas creadas antes de esta función también tienen que verificar su correo la próxima vez que entren.
+
+**Para enviar correos reales** (por ejemplo en el servidor) se completan en el `.env` los datos de una cuenta de correo del proyecto. Con Gmail:
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USUARIO=correo.del.proyecto@gmail.com
+SMTP_PASSWORD=la contraseña de aplicación (16 letras, sin espacios)
+```
+La contraseña de aplicación se crea en la cuenta de Google → Seguridad → Verificación en dos pasos (activarla) → Contraseñas de aplicaciones. Después: `docker compose up -d` para que la API tome los datos.
+
 ## Publicar en Azure
 
 La plataforma se publica en una máquina virtual de Azure con HTTPS. La guía paso a paso (crear la VM, prepararla, levantar, prender y apagar, actualizar) está en [`Aplicación/DESPLIEGUE_AZURE.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20Sistema/Aplicación/DESPLIEGUE_AZURE.md).

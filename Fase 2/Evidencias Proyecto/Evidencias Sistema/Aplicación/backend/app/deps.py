@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from bson import ObjectId
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.config import settings
@@ -21,7 +21,14 @@ NO_AUTORIZADO = HTTPException(
 CUENTA_ELIMINADA = "Esta cuenta fue eliminada. Puedes volver a registrarte con el mismo correo"
 
 
-async def usuario_actual(token: str = Depends(oauth2)) -> dict:
+# Hasta verificar su correo con el código, la cuenta solo puede usar estas rutas (verificacion_correo.py)
+CORREO_SIN_VERIFICAR = "Verifica tu correo con el código que te enviamos para continuar"
+RUTAS_SIN_CORREO_VERIFICADO = {
+    "/api/auth/me", "/api/auth/logout", "/api/auth/correo", "/api/auth/correo/reenviar", "/api/auth/correo/verificar",
+}
+
+
+async def usuario_actual(request: Request, token: str = Depends(oauth2)) -> dict:
     """Valida el token y la inactividad (CA-02.4 y CA-02.5). Devuelve el documento del usuario."""
     try:
         datos = leer_token(token)
@@ -50,6 +57,8 @@ async def usuario_actual(token: str = Depends(oauth2)) -> dict:
     await db.usuarios.update_one(
         {"_id": usuario_id}, {"$set": {"seguridad.ultima_actividad": ahora}}
     )
+    if not usuario.get("correo_verificado") and request.url.path not in RUTAS_SIN_CORREO_VERIFICADO:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, CORREO_SIN_VERIFICAR)
     return usuario
 
 

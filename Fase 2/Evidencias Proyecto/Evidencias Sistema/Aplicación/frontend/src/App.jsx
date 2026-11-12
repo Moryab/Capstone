@@ -27,6 +27,7 @@ import Razones from './paginas/evaluacion/Razones.jsx'
 import Terminar from './paginas/evaluacion/Terminar.jsx'
 import PasoVerificacion from './paginas/verificacion/PasoVerificacion.jsx'
 import Verificacion from './paginas/verificacion/Verificacion.jsx'
+import VerificarCorreo from './paginas/verificacion/VerificarCorreo.jsx'
 import { useSesion } from './sesion/SesionContext.jsx'
 
 // La landing y el inicio se descargan solo cuando hacen falta (traen GSAP)
@@ -49,7 +50,9 @@ function Raiz() {
   const { usuario, cargando } = useSesion()
   if (cargando) return <p className="cargando">Cargando…</p>
   if (usuario?.rol === 'administrador') return <Navigate to="/admin" replace />
-  // Primero el cuestionario de convivencia, obligatorio antes de entrar al inicio
+  // Primero verificar el correo con el código que le llegó
+  if (usuario && !usuario.correo_verificado) return <Navigate to="/verifica-correo" replace />
+  // Luego el cuestionario de convivencia, obligatorio antes de entrar al inicio
   if (usuario && !usuario.cuestionario_completo) return <Navigate to="/cuestionario" replace />
   // Luego debe enviar el documento que acredita que es estudiante
   if (usuario?.verificacion_estado === 'no_verificado') return <Navigate to="/confirma-estudiante" replace />
@@ -84,6 +87,10 @@ export default function App() {
       )}
       <Routes>
         <Route path="/" element={<Raiz />} />
+        {/* Primer paso después del registro: el código que llegó al correo */}
+        <Route path="/verifica-correo" element={
+          <RutaProtegida sinCorreo sinCuestionario sinVerificacion sinRol><VerificarCorreo /></RutaProtegida>
+        } />
         {/* EP-02: «Confirma que eres estudiante», obligatorio después del cuestionario y antes del rol */}
         <Route path="/confirma-estudiante" element={
           <RutaProtegida sinVerificacion sinRol><PasoVerificacion /></RutaProtegida>

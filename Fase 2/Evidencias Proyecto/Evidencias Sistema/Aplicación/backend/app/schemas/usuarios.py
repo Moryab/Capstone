@@ -120,6 +120,29 @@ class LoginIn(BaseModel):
         return v.lower()
 
 
+class CodigoIn(BaseModel):
+    """Código de verificación del correo: 6 dígitos (se aceptan espacios, como «123 456»)."""
+
+    codigo: str
+
+    @field_validator("codigo")
+    @classmethod
+    def seis_digitos(cls, v):
+        v = re.sub(r"\s", "", v)
+        if not re.fullmatch(r"\d{6}", v):
+            raise ValueError("El código tiene 6 dígitos")
+        return v
+
+
+class CambioCorreoIn(BaseModel):
+    correo: EmailStr
+
+    @field_validator("correo")
+    @classmethod
+    def correo_minusculas(cls, v):
+        return v.lower()
+
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"

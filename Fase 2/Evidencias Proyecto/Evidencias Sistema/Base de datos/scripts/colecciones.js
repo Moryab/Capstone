@@ -346,6 +346,17 @@ aplicar("usuarios", {
             ultimo_inicio_sesion: {"bsonType":["date","null"]},
             ultima_actividad: {"bsonType":["date","null"]}
           }
+        },
+        // Código pendiente para verificar el correo (solo su hash). Se borra al verificarlo
+        verificacion_correo: {
+          bsonType: "object",
+          required: ["codigo_hash","expira","intentos","fecha_envio"],
+          properties: {
+            codigo_hash: {"bsonType":"string"},
+            expira: {"bsonType":"date"},
+            intentos: {"bsonType":"int"},
+            fecha_envio: {"bsonType":"date"}
+          }
         }
       }
     }

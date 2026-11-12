@@ -52,6 +52,27 @@
 }
 .v-paso-nota { margin: 0 0 20px; font-size: 0.9rem; color: var(--texto-suave); }
 .v-correo { margin: 0 0 20px; line-height: 1.5; overflow-wrap: anywhere; }
+/* Verificación del correo con el código de 6 dígitos (VerificarCorreo.jsx) */
+.v-correo-destino { overflow-wrap: anywhere; color: var(--marca); }
+.v-paso input.v-codigo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+.v-paso .exito { margin: 4px 0 12px; }
+.v-correo-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde, #e5e7eb);
+}
+.v-correo-opciones .boton { margin-top: 0; }
+.v-correo-cambio { margin-top: 16px; }
 @media (max-width: 560px) {
   .v-opciones { grid-template-columns: 1fr; }
 }

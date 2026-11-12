@@ -26,5 +26,18 @@ class Settings(BaseSettings):
     admin_correo: str | None = None
     admin_password: str | None = None
 
+    # Envío de correos (código de verificación). Sin smtp_host no se envía nada: el correo se escribe
+    # en los registros de la API (docker compose logs api), útil en desarrollo
+    smtp_host: str = ""
+    smtp_port: int = 465              # 465 con SSL directo (Gmail); 587 con STARTTLS
+    smtp_usuario: str = ""
+    smtp_password: str = ""
+    smtp_remitente: str = ""          # si se deja vacío, se usa smtp_usuario
+
+    # Código de verificación del correo
+    codigo_minutos: int = 15          # vigencia de cada código
+    codigo_max_intentos: int = 5      # intentos fallidos antes de tener que pedir uno nuevo
+    codigo_reenvio_segundos: int = 60 # espera mínima entre dos envíos
+
 
 settings = Settings()
