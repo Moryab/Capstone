@@ -1,4 +1,3 @@
-import hmac
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -7,17 +6,18 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pymongo.errors import DuplicateKeyError
 
+from app.codigos import enviar_codigo, plantilla, revisar_codigo, saludo_de, segundos_para_reenviar
 from app.config import settings
-from app.correo import CorreoNoEnviado
+from app.correo import CorreoNoEnviado, enviar_correo
 from app.db import db
 from app.deps import CUENTA_ELIMINADA, usuario_actual
 from app.modos import tiene_convivencia
 from app.schemas.perfil import calcular_faltantes
 from app.schemas.usuarios import (
-    CambioCorreoIn, CodigoIn, LoginIn, RegistroIn, TokenOut, UsuarioOut, fecha_a_datetime,
+    CambioCorreoIn, CodigoIn, LoginIn, NuevaPasswordIn, RecuperarIn, RegistroIn, TokenOut, UsuarioOut,
+    fecha_a_datetime,
 )
 from app.security import cifrar_password, crear_token, verificar_password
-from app.verificacion_correo import enviar_codigo, hash_codigo, segundos_para_reenviar
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
@@ -231,6 +231,11 @@ async def yo(usuario: dict = Depends(usuario_actual)):
 NO_SE_ENVIO = "No pudimos enviar el correo. Intenta de nuevo en unos minutos"
 
 
+def error_de_codigo(texto: str) -> JSONResponse:
+    """Mismo formato que los 422 de validación, con el mensaje en el campo del código."""
+    return JSONResponse(status_code=422, content={"detail": texto, "errores": {"codigo": texto}})
+
+
 def estado_correo(usuario: dict) -> dict:
     return {
         "correo": usuario["correo"],
@@ -264,20 +269,8 @@ async def reenviar_codigo(usuario: dict = Depends(usuario_actual)):
 async def verificar_codigo(datos: CodigoIn, usuario: dict = Depends(usuario_actual)):
     if usuario.get("correo_verificado"):
         return {"mensaje": "Tu correo ya está verificado"}
-    pendiente = usuario.get("verificacion_correo") or {}
-    if not pendiente.get("codigo_hash"):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Pide un código para verificar tu correo")
-    if pendiente["expira"] <= datetime.now(timezone.utc):
-        raise HTTPException(status.HTTP_410_GONE, "El código venció. Pide uno nuevo")
-    if pendiente.get("intentos", 0) >= settings.codigo_max_intentos:
-        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos con este código. Pide uno nuevo")
-
-    if not hmac.compare_digest(pendiente["codigo_hash"], hash_codigo(usuario["_id"], datos.codigo)):
-        await db.usuarios.update_one({"_id": usuario["_id"]}, {"$inc": {"verificacion_correo.intentos": 1}})
-        quedan = settings.codigo_max_intentos - pendiente.get("intentos", 0) - 1
-        texto = (f"Código incorrecto. Te quedan {quedan} intento{'s' if quedan != 1 else ''}"
-                 if quedan else "Código incorrecto. Pide uno nuevo")
-        return JSONResponse(status_code=422, content={"detail": texto, "errores": {"codigo": texto}})
+    if error := await revisar_codigo(usuario, datos.codigo, "verificacion"):
+        return error_de_codigo(error)
 
     await db.usuarios.update_one(
         {"_id": usuario["_id"]},
@@ -312,3 +305,55 @@ async def corregir_correo(datos: CambioCorreoIn, usuario: dict = Depends(usuario
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, NO_SE_ENVIO)
     actualizado = await db.usuarios.find_one({"_id": usuario["_id"]})
     return {"mensaje": f"Te enviamos un código a {datos.correo}", **estado_correo(actualizado)}
+
+
+# ---------- «¿Olvidaste tu contraseña?»: código al correo y contraseña nueva (codigos.py) ----------
+
+# Siempre la misma respuesta, exista o no la cuenta: así no se puede averiguar qué correos están registrados
+CODIGO_ENVIADO = "Si el correo está registrado, te enviamos un código para crear una contraseña nueva"
+
+
+@router.post("/recuperar")
+async def pedir_recuperacion(datos: RecuperarIn):
+    usuario = await db.usuarios.find_one({"correo": datos.correo})
+    if usuario and usuario["estado_cuenta"] == "activa" and not segundos_para_reenviar(usuario, "recuperacion"):
+        try:
+            await enviar_codigo(usuario["_id"], usuario["correo"], usuario.get("nombre"), "recuperacion")
+        except CorreoNoEnviado:
+            logging.getLogger("uvicorn.error").warning("Código de recuperación no enviado a %s", datos.correo)
+    return {"mensaje": CODIGO_ENVIADO, "reenviar_en": settings.codigo_reenvio_segundos}
+
+
+@router.post("/recuperar/confirmar")
+async def confirmar_recuperacion(datos: NuevaPasswordIn):
+    usuario = await db.usuarios.find_one({"correo": datos.correo})
+    if not usuario or usuario["estado_cuenta"] != "activa":
+        return error_de_codigo("Pide un código primero")
+    if error := await revisar_codigo(usuario, datos.codigo, "recuperacion"):
+        return error_de_codigo(error)
+
+    ahora = datetime.now(timezone.utc)
+    await db.usuarios.update_one(
+        {"_id": usuario["_id"]},
+        {
+            "$set": {
+                "password": cifrar_password(datos.password),  # CA-01.5
+                # El código llegó a su correo: queda comprobado que es suyo
+                "correo_verificado": True,
+                "fecha_actualizacion": ahora,
+                "seguridad.intentos_fallidos": 0,
+                "seguridad.bloqueado_hasta": None,
+            },
+            "$unset": {"recuperacion": "", "verificacion_correo": ""},
+            "$inc": {"seguridad.token_version": 1},  # cierra las sesiones abiertas en otros equipos
+        },
+    )
+    # Aviso por si no fue la persona quien la cambió
+    saludo = saludo_de(usuario.get("nombre"))
+    aviso = "Tu contraseña de RoomMatch se cambió recién. Si no fuiste tú, escríbenos respondiendo este correo."
+    try:
+        await enviar_correo(usuario["correo"], "Tu contraseña de RoomMatch cambió", f"{saludo}\n\n{aviso}",
+                            plantilla(saludo, f"  <p>{aviso}</p>"))
+    except CorreoNoEnviado:
+        pass
+    return {"mensaje": "Listo, tu contraseña cambió. Ya puedes iniciar sesión con ella"}

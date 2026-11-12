@@ -347,6 +347,17 @@ aplicar("usuarios", {
             ultima_actividad: {"bsonType":["date","null"]}
           }
         },
+        // Código pendiente de «¿Olvidaste tu contraseña?» (solo su hash). Se borra al cambiarla
+        recuperacion: {
+          bsonType: "object",
+          required: ["codigo_hash","expira","intentos","fecha_envio"],
+          properties: {
+            codigo_hash: {"bsonType":"string"},
+            expira: {"bsonType":"date"},
+            intentos: {"bsonType":"int"},
+            fecha_envio: {"bsonType":"date"}
+          }
+        },
         // Código pendiente para verificar el correo (solo su hash). Se borra al verificarlo
         verificacion_correo: {
           bsonType: "object",

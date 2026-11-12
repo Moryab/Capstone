@@ -11,6 +11,7 @@ import FormPublicacion from './paginas/FormPublicacion.jsx'
 import LayoutPerfil, { CargandoPerfil } from './paginas/LayoutPerfil.jsx'
 import Marco from './marco/Marco.jsx'
 import Propuestas from './paginas/Propuestas.jsx'
+import Recuperar from './paginas/Recuperar.jsx'
 import Roomies from './paginas/Roomies.jsx'
 // Páginas de cada área de trabajo: cada una la completa quien tiene esas historias
 import DetallePublicacionAdmin from './paginas/admin/DetallePublicacionAdmin.jsx'
@@ -87,6 +88,8 @@ export default function App() {
       )}
       <Routes>
         <Route path="/" element={<Raiz />} />
+        {/* «¿Olvidaste tu contraseña?»: sin sesión */}
+        <Route path="/recuperar" element={<Recuperar />} />
         {/* Primer paso después del registro: el código que llegó al correo */}
         <Route path="/verifica-correo" element={
           <RutaProtegida sinCorreo sinCuestionario sinVerificacion sinRol><VerificarCorreo /></RutaProtegida>

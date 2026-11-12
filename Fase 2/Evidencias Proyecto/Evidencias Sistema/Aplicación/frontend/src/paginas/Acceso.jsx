@@ -20,6 +20,7 @@ export default function Acceso() {
 
   const enRegistro = pathname === '/registro'
   const registrado = state?.registrado
+  const passwordCambiada = state?.passwordCambiada
 
   return (
     <main className={`acceso${enRegistro ? ' registro-activo' : ''}`}>
@@ -30,7 +31,8 @@ export default function Acceso() {
 
       <section className="panel-form panel-login" inert={enRegistro}>
         {/* La key reinicia el login para precargar el correo recién registrado */}
-        <FormLogin key={registrado ?? 'login'} registrado={registrado} />
+        <FormLogin key={registrado ?? passwordCambiada ?? 'login'} registrado={registrado}
+          passwordCambiada={passwordCambiada} />
       </section>
 
       <div className="overlay-contenedor">
