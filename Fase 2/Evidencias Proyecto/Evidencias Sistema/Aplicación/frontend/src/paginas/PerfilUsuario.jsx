@@ -14,6 +14,7 @@ import { PublicacionesDe } from '../perfil/Publicaciones.jsx'
 import SobreMi from '../perfil/SobreMi.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
+import CalceAlojamientos from '../perfil/CalceAlojamientos.jsx'
 
 // HU-16: perfil de otro estudiante (/usuarios/:id). Su descripción y, enseguida, la compatibilidad entre ambos (CA-16.2)
 // y, al costado, el estado del match con esa persona y su contacto
@@ -79,6 +80,8 @@ export default function PerfilUsuario() {
             <SobreMi perfil={perfil} />
             <Compatibilidad estado={compat.estado} datos={compat.datos} nombre={perfil.nombre}
               yoCompleto={usuario.cuestionario_completo} otroCompleto={Boolean(perfil.habitos)} />
+            {/* Si soy oferente y es un buscador: si mis alojamientos calzan con lo que busca */}
+            <CalceAlojamientos usuarioId={id} nombre={perfil.nombre} />
             <Habitos perfil={perfil} importancia={importancia} />
             <PublicacionesDe usuarioId={id} nombre={perfil.nombre} />
           </>

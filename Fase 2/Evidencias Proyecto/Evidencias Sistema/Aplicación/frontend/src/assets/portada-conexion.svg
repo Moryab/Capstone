@@ -230,8 +230,8 @@
 <circle cx="1770" cy="236" r="3" fill="#fff" fill-opacity=".35"/>
 <circle cx="77" cy="311" r="5" fill="#fff" fill-opacity=".35"/>
 <circle cx="1653" cy="244" r="3" fill="#fff" fill-opacity=".35"/>
-<path d="M1300 300 Q 1520 40 1740 300" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="8 10"/>
-<circle cx="1300" cy="262" r="18" fill="#fff" fill-opacity=".85"/><path d="M1274 345 a26 34 0 0 1 52 0 z" fill="#fff" fill-opacity=".85"/>
-<circle cx="1740" cy="262" r="18" fill="#fff" fill-opacity=".85"/><path d="M1714 345 a26 34 0 0 1 52 0 z" fill="#fff" fill-opacity=".85"/>
-<circle cx="1520" cy="170" r="30" fill="#fff"/><path d="M1520 186 l-14 -13 a8 8 0 0 1 14 -10 a8 8 0 0 1 14 10 z" fill="#12766b"/>
+<path d="M1350 250 Q 1500 30 1650 250" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="8 10"/>
+<circle cx="1350" cy="214" r="18" fill="#fff" fill-opacity=".85"/><path d="M1324 297 a26 34 0 0 1 52 0 z" fill="#fff" fill-opacity=".85"/>
+<circle cx="1650" cy="214" r="18" fill="#fff" fill-opacity=".85"/><path d="M1624 297 a26 34 0 0 1 52 0 z" fill="#fff" fill-opacity=".85"/>
+<circle cx="1500" cy="130" r="30" fill="#fff"/><path d="M1500 146 l-14 -13 a8 8 0 0 1 14 -10 a8 8 0 0 1 14 10 z" fill="#12766b"/>
 </svg>

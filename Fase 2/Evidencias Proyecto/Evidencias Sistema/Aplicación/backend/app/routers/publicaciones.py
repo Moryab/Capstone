@@ -98,6 +98,9 @@ async def campos_desde(datos: PublicacionIn, anterior: dict | None = None) -> di
             "comuna_id": comuna["_id"],
             "comuna_nombre": comuna["nombre"],
             "sector": datos.ubicacion.sector,
+            # Calle y número: se muestran en el detalle y sirven para ubicar el punto en el mapa
+            "calle": datos.ubicacion.calle,
+            "numero": datos.ubicacion.numero,
             "direccion_referencia": datos.ubicacion.direccion_referencia,
             # «coordenadas» es lo público (zona o centro de la comuna); «punto_exacto», lo marcado
             **coordenadas,

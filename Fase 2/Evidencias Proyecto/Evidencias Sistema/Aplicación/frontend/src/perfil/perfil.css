@@ -41,7 +41,8 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 .p2-portada-imagen {
   position: absolute;
   inset: -12% 0 -12%;
-  background: url('../assets/portada-conexion.svg') center / cover no-repeat;
+  /* Encuadre a la derecha (85 %): ahí están los dos estudiantes y el corazón, que nunca se recortan */
+  background: url('../assets/portada-conexion.svg') 85% center / cover no-repeat;
   will-change: transform;
 }
 .p2-portada::after {
@@ -638,3 +639,33 @@ html.tema-oscuro .p2-match-estado.confirmado { color: var(--sobre-primario); }
 html.tema-oscuro .p2-ficha.es-imprescindible .p2-ficha-cara.frente { border-color: #f2c94c; }
 html.tema-oscuro .p2-nivel.flexible { background: #9fdcd2; }
 html.tema-oscuro .p2-pub-sin-fotos .boton { background: var(--tarjeta); }
+
+/* ---------- ¿Tus alojamientos calzan con lo que busca? (CalceAlojamientos.jsx) ---------- */
+.p2-calce { display: grid; gap: 14px; }
+.p2-calce > h2 { margin-bottom: 0 !important; }
+.p2-calce svg { flex: none; width: 15px; height: 15px; }
+.p2-calce-bloqueo { padding: 10px 14px; font-size: 0.9375rem; line-height: 1.45; color: var(--p2-amarillo); background: color-mix(in srgb, var(--p2-amarillo) 12%, var(--tarjeta)); border-radius: 12px; }
+.p2-calce-lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.p2-calce-item {
+  --p2-color: var(--p2-rojo);
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--tarjeta);
+  border: 1px solid var(--p2-borde);
+  border-left: 5px solid var(--p2-color);
+  border-radius: 14px;
+}
+.p2-calce-item[data-calza] { --p2-color: var(--p2-verde); }
+.p2-calce-cabeza { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; justify-content: space-between; }
+.p2-calce-alojamiento { display: grid; gap: 2px; min-width: 0; }
+.p2-calce-alojamiento a { font: 600 1rem 'Outfit', system-ui, sans-serif; color: var(--marca); text-decoration: none; }
+.p2-calce-alojamiento a:hover { color: var(--primario); text-decoration: underline; }
+.p2-calce-alojamiento small { font-size: 0.875rem; color: var(--texto-suave); }
+.p2-calce-estado { display: inline-flex; flex: none; gap: 5px; align-items: center; padding: 4px 10px; font-size: 0.875rem; font-weight: 700; color: var(--p2-color); background: color-mix(in srgb, var(--p2-color) 12%, transparent); border-radius: 999px; }
+.p2-calce-motivos { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.p2-calce-motivos li { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9375rem; line-height: 1.4; color: var(--texto); }
+.p2-calce-motivos svg { margin-top: 3px; color: var(--p2-rojo); }
+.p2-calce-cumple { display: flex; gap: 8px; align-items: center; font-size: 0.9375rem; color: var(--p2-verde); }
+.p2-calce-conclusion { font-weight: 600; color: var(--texto); }
+.p2-calce-conclusion[data-tono='ok'] { color: var(--p2-verde); }

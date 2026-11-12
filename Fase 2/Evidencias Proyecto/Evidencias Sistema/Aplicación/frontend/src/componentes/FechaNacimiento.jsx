@@ -17,6 +17,10 @@ function fechaReal(dia, mes, anio) {
   const f = new Date(Number(anio), Number(mes) - 1, Number(dia))
   return f.getFullYear() === Number(anio) && f.getMonth() === Number(mes) - 1 && f.getDate() === Number(dia)
 }
+// Mismo rango que el backend (EDAD_MINIMA y EDAD_MAXIMA en schemas/usuarios.py)
+const EDAD_MINIMA = 18
+const EDAD_MAXIMA = 65
+
 function edadDe(dia, mes, anio) {
   const hoy = new Date()
   let edad = hoy.getFullYear() - Number(anio)
@@ -49,7 +53,9 @@ export default function FechaNacimiento({ valor, alCambiar, error, etiqueta = 'F
   const edad = existe ? edadDe(dia, mes, anio) : null
   let aviso = ''
   if (completa && !existe) aviso = 'Esa fecha no existe. Revisa el día y el mes.'
-  else if (edad !== null && (edad < 0 || edad > 100)) aviso = 'Revisa el año: la fecha no parece válida.'
+  else if (edad !== null && edad < 0) aviso = 'Revisa el año: la fecha no parece válida.'
+  else if (edad !== null && edad < EDAD_MINIMA) aviso = `Debes tener al menos ${EDAD_MINIMA} años para usar RoomMatch.`
+  else if (edad !== null && edad > EDAD_MAXIMA) aviso = `Revisa el año de nacimiento: RoomMatch es para personas de ${EDAD_MINIMA} a ${EDAD_MAXIMA} años.`
   const mensaje = error || aviso
 
   return (

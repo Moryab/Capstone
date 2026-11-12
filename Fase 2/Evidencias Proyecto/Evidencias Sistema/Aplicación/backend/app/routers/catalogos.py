@@ -66,7 +66,10 @@ async def correos_institucionales():
 async def catalogo_publicacion():
     """Comunas para la ubicación del alojamiento (CA-06.2), con su centro para el mapa."""
     comunas = [
-        {"id": str(c["_id"]), "nombre": c["nombre"], "sector": c["sector"], "centro": c["centro"]["coordinates"]}
+        {
+            "id": str(c["_id"]), "nombre": c["nombre"], "region": c.get("region"), "sector": c["sector"],
+            "centro": c["centro"]["coordinates"],
+        }
         async for c in db.comunas.find().sort("nombre")
     ]
     return {"comunas": comunas}

@@ -25,6 +25,17 @@ function SeguirComuna({ centro }) {
   return null
 }
 
+// Cuando el punto llega de afuera (la búsqueda de la dirección), el mapa va hasta él
+function SeguirPunto({ punto }) {
+  const mapa = useMap()
+  useEffect(() => {
+    if (!punto) return
+    const destino = [punto.lat, punto.lng]
+    if (mapa.getZoom() < 15 || !mapa.getBounds().pad(-0.2).contains(destino)) mapa.setView(destino, 16)
+  }, [mapa, punto])
+  return null
+}
+
 /**
  * Punto del alojamiento en el formulario de publicación (opcional). `centro` es el de la comuna
  * elegida ([lat, lng]) y `punto` el marcado ({ lat, lng } o null).
@@ -33,17 +44,16 @@ export default function SelectorUbicacion({ centro, punto, onCambio, error }) {
   const posicion = punto && [punto.lat, punto.lng]
   return (
     <div className="campo selector-ubicacion">
-      <p className="selector-titulo" id="ubicacion-punto">Ubicación en el mapa (opcional)</p>
+      <p className="selector-titulo" id="ubicacion-punto">Punto en el mapa</p>
       <p className="campo-ayuda" id="ubicacion-punto-ayuda">
-        Toca el mapa donde está el alojamiento y arrastra el marcador para ajustarlo. Los demás estudiantes
-        solo verán una zona aproximada de unos {RADIO_ZONA_M} m, nunca el punto exacto. Si no lo marcas, se
-        muestra el centro de la comuna.
+        Toca el mapa o arrastra el marcador para ajustarlo. Los demás ven una zona de unos {RADIO_ZONA_M} m.
       </p>
       <MapContainer center={posicion ?? centro ?? CENTRO_INICIAL} zoom={posicion || centro ? 14 : 11}
         className="mapa-lienzo mapa-chico" aria-labelledby="ubicacion-punto" aria-describedby="ubicacion-punto-ayuda">
         <TileLayer {...CAPA_OSM} />
         <AlTocar onTocar={onCambio} />
         <SeguirComuna centro={centro} />
+        <SeguirPunto punto={punto} />
         {posicion && (
           <>
             <Circle center={posicion} radius={RADIO_ZONA_M} pathOptions={{ ...ESTILO_ZONA, dashArray: '6 6' }}
@@ -55,7 +65,7 @@ export default function SelectorUbicacion({ centro, punto, onCambio, error }) {
       </MapContainer>
       {posicion ? (
         <p className="campo-ayuda">
-          El círculo muestra el tamaño de la zona que verán los demás.{' '}
+          El círculo es la zona que verán los demás.{' '}
           <button type="button" className="enlace-boton" onClick={() => onCambio(null)}>Quitar el punto</button>
         </p>
       ) : null}

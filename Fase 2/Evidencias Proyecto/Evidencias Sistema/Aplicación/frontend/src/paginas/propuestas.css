@@ -13,9 +13,9 @@
 }
 
 /* ---------- Encabezado ---------- */
-.pp-encabezado { max-width: 760px; margin-bottom: 22px; }
+.pp-encabezado { margin-bottom: 22px; }
 .pp-encabezado h1 { margin: 0; font: 700 clamp(1.8rem, 2.6vw, 2.4rem)/1.1 'Outfit', system-ui, sans-serif; letter-spacing: -0.02em; color: var(--marca); }
-.pp-encabezado p { margin: 8px 0 0; font-size: 0.98rem; line-height: 1.5; color: var(--texto-suave); }
+.pp-encabezado p { max-width: 72ch; margin: 8px 0 0; font-size: 0.98rem; line-height: 1.5; color: var(--texto-suave); }
 .pp-aviso { margin: 0 0 18px; }
 
 /* ---------- «Estoy buscando alojamiento» ---------- */
@@ -24,7 +24,6 @@
   gap: 20px;
   align-items: center;
   justify-content: space-between;
-  max-width: 760px;
   margin-bottom: 30px;
   padding: 18px 22px;
   background: var(--tarjeta);
@@ -210,7 +209,6 @@
   display: flex;
   gap: 20px;
   align-items: center;
-  max-width: 760px;
   padding: 18px;
   background: var(--tarjeta);
   border: 1px dashed var(--borde);
@@ -218,9 +216,10 @@
 }
 .pp-vacio-dibujo.sin-foto-dibujo { flex: none; width: 120px; height: 76px; border-radius: 12px; }
 .pp-vacio p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--texto-suave); }
+.pp-vacio a { font-weight: 600; color: var(--primario); }
 
 /* ---------- Historial ---------- */
-.pp-historial { max-width: 760px; padding: 14px 18px; background: var(--tarjeta); border-radius: 16px; box-shadow: var(--pp-sombra); }
+.pp-historial { padding: 14px 18px; background: var(--tarjeta); border-radius: 16px; box-shadow: var(--pp-sombra); }
 .pp-historial summary { font-weight: 600; cursor: pointer; }
 .pp-historial ul { display: grid; gap: 0; margin: 12px 0 0; padding: 0; list-style: none; }
 .pp-historial li { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; padding: 10px 0; font-size: 0.9rem; border-top: 1px solid var(--pp-linea); }

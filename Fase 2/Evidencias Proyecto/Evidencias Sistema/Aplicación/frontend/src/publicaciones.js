@@ -76,6 +76,8 @@ export const FORMULARIO_VACIO = {
   genero_preferido: 'indiferente',
   'ubicacion.comuna_id': '',
   'ubicacion.sector': '',
+  'ubicacion.calle': '',
+  'ubicacion.numero': '',
   'ubicacion.direccion_referencia': '',
   'ubicacion.punto': null, // { lat, lng } marcado en el mapa (opcional)
   ...Object.fromEntries(SERVICIOS.flatMap(({ clave }) => [
@@ -104,6 +106,8 @@ export function aFormulario(pub) {
     genero_preferido: pub.genero_preferido,
     'ubicacion.comuna_id': ubicacion.comuna_id,
     'ubicacion.sector': ubicacion.sector,
+    'ubicacion.calle': ubicacion.calle ?? '',
+    'ubicacion.numero': ubicacion.numero ?? '',
     'ubicacion.direccion_referencia': ubicacion.direccion_referencia ?? '',
     'ubicacion.punto': ubicacion.punto ?? null,
     ...Object.fromEntries(SERVICIOS.flatMap(({ clave }) => [
@@ -134,6 +138,8 @@ export function aPayload(f) {
     ubicacion: {
       comuna_id: f['ubicacion.comuna_id'],
       sector: f['ubicacion.sector'],
+      calle: f['ubicacion.calle'] || null,
+      numero: f['ubicacion.numero'] || null,
       direccion_referencia: f['ubicacion.direccion_referencia'] || null,
       punto: f['ubicacion.punto'],
     },
@@ -154,4 +160,36 @@ export function aPayload(f) {
       clave, f[`caracteristicas.${clave}`],
     ])),
   }
+}
+
+/**
+ * Busca en OpenStreetMap (Nominatim) el punto de una dirección de Chile. Prueba primero la dirección
+ * estructurada (número y calle en la comuna), luego como texto libre y, si el número no aparece en el
+ * mapa, solo la calle. Devuelve { lat, lng, aproximado } o null. Solo se usa en el formulario de quien publica.
+ */
+// Nominatim pide como máximo una consulta por segundo
+let ultimaConsulta = 0
+const esperarTurno = async () => {
+  const espera = ultimaConsulta + 1100 - Date.now()
+  if (espera > 0) await new Promise((listo) => { setTimeout(listo, espera) })
+  ultimaConsulta = Date.now()
+}
+
+export async function ubicarDireccion({ calle, numero, comuna }) {
+  const buscar = async (consulta) => {
+    await esperarTurno()
+    const params = new URLSearchParams({ ...consulta, countrycodes: 'cl', format: 'jsonv2', limit: '1', 'accept-language': 'es' })
+    const respuesta = await fetch(`https://nominatim.openstreetmap.org/search?${params}`)
+    if (!respuesta.ok) throw new Error('No pudimos consultar el mapa. Intenta de nuevo en un momento.')
+    const [lugar] = await respuesta.json()
+    return lugar ? { lat: Number(Number(lugar.lat).toFixed(6)), lng: Number(Number(lugar.lon).toFixed(6)) } : null
+  }
+  // «Avenida», «Av.», «Calle» o «Pasaje» al inicio suelen impedir que el mapa la encuentre
+  const nombre = calle.replace(/^(avenida|avda\.?|av\.?|calle|pasaje|psje\.?)\s+/i, '')
+  const exacto = await buscar({ street: `${numero} ${calle}`, city: comuna, country: 'Chile' })
+    ?? (nombre !== calle ? await buscar({ street: `${numero} ${nombre}`, city: comuna, country: 'Chile' }) : null)
+    ?? await buscar({ q: `${calle} ${numero}, ${comuna}, Chile` })
+  if (exacto) return { ...exacto, aproximado: false }
+  const soloCalle = await buscar({ street: nombre, city: comuna, country: 'Chile' })
+  return soloCalle && { ...soloCalle, aproximado: true }
 }

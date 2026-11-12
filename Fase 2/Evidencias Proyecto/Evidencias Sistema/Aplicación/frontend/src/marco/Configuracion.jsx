@@ -1,9 +1,12 @@
 import { useEffect, useId, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { IconoCampana, IconoCerrar, IconoEditar, IconoEscudo, IconoFlecha, IconoLuna, IconoSol } from '../inicio/iconos.jsx'
+import {
+  IconoCerrar, IconoEditar, IconoEscudo, IconoFlecha, IconoLuna, IconoMatch, IconoSol, IconoUsuario, IconoVerificado,
+} from '../inicio/iconos.jsx'
 import { NOMBRES_ROL, SIN_CAMBIO_CON_CONVIVENCIA, useCambioRol } from '../rol/CambioRol.jsx'
 import { IconoBuscador, IconoOferente } from '../rol/iconos.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 
 // Interruptor del tema: de día un sol con nube, de noche una luna con estrellas
 function Interruptor({ oscuro, alCambiar, etiqueta }) {
@@ -20,20 +23,22 @@ function Interruptor({ oscuro, alCambiar, etiqueta }) {
   )
 }
 
-// Fila de una opción que todavía no existe
-function FilaPronto({ icono, titulo, texto }) {
+// Fila que lleva a otra página (y cierra el panel)
+function FilaEnlace({ a, icono, titulo, texto, alCerrar }) {
   return (
-    <div className="i-config-fila bloqueada">
+    <Link to={a} className="i-config-fila" onClick={alCerrar}>
       <span className="i-config-icono" aria-hidden="true">{icono}</span>
       <span className="i-config-textos"><strong>{titulo}</strong><span>{texto}</span></span>
-      <span className="i-muy-pronto">Muy pronto</span>
-    </div>
+      <span className="i-config-flecha" aria-hidden="true"><IconoFlecha /></span>
+    </Link>
   )
 }
 
 /**
  * Panel de configuración (se abre con la tuerca). Usa <dialog>, que ya maneja el foco y Escape.
- * En escritorio entra desde la derecha; en móvil sube desde abajo.
+ * En escritorio entra desde la derecha; en móvil sube desde abajo. Muestra solo lo que le sirve a cada
+ * uno: el estudiante, su cuenta, su rol y cómo lo ven los demás; el administrador, la apariencia
+ * (no tiene perfil de estudiante que editar).
  */
 export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) {
   const dialogo = useRef(null)
@@ -43,6 +48,7 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
   const { abrir } = useCambioRol()
   const destino = usuario?.modo === 'buscador' ? 'oferente' : 'buscador'
   const IconoRolDestino = destino === 'oferente' ? IconoOferente : IconoBuscador
+  const estudiante = usuario?.rol === 'estudiante'
 
   useEffect(() => {
     const d = dialogo.current
@@ -58,7 +64,7 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
         <div className="i-config-barra">
           <div className="i-config-titulo">
             <h2 id="i-titulo-config">Configuración</h2>
-            <p>Haz que RoomMatch se sienta tuyo.</p>
+            <p>{estudiante ? 'Haz que RoomMatch se sienta tuyo.' : 'Cómo se ve el panel de administración.'}</p>
           </div>
           <button type="button" className="i-cerrar" onClick={alCerrar} aria-label="Cerrar configuración">
             <IconoCerrar />
@@ -80,45 +86,55 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
           </div>
         </section>
 
-        <section className="i-config-seccion" aria-labelledby="i-config-cuenta">
-          <h3 id="i-config-cuenta">Cuenta</h3>
-          <div className="i-config-grupo">
-            <Link to="/perfil/editar" className="i-config-fila">
-              <span className="i-config-icono" aria-hidden="true"><IconoEditar /></span>
-              <span className="i-config-textos"><strong>Editar mis datos</strong><span>Nombre, estudios y contacto</span></span>
-              <span className="i-config-flecha" aria-hidden="true"><IconoFlecha /></span>
-            </Link>
-            {usuario?.rol === 'estudiante' && usuario.modo && (
-              usuario.con_convivencia ? (
-                <div className="i-config-fila bloqueada">
-                  <span className="i-config-icono" aria-hidden="true"><IconoRolDestino /></span>
-                  <span className="i-config-textos">
-                    <strong>Tu rol: {NOMBRES_ROL[usuario.modo]}</strong>
-                    <span>{SIN_CAMBIO_CON_CONVIVENCIA}.</span>
-                  </span>
-                </div>
-              ) : (
-                <button type="button" className="i-config-fila" aria-haspopup="dialog"
-                  onClick={() => { alCerrar(); abrir(destino) }}>
-                  <span className="i-config-icono" aria-hidden="true"><IconoRolDestino /></span>
-                  <span className="i-config-textos">
-                    <strong>Cambiar a {destino}</strong>
-                    <span>Tu rol hoy: {NOMBRES_ROL[usuario.modo]}</span>
-                  </span>
-                  <span className="i-config-flecha" aria-hidden="true"><IconoFlecha /></span>
-                </button>
-              )
-            )}
-          </div>
-        </section>
+        {estudiante && (
+          <section className="i-config-seccion" aria-labelledby="i-config-cuenta">
+            <h3 id="i-config-cuenta">Cuenta</h3>
+            <div className="i-config-grupo">
+              <FilaEnlace a="/perfil/editar" icono={<IconoEditar />} titulo="Editar mis datos"
+                texto="Nombre, estudios y contacto" alCerrar={alCerrar} />
+              <FilaEnlace a="/perfil/verificacion" icono={<IconoVerificado />} titulo="Verificación de estudiante"
+                texto={estaVerificado(usuario) ? 'Tu cuenta está verificada' : 'Revisa el estado o sube tu comprobante'}
+                alCerrar={alCerrar} />
+              {usuario.modo && (
+                usuario.con_convivencia ? (
+                  // Con una convivencia en curso el rol no se cambia: se informa, sin botón
+                  <div className="i-config-fila">
+                    <span className="i-config-icono" aria-hidden="true">{usuario.modo === 'oferente' ? <IconoOferente /> : <IconoBuscador />}</span>
+                    <span className="i-config-textos">
+                      <strong>Tu rol: {NOMBRES_ROL[usuario.modo]}</strong>
+                      <span>{SIN_CAMBIO_CON_CONVIVENCIA}.</span>
+                    </span>
+                  </div>
+                ) : (
+                  <button type="button" className="i-config-fila" aria-haspopup="dialog"
+                    onClick={() => { alCerrar(); abrir(destino) }}>
+                    <span className="i-config-icono" aria-hidden="true"><IconoRolDestino /></span>
+                    <span className="i-config-textos">
+                      <strong>Cambiar a {destino}</strong>
+                      <span>Tu rol hoy: {NOMBRES_ROL[usuario.modo]}</span>
+                    </span>
+                    <span className="i-config-flecha" aria-hidden="true"><IconoFlecha /></span>
+                  </button>
+                )
+              )}
+            </div>
+          </section>
+        )}
 
-        <section className="i-config-seccion" aria-labelledby="i-config-alertas">
-          <h3 id="i-config-alertas">Alertas y privacidad</h3>
-          <div className="i-config-grupo">
-            <FilaPronto icono={<IconoCampana />} titulo="Notificaciones" texto="Avisos cuando recibas un match" />
-            <FilaPronto icono={<IconoEscudo />} titulo="Privacidad" texto="Quién puede ver tu perfil" />
-          </div>
-        </section>
+        {estudiante && (
+          <section className="i-config-seccion" aria-labelledby="i-config-privacidad">
+            <h3 id="i-config-privacidad">Convivencia y privacidad</h3>
+            <div className="i-config-grupo">
+              <FilaEnlace a="/perfil/cuestionario" icono={<IconoMatch />} titulo="Mis hábitos de convivencia"
+                texto="Lo que usamos para calcular tu compatibilidad" alCerrar={alCerrar} />
+              <FilaEnlace a="/perfil-publico" icono={<IconoUsuario />} titulo="Cómo te ven los demás"
+                texto="Tu perfil tal como lo ven otros estudiantes" alCerrar={alCerrar} />
+            </div>
+            <p className="i-config-nota">
+              <IconoEscudo /> Tu correo, RUT y fecha de nacimiento nunca se muestran a otros estudiantes.
+            </p>
+          </section>
+        )}
       </div>
     </dialog>
   )

@@ -85,7 +85,8 @@ export default function VerificarCorreo() {
   }
 
   return (
-    <div className="v-paso">
+    // Fondo de ondas (el de la tarjeta del estado de la verificación) y la tarjeta del código en vidrio
+    <div className="v-paso v-paso-ondas">
       <header className="v-paso-cabecera">
         <span className="v-paso-marca"><IconoLogo tamano={36} /> RoomMatch</span>
         <button type="button" className="v-paso-salir" onClick={cerrarSesion}>Cerrar sesión</button>

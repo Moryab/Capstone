@@ -5,6 +5,7 @@ import Avatar from '../../componentes/Avatar.jsx'
 import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import FichaPublicacion from '../../componentes/FichaPublicacion.jsx'
+import { IconoSiguiente } from '../../componentes/IconosAlojamiento.jsx'
 import InsigniaVerificacion from '../../componentes/InsigniaVerificacion.jsx'
 import {
   MAX_JUSTIFICACION, MOTIVOS_INCUMPLIMIENTO, textoAccion, textoEstadoReporte, textoIncumplimiento, textoMotivo,
@@ -188,14 +189,17 @@ export default function DetallePublicacionAdmin() {
 
       <FichaPublicacion key={pub.id} pub={pub}>
         {oferente && (
+          <section className="fp-tarjeta fp-quien" aria-label="Quién publica">
           <Link to={`/admin/usuarios/${oferente.id}`} className="fp-oferente">
-            <Avatar nombre={oferente.nombre} apellido={oferente.ap_paterno} foto={oferente.foto_url} tamano={48} />
+            <Avatar nombre={oferente.nombre} apellido={oferente.ap_paterno} foto={oferente.foto_url} tamano={120} />
             <span className="fp-oferente-datos">
               <span className="fp-oferente-rol">Oferente · ver ficha</span>
               <strong>{oferente.nombre} {oferente.ap_paterno}</strong>
               <InsigniaVerificacion verificado={oferente.verificado} />
             </span>
+            <IconoSiguiente />
           </Link>
+          </section>
         )}
       </FichaPublicacion>
 

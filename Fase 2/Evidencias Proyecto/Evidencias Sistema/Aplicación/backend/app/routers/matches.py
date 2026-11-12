@@ -5,10 +5,11 @@ from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.compatibilidad import nivel_de
+from app.compatibilidad import NIVEL_ALTO, nivel_de
 from app.db import db
 from app.deps import estudiante_verificado, usuario_actual
 from app.matching import ABIERTAS, VIGENCIA, MatchNoDisponible, generar_propuestas, responder
+from app.routers.catalogos import comunas_cerca_de
 from app.routers.compatibilidades import el_otro, resumenes
 from app.routers.evaluaciones import estado_evaluacion
 from app.routers.perfil import datos_invalidos
@@ -221,4 +222,112 @@ async def terminar(match_id: str, datos: TerminoIn, usuario: dict = Depends(usua
         "mensaje": "La convivencia terminó. Usaremos lo que nos contaste para tus próximas recomendaciones"
         if razones else "La convivencia terminó",
         "propuesta": (await vista([match], yo))[0],
+    }
+
+
+# ---------- ¿Tus alojamientos calzan con lo que busca? (perfil de un buscador visto por un oferente) ----------
+
+GENEROS_SOLO = {"femenino": "mujeres", "masculino": "hombres"}
+REGLAS_TEXTO = {
+    "permite_mascotas": ("mascotas", "Busca un lugar donde se acepten mascotas", "Busca un lugar sin mascotas"),
+    "permite_fumar": ("fumar", "Busca un lugar donde se pueda fumar", "Busca un lugar donde no se fume"),
+    "permite_visitas": ("visitas", "Busca un lugar donde se permitan visitas", "Busca un lugar sin visitas"),
+}
+
+
+def pesos(monto: int) -> str:
+    return "$" + f"{monto:,}".replace(",", ".")
+
+
+async def nombres_comunas(ids) -> str:
+    nombres = sorted([c["nombre"] async for c in db.comunas.find({"_id": {"$in": list(ids)}}, {"nombre": 1})])
+    return ", ".join(nombres[:-1]) + (f" o {nombres[-1]}" if len(nombres) > 1 else (nombres[0] if nombres else ""))
+
+
+def revisar_publicacion(pub: dict, p: dict, genero: str | None, zona: set | None, texto_zona: str) -> list[dict]:
+    """Las mismas condiciones que usa matching.py para proponer un alojamiento a un buscador, una por
+    una, con el motivo en palabras cuando no se cumple. Solo revisa lo que el buscador pidió."""
+    revisiones = []
+
+    def revisar(clave, ok, motivo):
+        revisiones.append({"clave": clave, "ok": bool(ok), "motivo": None if ok else motivo})
+
+    minimo, maximo, costo = p.get("costo_min"), p.get("costo_max"), pub["costo_mensual"]
+    if minimo is not None or maximo is not None:
+        rango = (f"entre {pesos(minimo)} y {pesos(maximo)}" if minimo is not None and maximo is not None
+                 else f"hasta {pesos(maximo)}" if maximo is not None else f"desde {pesos(minimo)}")
+        revisar("precio", (minimo is None or costo >= minimo) and (maximo is None or costo <= maximo), f"Busca un precio {rango}")
+    if zona is not None:
+        revisar("ubicacion", pub["ubicacion"]["comuna_id"] in zona, texto_zona)
+    if p.get("tipo_alojamiento"):
+        tipo = "una habitación" if p["tipo_alojamiento"] == "habitacion" else "un departamento"
+        revisar("tipo", pub["tipo"] == p["tipo_alojamiento"], f"Busca {tipo}")
+    for regla, valor in (("permite_mascotas", p.get("requiere_mascotas")), ("permite_fumar", p.get("requiere_fumar")),
+                         ("permite_visitas", p.get("requiere_visitas"))):
+        if valor is not None:
+            clave, si, no = REGLAS_TEXTO[regla]
+            revisar(clave, pub["reglas"][regla] == valor, si if valor else no)
+    for extra, campo, motivo in (("gastos_incluidos", pub.get("gastos", {}).get("todos_incluidos"), "Busca con gastos incluidos"),
+                                 ("amoblado", pub.get("caracteristicas", {}).get("amoblado"), "Busca un lugar amoblado"),
+                                 ("estacionamiento", pub.get("caracteristicas", {}).get("estacionamiento"), "Busca estacionamiento")):
+        if p.get(extra):
+            revisar(extra, campo, motivo)
+    # El género que pide el alojamiento también cuenta, aunque no sea una preferencia del buscador
+    if pub["genero_preferido"] != "indiferente":
+        revisar("genero", pub["genero_preferido"] == genero,
+                f"Tu alojamiento es solo para {GENEROS_SOLO[pub['genero_preferido']]}")
+    return revisiones
+
+
+@router.get("/calce/{usuario_id}")
+async def calce_con(usuario_id: str, usuario: dict = Depends(estudiante_verificado)):
+    """Para un oferente que ve el perfil de un buscador: si sus alojamientos activos cumplen las
+    preferencias de búsqueda que ese buscador guardó, las mismas que usan las propuestas de match.
+    Explica por qué RoomMatch los propuso o no, sin mostrar todo su perfil de búsqueda: solo el
+    motivo de lo que no se cumple."""
+    try:
+        otro = await db.usuarios.find_one({"_id": ObjectId(usuario_id)})
+    except InvalidId:
+        otro = None
+    if not otro:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    if usuario.get("modo") != "oferente" or otro.get("modo") != "buscador":
+        return {"aplica": False}
+
+    preferencias = otro.get("preferencias_busqueda") or {}
+    zona, texto_zona = None, ""
+    if preferencias.get("comunas_ids"):
+        zona = {ObjectId(c) if isinstance(c, str) else c for c in preferencias["comunas_ids"]}
+        texto_zona = f"Busca en {await nombres_comunas(zona)}"
+    if preferencias.get("cerca_institucion"):
+        cercanas = await comunas_cerca_de(otro)
+        if cercanas is not None:
+            zona = set(cercanas) if zona is None else zona & set(cercanas)
+            texto_zona = f"Busca cerca de su sede: {await nombres_comunas(zona)}"
+
+    alojamientos = []
+    async for pub in db.publicaciones.find(
+        {"oferente_id": usuario["_id"], "estado": "activa", "cupos_disponibles": {"$gt": 0}}
+    ).sort("fecha_publicacion", -1):
+        revisiones = revisar_publicacion(pub, preferencias, otro.get("genero"), zona, texto_zona)
+        alojamientos.append({
+            "id": str(pub["_id"]),
+            "titulo": pub["titulo"],
+            "comuna": pub["ubicacion"]["comuna_nombre"],
+            "costo_mensual": pub["costo_mensual"],
+            "calza": all(r["ok"] for r in revisiones),
+            "revisiones": revisiones,
+        })
+
+    a, b = sorted([usuario["_id"], otro["_id"]])
+    compatibilidad = await db.compatibilidades.find_one({"usuario_a_id": a, "usuario_b_id": b, "vigente": True})
+    return {
+        "aplica": True,
+        "buscando": bool(otro.get("buscando_alojamiento")),
+        "con_preferencias": any(
+            preferencias.get(k) for k in ("costo_min", "costo_max", "tipo_alojamiento", "comunas_ids", "cerca_institucion",
+                                          "gastos_incluidos", "amoblado", "estacionamiento")
+        ) or any(preferencias.get(k) is not None for k in ("requiere_mascotas", "requiere_fumar", "requiere_visitas")),
+        "compatibilidad_alta": bool(compatibilidad and compatibilidad["porcentaje"] >= NIVEL_ALTO and not compatibilidad["descartado"]),
+        "alojamientos": alojamientos,
     }

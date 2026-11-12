@@ -263,6 +263,14 @@ html.tema-oscuro .i-pagina[data-fondo='topografia']::before { background: url('.
   opacity: 0.85;
 }
 html.tema-oscuro .i-pagina[data-fondo='ciudad']::before { filter: blur(3px) invert(1) hue-rotate(180deg); opacity: 0.16; }
+/* Conexión: una red de puntos y líneas (estudiantes conectados) con los colores de la ciudad, abajo y
+   desvaneciéndose hacia arriba como el barrio. Apenas desenfocada, para que resalten las tarjetas */
+.i-pagina[data-fondo='conexion']::before {
+  background: url('../assets/fondo-conexion.svg') center bottom / cover no-repeat;
+  filter: blur(2px);
+  opacity: 0.85;
+}
+html.tema-oscuro .i-pagina[data-fondo='conexion']::before { filter: blur(3px) invert(1) hue-rotate(180deg); opacity: 0.14; }
 /* Las páginas antiguas centraban su contenido con la cabecera de arriba; dentro del marco
    van arriba, con aire */
 .i-pagina > main.tarjeta, .i-pagina > .tarjeta { margin: 24px auto; }
@@ -1505,6 +1513,8 @@ html.tema-oscuro body.pagina-inicio { background: #071220; }
 a.i-config-fila:hover, button.i-config-fila:hover { background: var(--i-hover); }
 button.i-config-fila { cursor: pointer; }
 .i-config-fila.bloqueada { opacity: 0.75; }
+.i-config-nota { display: flex; gap: 8px; align-items: flex-start; margin: 10px 4px 0; font-size: 0.8rem; line-height: 1.45; color: var(--i-texto-suave, var(--texto-suave)); }
+.i-config-nota svg { flex: none; width: 15px; height: 15px; margin-top: 1px; color: var(--primario); }
 .i-config-icono {
   display: grid;
   place-items: center;

@@ -1,0 +1,16 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='xMidYMid slice'>
+<defs>
+<linearGradient id='b' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#0b1f3a'/><stop offset='.55' stop-color='#0e3a4f'/><stop offset='1' stop-color='#0f766e'/></linearGradient>
+<radialGradient id='g' cx='.85' cy='.08' r='.5'><stop offset='0' stop-color='#5eead4' stop-opacity='0.4'/><stop offset='1' stop-color='#5eead4' stop-opacity='0'/></radialGradient>
+<radialGradient id='d' cx='.1' cy='.95' r='.4'><stop offset='0' stop-color='#f2c94c' stop-opacity='0.18'/><stop offset='1' stop-color='#f2c94c' stop-opacity='0'/></radialGradient>
+<linearGradient id='o1' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#14b8a6' stop-opacity='0.5'/><stop offset='1' stop-color='#5eead4' stop-opacity='0.14'/></linearGradient>
+<linearGradient id='o2' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#0b1f3a' stop-opacity='0.1'/><stop offset='1' stop-color='#0f766e' stop-opacity='0.55'/></linearGradient>
+</defs>
+<rect width='1600' height='1000' fill='url(#b)'/>
+<rect width='1600' height='1000' fill='url(#g)'/>
+<rect width='1600' height='1000' fill='url(#d)'/>
+<path d='M0 600C200 520 400 660 620 600S1000 440 1220 500 1520 620 1600 570V1000H0z' fill='url(#o1)'/>
+<path d='M0 720C240 660 470 770 710 720S1110 600 1330 660 1560 740 1600 715V1000H0z' fill='url(#o2)'/>
+<path d='M0 860C260 820 520 900 800 860S1250 800 1600 840V1000H0z' fill='url(#o2)' opacity='.6'/>
+<g fill='none' stroke='#5eead4' stroke-width='1.3'><path d='M-40 420C360 300 640 640 1000 500S1500 340 1660 440' stroke-opacity='0.10'/><path d='M-40 442C360 326 640 626 1000 510S1500 360 1660 454' stroke-opacity='0.14'/><path d='M-40 464C360 352 640 612 1000 520S1500 380 1660 468' stroke-opacity='0.17'/><path d='M-40 486C360 378 640 598 1000 530S1500 400 1660 482' stroke-opacity='0.21'/><path d='M-40 508C360 404 640 584 1000 540S1500 420 1660 496' stroke-opacity='0.24'/><path d='M-40 530C360 430 640 570 1000 550S1500 440 1660 510' stroke-opacity='0.28'/><path d='M-40 552C360 456 640 556 1000 560S1500 460 1660 524' stroke-opacity='0.31'/></g>
+</svg>

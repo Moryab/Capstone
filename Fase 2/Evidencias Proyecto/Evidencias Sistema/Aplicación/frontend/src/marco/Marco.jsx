@@ -22,12 +22,16 @@ const REVISAR_MENSAJES_MS = 20000 // y si hay mensajes sin leer (la página de m
 const FONDOS = {
   '/': 'ciudad',
   '/mis-publicaciones': 'ciudad',
+  '/publicaciones': 'ciudad', // publicar y editar un alojamiento
   '/mensajes': 'topografia', // también /mensajes/:id
   '/alojamientos': 'ciudad',
   // Perfil: el propio (todas sus pestañas), su vista pública y el de otros estudiantes
   '/perfil': 'ciudad',
   '/perfil-publico': 'ciudad',
   '/usuarios': 'ciudad',
+  // Estudiantes conectados entre sí: donde se buscan roomies y se responden los match
+  '/roomies': 'conexion',
+  '/propuestas': 'conexion',
 }
 const fondoDe = (ruta) => FONDOS[ruta] ?? FONDOS[`/${ruta.split('/')[1]}`]
 

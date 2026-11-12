@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
+from app.schemas.perfil import calcular_edad
 from app.ubicacion import RADIO_ZONA_M
 
 TipoAlojamiento = Literal["habitacion", "departamento"]
@@ -32,17 +33,20 @@ class PuntoIn(BaseModel):
 
 
 class UbicacionIn(BaseModel):
-    """CA-06.2: comuna de la lista más el sector; la dirección de referencia es opcional.
+    """CA-06.2: comuna de la lista, el barrio (sector), la calle y el número; la referencia es opcional.
 
-    El punto en el mapa también es opcional: los demás solo ven una zona aproximada (ubicacion.py).
+    La calle y el número se muestran en la publicación y sirven para ubicar el punto en el mapa. El punto
+    exacto, en cambio, solo lo ven su dueño y el administrador (ubicacion.py).
     """
 
     comuna_id: str
     sector: str = Field(max_length=80)
+    calle: str = Field(max_length=100)
+    numero: str = Field(max_length=10)
     direccion_referencia: str | None = Field(default=None, max_length=150)
     punto: PuntoIn | None = None
 
-    @field_validator("comuna_id", "sector")
+    @field_validator("comuna_id", "sector", "calle", "numero")
     @classmethod
     def obligatorios(cls, v):
         return texto_obligatorio(v)
@@ -153,6 +157,10 @@ class OferenteOut(BaseModel):
     ap_paterno: str | None = None
     foto_url: str | None = None
     verificado: bool
+    # Lo principal de quien publica, como en su perfil público (CA-16.3: la edad, nunca la fecha)
+    edad: int | None = None
+    genero: str | None = None
+    carrera: str | None = None
 
 
 def ubicacion_out(ubicacion: dict, ver_punto: bool) -> dict:
@@ -222,6 +230,9 @@ class PublicacionOut(BaseModel):
                 ap_paterno=oferente.get("ap_paterno"),
                 foto_url=oferente.get("perfil", {}).get("foto_url"),
                 verificado=oferente.get("verificacion", {}).get("estado") == "verificado",
+                edad=calcular_edad(oferente.get("fecha_nac")),
+                genero=oferente.get("genero"),
+                carrera=oferente.get("perfil", {}).get("carrera"),
             )
             if oferente
             else None,

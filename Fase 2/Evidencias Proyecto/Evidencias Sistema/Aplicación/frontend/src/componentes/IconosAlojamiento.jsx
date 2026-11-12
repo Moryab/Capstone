@@ -6,7 +6,9 @@ const Svg = ({ children, tamano = 16 }) => (
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{children}</svg>
 )
 
-export const IconoSillon = () => <Svg><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" /><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z" /><path d="M5 17v2M19 17v2" /></Svg>
+export const IconoCama = () => <Svg><path d="M3 6v13M3 15h18M21 19v-6a2 2 0 0 0-2-2h-8v4" /><rect x="5.5" y="10" width="3.5" height="3" rx="1" /></Svg>
+// Quién puede postular: una persona con un visto
+export const IconoPostular = () => <Svg><circle cx="10" cy="8" r="3.5" /><path d="M3.5 20a6.5 6.5 0 0 1 10.5-5.1" /><path d="M15.5 18l2 2 4-4.5" /></Svg>
 export const IconoDucha = () => <Svg><path d="M4 20V8a4 4 0 0 1 8 0" /><path d="M9 11h6" /><path d="M10 14v1M12 15v1M14 14v1M11 18v1M13 18v1" /></Svg>
 export const IconoAuto = () => <Svg><path d="M5 16V12l2-5h10l2 5v4" /><path d="M3 16h18v2H3z" /><circle cx="8" cy="13" r="0.6" /><circle cx="16" cy="13" r="0.6" /></Svg>
 // Boleta con un check: los gastos (agua, luz, gas, internet) van incluidos en el arriendo

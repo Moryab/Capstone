@@ -32,9 +32,10 @@ const SEGUN_TIPO = {
  * Ya está puesto en el perfil de otro estudiante (tipo="perfil") y en el detalle de un
  * alojamiento ajeno (tipo="publicacion"); nunca aparece en lo propio (CA-24.5 y CA-25.5).
  *
- * Props: tipo ('perfil' | 'publicacion'), id (del usuario o la publicación) y nombre (para el texto).
+ * Props: tipo ('perfil' | 'publicacion'), id (del usuario o la publicación), nombre (para el texto) y,
+ * opcional, `texto` para un rótulo más corto del botón.
  */
-export default function BotonReportar({ tipo, id, nombre }) {
+export default function BotonReportar({ tipo, id, nombre, texto }) {
   const textos = SEGUN_TIPO[tipo]
   const dialogo = useRef(null)
   const [abierto, setAbierto] = useState(false)
@@ -92,7 +93,7 @@ export default function BotonReportar({ tipo, id, nombre }) {
   return (
     <>
       <button type="button" className="boton peligro-suave boton-reportar" onClick={() => setAbierto(true)}>
-        <IconoBandera /> {textos.boton}
+        <IconoBandera /> {texto ?? textos.boton}
       </button>
 
       {/* onCancel: Escape cierra el diálogo y limpia el formulario */}

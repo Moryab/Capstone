@@ -47,7 +47,7 @@ function TarjetaRoomie({ roomie, desde, orden }) {
   return (
     <li className="rm-tarjeta" style={{ '--orden': Math.min(orden, 9) }}>
       <div className="rm-cabeza">
-        <Avatar nombre={u.nombre} apellido={u.ap_paterno} foto={u.foto_url} tamano={56} />
+        <Avatar nombre={u.nombre} apellido={u.ap_paterno} foto={u.foto_url} tamano={80} />
         <div className="rm-quien">
           <h2><Link to={`/usuarios/${u.id}`} state={{ desde }} className="rm-nombre">{nombre}</Link></h2>
           <p className="rm-estudios">{estudios || 'Carrera sin indicar'}</p>

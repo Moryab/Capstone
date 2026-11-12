@@ -76,3 +76,35 @@
 @media (max-width: 560px) {
   .v-opciones { grid-template-columns: 1fr; }
 }
+
+/* ---------- Paso con fondo de ondas (VerificarCorreo.jsx) ----------
+   Las mismas ondas marino → petróleo → verde azulado de la tarjeta del estado de la verificación,
+   a toda la pantalla. La tarjeta es un vidrio claro apenas translúcido: deja ver las ondas detrás
+   y el texto y el campo del código siguen con todo su contraste */
+.v-paso-ondas { background: #0b1f3a url('../../assets/fondo-ondas-oscuro.svg') center / cover no-repeat fixed; }
+/* El fondo ya ocupa todo el alto: sin el margen inferior que #root da a las demás páginas
+   (index.css), que aquí quedaba como una franja gris y una barra de desplazamiento de más */
+#root:has(.v-paso-ondas) { padding-bottom: 0; }
+.v-paso-ondas .v-paso-marca { color: #fff; }
+.v-paso-ondas .v-paso-salir {
+  color: #fff;
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.v-paso-ondas .v-paso-salir:hover { color: #fff; background: rgb(255 255 255 / 0.2); border-color: rgb(255 255 255 / 0.5); }
+.v-paso-ondas .tarjeta {
+  margin-top: clamp(16px, 8vh, 72px);
+  background: rgb(255 255 255 / 0.86);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.1), 0 30px 70px -30px rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+/* Lo que hay que escribir va sólido, para que se lea perfecto sobre el vidrio */
+.v-paso-ondas .campo input { background: #fff; }
+/* «Verificar y continuar» (y «Cambiar y enviar código») centrados bajo el campo */
+.v-paso-ondas form > .acciones { justify-content: center; }
+.v-paso-ondas .v-correo-opciones .boton.secundario { background: rgb(255 255 255 / 0.7); }

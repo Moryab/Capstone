@@ -6,7 +6,12 @@ from pydantic import BaseModel, EmailStr, Field, ValidationInfo, field_validator
 
 Genero = Literal["femenino", "masculino", "no_binario"]
 
-EDAD_MINIMA = 16
+# Rango de edad para registrarse y editar el perfil. Mínimo 18: la plataforma junta a desconocidos
+# para convivir y comparte el teléfono al confirmar un match. Queda para el futuro aceptar a menores
+# de 17 con la autorización de un apoderado. Máximo 65: cubre a los estudiantes adultos y evita fechas
+# mal escritas (1925 por 2005). El formulario (FechaNacimiento.jsx) avisa lo mismo
+EDAD_MINIMA = 18
+EDAD_MAXIMA = 65
 
 
 def normalizar_rut(rut: str) -> str:
@@ -64,10 +69,12 @@ class DatosPersonales(BaseModel):
     def edad_valida(cls, v):
         hoy = date.today()
         edad = hoy.year - v.year - ((hoy.month, hoy.day) < (v.month, v.day))
-        if v > hoy or edad > 100:
+        if v > hoy:
             raise ValueError("Ingresa una fecha de nacimiento válida")
         if edad < EDAD_MINIMA:
-            raise ValueError(f"Debes tener al menos {EDAD_MINIMA} años para registrarte")
+            raise ValueError(f"Debes tener al menos {EDAD_MINIMA} años para usar RoomMatch")
+        if edad > EDAD_MAXIMA:
+            raise ValueError(f"Revisa el año de nacimiento: RoomMatch es para personas de {EDAD_MINIMA} a {EDAD_MAXIMA} años")
         return v
 
     @field_validator("correo")

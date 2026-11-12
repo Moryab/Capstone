@@ -113,7 +113,9 @@ html.tema-oscuro .i-app.es-admin {
 .a-barra-insignia svg { width: 13px; height: 13px; }
 .contraida .a-barra-insignia { display: none; }
 
-.a-nav-grupos { display: grid; gap: 20px; }
+.a-nav-grupos { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+/* Sin esto, el texto (oculto) de los títulos de grupo ensancha la columna al contraer la barra */
+.a-nav-grupos > * { min-width: 0; }
 .a-nav-grupo-titulo {
   margin: 0 0 6px;
   padding: 0 14px;

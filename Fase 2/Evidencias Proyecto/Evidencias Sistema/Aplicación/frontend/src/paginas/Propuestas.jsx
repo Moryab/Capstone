@@ -7,7 +7,7 @@ import Avatar from '../componentes/Avatar.jsx'
 import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import Confirmar from '../componentes/Confirmar.jsx'
 import { IconoPersona, IconoUbicacion } from '../componentes/Iconos.jsx'
-import { IconoAuto, IconoDucha, IconoGastos, IconoSede, IconoSillon } from '../componentes/IconosAlojamiento.jsx'
+import { IconoAuto, IconoDucha, IconoGastos, IconoSede, IconoCama } from '../componentes/IconosAlojamiento.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import SinFoto from '../componentes/SinFoto.jsx'
 import { tituloCategoria } from '../cuestionario.js'
@@ -94,7 +94,7 @@ function Incluye({ pub }) {
   const c = pub.caracteristicas ?? {}
   const datos = [
     pub.gastos_incluidos && { clave: 'gastos', icono: <IconoGastos />, texto: 'Gastos incluidos' },
-    c.amoblado && { clave: 'amoblado', icono: <IconoSillon />, texto: 'Amoblado' },
+    c.amoblado && { clave: 'amoblado', icono: <IconoCama />, texto: 'Amoblado' },
     c.banio_privado && { clave: 'banio', icono: <IconoDucha />, texto: 'Baño privado' },
     c.estacionamiento && { clave: 'auto', icono: <IconoAuto />, texto: 'Estacionamiento' },
   ].filter(Boolean)

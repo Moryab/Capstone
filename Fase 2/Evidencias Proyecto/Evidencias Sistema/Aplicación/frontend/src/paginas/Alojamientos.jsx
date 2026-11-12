@@ -27,7 +27,7 @@ const Svg = ({ children, tamano = 16 }) => (
 const IconoFiltros = () => <Svg tamano={18}><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></Svg>
 const IconoCerrar = () => <Svg tamano={18}><path d="M6 6l12 12M18 6L6 18" /></Svg>
 const IconoX = () => <Svg tamano={13}><path d="M7 7l10 10M17 7L7 17" /></Svg>
-const IconoSillon = () => <Svg><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" /><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z" /><path d="M5 17v2M19 17v2" /></Svg>
+const IconoCama = () => <Svg><path d="M3 6v13M3 15h18M21 19v-6a2 2 0 0 0-2-2h-8v4" /><rect x="5.5" y="10" width="3.5" height="3" rx="1" /></Svg>
 const IconoDucha = () => <Svg><path d="M4 20V8a4 4 0 0 1 8 0" /><path d="M9 11h6" /><path d="M10 14v1M12 15v1M14 14v1M11 18v1M13 18v1" /></Svg>
 const IconoAuto = () => <Svg><path d="M5 16V12l2-5h10l2 5v4" /><path d="M3 16h18v2H3z" /><circle cx="8" cy="13" r="0.6" /><circle cx="16" cy="13" r="0.6" /></Svg>
 const IconoLista = () => <Svg><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></Svg>
@@ -70,7 +70,7 @@ function TarjetaAlojamiento({ pub, desde, orden }) {
   const { caracteristicas: c = {} } = pub
   const datos = [
     { clave: 'cupos', icono: <IconoPersona />, texto: `${pub.cupos_disponibles} ${pub.cupos_disponibles === 1 ? 'cupo' : 'cupos'}` },
-    c.amoblado && { clave: 'amoblado', icono: <IconoSillon />, texto: 'Amoblado' },
+    c.amoblado && { clave: 'amoblado', icono: <IconoCama />, texto: 'Amoblado' },
     c.banio_privado && { clave: 'banio', icono: <IconoDucha />, texto: 'Baño privado' },
     c.estacionamiento && { clave: 'auto', icono: <IconoAuto />, texto: 'Estacionamiento' },
   ].filter(Boolean)
