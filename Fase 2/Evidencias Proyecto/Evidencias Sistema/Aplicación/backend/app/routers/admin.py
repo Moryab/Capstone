@@ -258,6 +258,7 @@ def perfil_de(usuario: dict, institucion: str | None) -> UsuarioPerfilOut:
         institucion=institucion,
         sede=perfil.get("sede"),
         carrera=perfil.get("carrera"),
+        carrera_otra=perfil.get("carrera_otra", False),
         anio_ingreso=perfil.get("anio_ingreso"),
         ciudad_origen=perfil.get("ciudad_origen"),
         region_origen=perfil.get("region_origen"),

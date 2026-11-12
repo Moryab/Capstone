@@ -35,7 +35,9 @@ CAMPOS_OBLIGATORIOS = [
     "telefono",
 ]
 
-ANIO_MINIMO_INGRESO = 1980
+# Año de ingreso: de hace 15 años (carreras de 4 a 6 años más atrasos, pausas o una segunda carrera)
+# al año actual, nunca futuro
+ANIOS_INGRESO = 15
 
 
 def calcular_faltantes(perfil: dict) -> list[str]:
@@ -48,6 +50,9 @@ class PerfilIn(DatosPersonales):
     institucion_id: str
     sede: str = Field(max_length=100)
     carrera: str = Field(max_length=100)
+    # La carrera se elige de la lista de su institución (colección «carreras»); true si no estaba y
+    # la escribió a mano («No encuentro mi carrera»)
+    carrera_otra: bool = False
     anio_ingreso: int | None = None
     direccion: str = Field(max_length=150)
     ciudad_origen: str = Field(max_length=80)
@@ -78,8 +83,9 @@ class PerfilIn(DatosPersonales):
     @field_validator("anio_ingreso")
     @classmethod
     def anio_valido(cls, v):
-        if v is not None and not ANIO_MINIMO_INGRESO <= v <= date.today().year:
-            raise ValueError(f"Ingresa un año entre {ANIO_MINIMO_INGRESO} y {date.today().year}")
+        actual = date.today().year
+        if v is not None and not actual - ANIOS_INGRESO <= v <= actual:
+            raise ValueError(f"Ingresa un año entre {actual - ANIOS_INGRESO} y {actual}")
         return v
 
     @field_validator("descripcion")
@@ -94,6 +100,7 @@ class EstudiosIn(BaseModel):
     institucion_id: str
     sede: str = Field(max_length=100)
     carrera: str = Field(max_length=100)
+    carrera_otra: bool = False
     anio_ingreso: int | None = None
 
     texto_obligatorio = field_validator("institucion_id", "sede", "carrera")(PerfilIn.texto_obligatorio.__func__)
@@ -133,6 +140,7 @@ class PerfilOut(BaseModel):
     institucion_id: str | None = None
     sede: str | None = None
     carrera: str | None = None
+    carrera_otra: bool = False  # escrita a mano, fuera de la lista de su institución
     anio_ingreso: int | None = None
     direccion: str | None = None
     ciudad_origen: str | None = None
@@ -160,6 +168,7 @@ class PerfilOut(BaseModel):
             institucion_id=str(institucion_id) if institucion_id else None,
             sede=perfil.get("sede"),
             carrera=perfil.get("carrera"),
+            carrera_otra=perfil.get("carrera_otra", False),
             anio_ingreso=perfil.get("anio_ingreso"),
             direccion=perfil.get("direccion"),
             ciudad_origen=perfil.get("ciudad_origen"),

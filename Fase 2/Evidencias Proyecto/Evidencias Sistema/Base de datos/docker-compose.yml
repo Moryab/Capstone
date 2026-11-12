@@ -22,7 +22,8 @@ services:
       retries: 20
     # Sin "ports": Mongo solo es accesible dentro de la red de Docker
 
-  # Crea las colecciones con su validador, los índices y los catálogos (comunas e instituciones), y termina.
+  # Crea las colecciones con su validador, los índices y los catálogos (comunas, instituciones y sus
+  # carreras), y termina.
   # Corre en cada «docker compose up»: los scripts no repiten ni pisan lo que ya existe.
   # La API espera a que termine bien antes de arrancar
   inicializar-bd:
@@ -36,7 +37,7 @@ services:
       MONGO_DB: ${MONGO_DB:-roommatch}
     volumes:
       - ./scripts:/scripts:ro
-    entrypoint: ["sh", "-c", "mongosh \"$$MONGO_URI\" --quiet --file /scripts/colecciones.js --file /scripts/indices.js --file /scripts/datos_iniciales.js"]
+    entrypoint: ["sh", "-c", "mongosh \"$$MONGO_URI\" --quiet --file /scripts/colecciones.js --file /scripts/indices.js --file /scripts/datos_iniciales.js --file /scripts/carreras.js"]
 
 volumes:
   mongo_data:

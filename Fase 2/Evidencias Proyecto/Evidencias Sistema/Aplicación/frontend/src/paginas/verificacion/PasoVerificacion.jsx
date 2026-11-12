@@ -38,7 +38,8 @@ export default function PasoVerificacion() {
   }
 
   return (
-    <div className="v-paso">
+    // Mismo fondo de ondas y tarjeta de vidrio que «Verifica tu correo»
+    <div className="v-paso v-paso-ondas">
       <header className="v-paso-cabecera">
         <span className="v-paso-marca"><IconoLogo tamano={36} /> RoomMatch</span>
         <button type="button" className="v-paso-salir" onClick={cerrarSesion}>Cerrar sesión</button>

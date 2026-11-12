@@ -35,7 +35,7 @@ const Check = () => (
  */
 export default function PaginaRol() {
   const { usuario, recargarUsuario, cerrarSesion } = useSesion()
-  useAplicarTema()
+  useAplicarTema(true) // como la verificación y el cuestionario: en claro, sobre el fondo de ondas
   const navegar = useNavigate()
   // Solo se revisa al entrar: después de guardar el rol, el paso de preferencias sigue aquí
   const [yaTeniaRol] = useState(Boolean(usuario.modo))
@@ -111,7 +111,7 @@ export default function PaginaRol() {
   }
 
   return (
-    <div className="i-tokens r-pagina">
+    <div className="i-tokens r-pagina r-ondas">
       <header className="r-cabecera">
         <span className="r-marca"><IconoLogo tamano={34} /><span>Room<span>Match</span></span></span>
         <button type="button" className="r-salir" onClick={cerrarSesion}>Cerrar sesión</button>

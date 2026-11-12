@@ -1,4 +1,7 @@
 import Campo from '../componentes/Campo.jsx'
+import SelectorCarrera from '../componentes/SelectorCarrera.jsx'
+import SelectorComuna, { cambiosDeRegion } from '../componentes/SelectorComuna.jsx'
+import { ANIO_INGRESO_MAX, ANIO_INGRESO_MIN, errorAnioIngreso, sinSignos } from '../perfil.js'
 import { IlustracionPaso } from './ilustraciones.jsx'
 
 const TEXTOS = {
@@ -22,8 +25,8 @@ export default function PasoPerfil({ tipo, perfil, errores, catalogo, alCambiar,
 
   const institucion = catalogo?.instituciones.find((i) => i.id === perfil.institucion_id)
   const opcionesInstitucion = (catalogo?.instituciones ?? []).map((i) => ({ valor: i.id, texto: `${i.nombre} (${i.sigla})` }))
-  const opcionesSede = (institucion?.sedes ?? []).map((s) => ({ valor: s, texto: s }))
   const opcionesRegion = (catalogo?.regiones ?? []).map((r) => ({ valor: r, texto: r }))
+  const opcionesSede = (institucion?.sedes ?? []).map((s) => ({ valor: s, texto: s }))
 
   return (
     <div className="c-paso-perfil" role="group" aria-labelledby={idTitulo}>
@@ -43,22 +46,27 @@ export default function PasoPerfil({ tipo, perfil, errores, catalogo, alCambiar,
                   error={errores.sede} opciones={opcionesSede} disabled={!institucion} required
                   ayuda={institucion ? undefined : 'Primero elige tu institución'} />
                 <Campo etiqueta="Año de ingreso (opcional)" nombre="anio_ingreso" id="c-anio" type="number"
-                  value={perfil.anio_ingreso} onChange={cambiar} error={errores.anio_ingreso} inputMode="numeric" />
+                  value={perfil.anio_ingreso} onChange={cambiar} onKeyDown={sinSignos} inputMode="numeric"
+                  min={ANIO_INGRESO_MIN} max={ANIO_INGRESO_MAX} placeholder={String(ANIO_INGRESO_MAX)}
+                  error={errores.anio_ingreso ?? errorAnioIngreso(perfil.anio_ingreso)} />
               </div>
-              <Campo etiqueta="Carrera" nombre="carrera" id="c-carrera" value={perfil.carrera} onChange={cambiar}
-                error={errores.carrera} maxLength={100} required placeholder="Por ejemplo: Ingeniería en Informática" />
+              <SelectorCarrera id="c-carrera" institucionId={perfil.institucion_id} valor={perfil.carrera}
+                otra={perfil.carrera_otra} alCambiar={alCambiar} error={errores.carrera} />
             </>
           ) : (
             <>
               <div className="c-fila">
-                <Campo etiqueta="Ciudad de origen" nombre="ciudad_origen" id="c-ciudad" value={perfil.ciudad_origen}
-                  onChange={cambiar} error={errores.ciudad_origen} maxLength={80} required />
+                {/* Primero la región; la ciudad se busca entre las comunas de esa región */}
                 <Campo etiqueta="Región de origen" nombre="region_origen" id="c-region" value={perfil.region_origen}
-                  onChange={cambiar} error={errores.region_origen} opciones={opcionesRegion} required />
+                  onChange={(e) => alCambiar(cambiosDeRegion(e.target.value, perfil.ciudad_origen))}
+                  error={errores.region_origen} opciones={opcionesRegion} required />
+                <SelectorComuna id="c-ciudad" region={perfil.region_origen} valor={perfil.ciudad_origen}
+                  alCambiar={alCambiar} error={errores.ciudad_origen} />
               </div>
               <Campo etiqueta="Dirección de tu ciudad de origen" nombre="direccion" id="c-direccion"
                 value={perfil.direccion} onChange={cambiar} error={errores.direccion} maxLength={150} required
-                ayuda="Privada: no aparece en tu perfil." />
+                placeholder="Por ejemplo: Los Carrera 1250, depto. 304" autoComplete="street-address"
+                ayuda="Calle y número. Privada: no aparece en tu perfil." />
             </>
           )}
         </div>

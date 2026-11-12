@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { gsap } from '../landing/animaciones.js'
 import { Inclinable } from '../landing/componentes.jsx'
 
@@ -39,13 +39,16 @@ export function Tarjeta({ className = '', cuerpo = '', children, etiqueta, id, o
   )
 }
 
-// Botón «?» con una explicación breve. Se muestra al pasar el mouse o al enfocarlo con teclado
+// Botón «?» con una explicación breve. Se muestra al pasar el mouse o al enfocarlo con teclado.
+// Si el «?» está cerca del borde derecho, el globo se abre hacia la izquierda (no se sale de la pantalla)
 export function Ayuda({ texto, claro = false }) {
   const id = useId()
+  const [haciaIzquierda, setHaciaIzquierda] = useState(false)
+  const ubicar = (e) => setHaciaIzquierda(e.currentTarget.getBoundingClientRect().left + 290 > window.innerWidth)
   return (
-    <span className={`i-ayuda${claro ? ' claro' : ''}`}>
+    <span className={`i-ayuda${claro ? ' claro' : ''}`} onPointerEnter={ubicar} onFocus={ubicar}>
       <button type="button" className="i-ayuda-boton" aria-label="Más información" aria-describedby={id}>?</button>
-      <span role="tooltip" id={id} className="i-ayuda-globo">{texto}</span>
+      <span role="tooltip" id={id} className="i-ayuda-globo" data-lado={haciaIzquierda ? 'izquierda' : undefined}>{texto}</span>
     </span>
   )
 }

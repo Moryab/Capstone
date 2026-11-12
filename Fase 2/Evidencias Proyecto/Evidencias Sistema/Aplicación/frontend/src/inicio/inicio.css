@@ -440,13 +440,18 @@ html.tema-oscuro .i-pagina[data-fondo='conexion']::before { filter: blur(3px) in
   background: var(--i-globo);
   border-radius: 10px;
   box-shadow: 0 14px 30px -10px rgb(0 0 0 / 0.4);
-  opacity: 0;
   pointer-events: none;
-  transform: translateY(-4px);
+  /* Oculto no ocupa lugar: antes, aun invisible, se salía por la derecha y la página se movía de lado */
+  display: none;
   transition: opacity 0.15s, transform 0.15s;
 }
 .i-ayuda:hover .i-ayuda-globo,
-.i-ayuda-boton:focus-visible + .i-ayuda-globo { opacity: 1; transform: none; }
+.i-ayuda-boton:focus-visible + .i-ayuda-globo { display: block; }
+@starting-style {
+  .i-ayuda:hover .i-ayuda-globo,
+  .i-ayuda-boton:focus-visible + .i-ayuda-globo { opacity: 0; transform: translateY(-4px); }
+}
+.i-ayuda-globo[data-lado='izquierda'] { right: -10px; left: auto; }
 
 /* Esqueleto de carga */
 .i-esqueleto {

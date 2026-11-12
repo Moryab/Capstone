@@ -2,6 +2,7 @@
 // (no se cambian aquí); este archivo solo agrega cómo se ven
 
 import { CATEGORIAS } from '../cuestionario.js'
+import { errorAnioIngreso } from '../perfil.js'
 
 export { CATEGORIAS, MAX_IMPRESCINDIBLES } from '../cuestionario.js'
 
@@ -48,12 +49,15 @@ export const aPerfil = (perfil = {}) => ({
   institucion_id: perfil.institucion_id ?? '',
   sede: perfil.sede ?? '',
   carrera: perfil.carrera ?? '',
+  carrera_otra: Boolean(perfil.carrera_otra),
   anio_ingreso: perfil.anio_ingreso ?? '',
   ciudad_origen: perfil.ciudad_origen ?? '',
   region_origen: perfil.region_origen ?? '',
   direccion: perfil.direccion ?? '',
 })
+// Además de lo obligatorio, el año de ingreso (opcional) debe estar dentro del rango si se escribió
 export const pasoListo = (tipo, perfil) => CAMPOS_PASO[tipo].every((c) => String(perfil[c] ?? '').trim())
+  && (tipo !== 'estudios' || !errorAnioIngreso(perfil.anio_ingreso))
 
 // Respuestas vacías como '' para que las opciones partan sin marcar
 export const aEstado = ({ respuestas, importancia }) => ({

@@ -73,6 +73,7 @@ class UsuarioPerfilOut(BaseModel):
     institucion: str | None = None
     sede: str | None = None
     carrera: str | None = None
+    carrera_otra: bool = False  # la escribió a mano: administración puede revisarla
     anio_ingreso: int | None = None
     ciudad_origen: str | None = None
     region_origen: str | None = None

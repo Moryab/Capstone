@@ -482,6 +482,8 @@ button.a-kpi[aria-pressed='true'] { border-color: var(--a-acento); box-shadow: 0
 .a-detalle > .a-panel h1 { margin: 0 0 6px; font-size: clamp(1.4rem, 2vw, 1.8rem); text-align: left; }
 .a-detalle > .a-panel > .subtitulo { text-align: left; }
 .a-detalle .alerta, .a-detalle .exito, .a-detalle .info { margin: 0 0 16px; }
+/* Carrera fuera de la lista de su institución: para revisarla y, si corresponde, agregarla */
+.a-carrera-otra { display: inline-block; margin-left: 8px; padding: 2px 8px; font-size: 0.72rem; font-weight: 700; color: var(--aviso); background: var(--aviso-fondo); border-radius: 999px; vertical-align: 1px; }
 
 .a-buscador > span { display: flex; gap: 8px; }
 .a-buscador > span input { flex: 1; min-width: 0; }

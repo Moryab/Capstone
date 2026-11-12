@@ -200,6 +200,47 @@
   border-radius: 12px;
 }
 
+/* ---------- Fondo de ondas (el de «Verifica tu correo») con tarjetas de vidrio claro ----------
+   Lo de afuera de las tarjetas va en blanco sobre las ondas; adentro, el texto oscuro de siempre */
+.r-ondas {
+  display: flex;
+  flex-direction: column;
+  background: #0b1f3a url('../assets/fondo-ondas-oscuro.svg') center / cover no-repeat fixed;
+}
+#root:has(.r-ondas) { padding-bottom: 0; }
+.r-ondas .r-contenido { margin: auto; } /* centrado en el alto que queda bajo la cabecera */
+.r-ondas .r-marca { color: #fff; }
+.r-ondas .r-marca > span > span { color: #5eead4; }
+.r-ondas .r-salir {
+  color: #fff;
+  background: rgb(255 255 255 / 0.12);
+  border-color: rgb(255 255 255 / 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.r-ondas .r-salir:hover { background: rgb(255 255 255 / 0.2); border-color: rgb(255 255 255 / 0.5); }
+.r-ondas .r-etiqueta { color: #5eead4; }
+.r-ondas .r-contenido h1 { color: #fff; }
+.r-ondas .r-bajada, .r-ondas .r-nota { color: rgb(255 255 255 / 0.82); }
+.r-ondas .r-nota { margin: 28px 0 22px; }
+.r-ondas :is(.r-opcion, .r-preguntas) {
+  background: rgb(255 255 255 / 0.84);
+  border-color: rgb(255 255 255 / 0.6);
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.1), 0 30px 70px -30px rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+/* La elegida, sólida y con su borde verde: se distingue de inmediato */
+.r-ondas .r-opcion[aria-pressed='true'] { background: #fff; }
+.r-ondas .r-volver, .r-ondas .r-boton-texto { color: rgb(255 255 255 / 0.85); }
+@media (hover: hover) and (pointer: fine) {
+  .r-ondas .r-volver:hover, .r-ondas .r-boton-texto:hover { background: rgb(255 255 255 / 0.12); }
+}
+/* «Continuar» va blanco: el verde de siempre se perdía sobre la parte verde de las ondas */
+.r-ondas .r-contenido > .r-boton { color: #0b1f3a; background: #fff; border-color: #fff; box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.6); }
+.r-ondas .r-contenido > .r-boton:disabled { opacity: 0.55; }
+
 /* Paso 2 del buscador: presupuesto y comuna */
 .r-volver { align-self: flex-start; margin: -8px 0 12px -14px; }
 .r-preguntas { width: 100%; padding: 28px; text-align: left; background: var(--i-sup); border: 1px solid var(--i-borde); border-radius: 24px; }

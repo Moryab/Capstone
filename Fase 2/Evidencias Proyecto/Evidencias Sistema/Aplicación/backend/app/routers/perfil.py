@@ -1,3 +1,4 @@
+import unicodedata
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -8,6 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pymongo.errors import DuplicateKeyError
 
+from app.comunas_chile import COMUNAS_CHILE
 from app.config import settings
 from app.db import db
 from app.deps import usuario_actual
@@ -45,6 +47,12 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
         return datos_invalidos({"institucion_id": "Selecciona una institución válida"})
     if datos.sede not in [sede["nombre"] for sede in institucion.get("sedes", [])]:
         return datos_invalidos({"sede": "Selecciona una sede de tu institución"})
+    carrera = await revisar_carrera(institucion_id, datos.carrera, datos.carrera_otra, usuario)
+    if not carrera:
+        return datos_invalidos(CARRERA_FUERA_DE_LISTA)
+    origen = revisar_origen(datos.ciudad_origen, datos.region_origen, usuario)
+    if not origen:
+        return datos_invalidos(CIUDAD_FUERA_DE_LISTA)
 
     # CA-04.3: el correo y el teléfono nuevos no pueden pertenecer a otra cuenta
     repetidos = [
@@ -60,11 +68,12 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
     perfil = {
         "institucion_id": institucion_id,
         "sede": datos.sede,
-        "carrera": datos.carrera,
+        "carrera": carrera[0],
+        "carrera_otra": carrera[1],
         "anio_ingreso": datos.anio_ingreso,
         "direccion": datos.direccion,
-        "ciudad_origen": datos.ciudad_origen,
-        "region_origen": datos.region_origen,
+        "ciudad_origen": origen[0],
+        "region_origen": origen[1],
         "telefono": datos.telefono,
         "descripcion": datos.descripcion,
     }
@@ -99,6 +108,45 @@ async def guardar_perfil(datos: PerfilIn, usuario: dict = Depends(usuario_actual
     return {"mensaje": "Perfil guardado", "perfil": PerfilOut.desde_doc(actualizado)}
 
 
+async def revisar_carrera(
+    institucion_id: ObjectId, carrera: str, otra: bool, usuario: dict
+) -> tuple[str, bool] | None:
+    """La carrera tal como está en la lista de la institución (con sus mayúsculas y tildes) o, si el
+    estudiante marcó «No encuentro mi carrera», lo que escribió. None si dice venir de la lista y no está.
+    Si escribió a mano una que sí está en la lista, se guarda la de la lista. La que ya tenía guardada
+    (de antes de que existiera la lista) se acepta sin cambios, como escrita a mano."""
+    de_lista = await db.carreras.find_one(
+        {"institucion_id": institucion_id, "nombre": carrera, "activa": True},
+        collation={"locale": "es", "strength": 1},  # sin distinguir mayúsculas ni tildes
+    )
+    if de_lista:
+        return de_lista["nombre"], False
+    actual = usuario.get("perfil", {}).get("carrera")
+    return (carrera, True) if otra or carrera == actual else None
+
+
+def _sin_tildes(texto: str) -> str:
+    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode().lower().strip()
+
+
+COMUNA_DE = {_sin_tildes(comuna): (comuna, region) for comuna, region in COMUNAS_CHILE.items()}
+
+
+def revisar_origen(ciudad: str, region: str, usuario: dict) -> tuple[str, str] | None:
+    """La ciudad de origen es una de las 346 comunas de Chile y la región es siempre la de esa comuna
+    (con el nombre oficial, aunque se escriba sin tildes). La que ya tenía guardada de antes de la lista
+    se acepta sin cambios, con su región. None si no es una comuna."""
+    oficial = COMUNA_DE.get(_sin_tildes(ciudad))
+    # Sin cambios y escrita a mano («san pedro» puede ser San Pedro o San Pedro de la Paz): tal cual
+    if ciudad == usuario.get("perfil", {}).get("ciudad_origen") and (not oficial or oficial[0] != ciudad):
+        return ciudad, region
+    return oficial
+
+
+CIUDAD_FUERA_DE_LISTA = {"ciudad_origen": "Elige tu ciudad de la lista de comunas"}
+CARRERA_FUERA_DE_LISTA = {"carrera": "Elige tu carrera de la lista o usa «No encuentro mi carrera»"}
+
+
 async def guardar_parte(usuario: dict, campos: dict) -> dict:
     """Guarda solo algunos campos del perfil y recalcula qué falta (CA-03.5)."""
     perfil = {**usuario.get("perfil", {}), **campos}
@@ -128,10 +176,14 @@ async def guardar_estudios(datos: EstudiosIn, usuario: dict = Depends(usuario_ac
         return datos_invalidos({"institucion_id": "Selecciona una institución válida"})
     if datos.sede not in [sede["nombre"] for sede in institucion.get("sedes", [])]:
         return datos_invalidos({"sede": "Selecciona una sede de tu institución"})
+    carrera = await revisar_carrera(institucion_id, datos.carrera, datos.carrera_otra, usuario)
+    if not carrera:
+        return datos_invalidos(CARRERA_FUERA_DE_LISTA)
     return await guardar_parte(usuario, {
         "institucion_id": institucion_id,
         "sede": datos.sede,
-        "carrera": datos.carrera,
+        "carrera": carrera[0],
+        "carrera_otra": carrera[1],
         "anio_ingreso": datos.anio_ingreso,
     })
 
@@ -145,7 +197,12 @@ async def guardar_descripcion(datos: DescripcionIn, usuario: dict = Depends(usua
 @router.put("/origen")
 async def guardar_origen(datos: OrigenIn, usuario: dict = Depends(usuario_actual)):
     """Paso «De dónde eres» del cuestionario de bienvenida: ciudad, región y dirección."""
-    return await guardar_parte(usuario, datos.model_dump())
+    origen = revisar_origen(datos.ciudad_origen, datos.region_origen, usuario)
+    if not origen:
+        return datos_invalidos(CIUDAD_FUERA_DE_LISTA)
+    return await guardar_parte(usuario, {
+        "ciudad_origen": origen[0], "region_origen": origen[1], "direccion": datos.direccion,
+    })
 
 
 def preferencias_out(usuario: dict) -> dict:

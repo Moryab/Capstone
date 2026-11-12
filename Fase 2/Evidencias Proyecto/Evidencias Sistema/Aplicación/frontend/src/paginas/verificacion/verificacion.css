@@ -78,11 +78,16 @@ a.v-paso-salir { display: inline-flex; align-items: center; text-decoration: non
   .v-opciones { grid-template-columns: 1fr; }
 }
 
-/* ---------- Paso con fondo de ondas (VerificarCorreo.jsx) ----------
+/* ---------- Pasos con fondo de ondas (VerificarCorreo.jsx y PasoVerificacion.jsx) ----------
    Las mismas ondas marino → petróleo → verde azulado de la tarjeta del estado de la verificación,
    a toda la pantalla. La tarjeta es un vidrio claro apenas translúcido: deja ver las ondas detrás
    y el texto y el campo del código siguen con todo su contraste */
-.v-paso-ondas { background: #0b1f3a url('../../assets/fondo-ondas-oscuro.svg') center / cover no-repeat fixed; }
+.v-paso-ondas {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 32px;
+  background: #0b1f3a url('../../assets/fondo-ondas-oscuro.svg') center / cover no-repeat fixed;
+}
 /* El fondo ya ocupa todo el alto: sin el margen inferior que #root da a las demás páginas
    (index.css), que aquí quedaba como una franja gris y una barra de desplazamiento de más */
 #root:has(.v-paso-ondas) { padding-bottom: 0; }
@@ -96,8 +101,9 @@ a.v-paso-salir { display: inline-flex; align-items: center; text-decoration: non
   transition: background-color 180ms ease, border-color 180ms ease;
 }
 .v-paso-ondas .v-paso-salir:hover { color: #fff; background: rgb(255 255 255 / 0.2); border-color: rgb(255 255 255 / 0.5); }
-.v-paso-ondas .tarjeta {
-  margin-top: clamp(16px, 8vh, 72px);
+/* Centrada en el alto que queda bajo la cabecera; si es más alta que la pantalla, parte arriba */
+.v-paso-ondas > .tarjeta {
+  margin: auto;
   background: rgb(255 255 255 / 0.86);
   border: 1px solid rgb(255 255 255 / 0.6);
   box-shadow: 0 1px 2px rgb(11 31 58 / 0.1), 0 30px 70px -30px rgb(0 0 0 / 0.55);
@@ -105,7 +111,10 @@ a.v-paso-salir { display: inline-flex; align-items: center; text-decoration: non
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
 }
 /* Lo que hay que escribir va sólido, para que se lea perfecto sobre el vidrio */
-.v-paso-ondas .campo input { background: #fff; }
+.v-paso-ondas .campo :is(input, select) { background: #fff; }
+/* Las opciones de «¿Cuál es tu situación?» sobre el vidrio: sólidas y con su borde */
+.v-paso-ondas .v-opcion { background: rgb(255 255 255 / 0.75); border-color: rgb(11 31 58 / 0.08); }
+.v-paso-ondas .v-opcion.elegida { background: #fff; border-color: var(--primario); }
 /* «Verificar y continuar» (y «Cambiar y enviar código») centrados bajo el campo */
 .v-paso-ondas form > .acciones { justify-content: center; }
 .v-paso-ondas .v-correo-opciones .boton.secundario { background: rgb(255 255 255 / 0.7); }

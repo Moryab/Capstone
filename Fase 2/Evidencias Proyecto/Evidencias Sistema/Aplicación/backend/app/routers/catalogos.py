@@ -51,6 +51,21 @@ async def catalogo_perfil():
     return {"regiones": REGIONES, "instituciones": instituciones}
 
 
+@router.get("/carreras/{institucion_id}")
+async def carreras_de(institucion_id: str):
+    """Carreras de pregrado de una institución (desde el SIES), para elegir la propia en el perfil."""
+    try:
+        oid = ObjectId(institucion_id)
+    except InvalidId:
+        return {"carreras": []}
+    carreras = [
+        c["nombre"]
+        async for c in db.carreras.find({"institucion_id": oid, "activa": True}, {"nombre": 1})
+        .collation({"locale": "es"}).sort("nombre")
+    ]
+    return {"carreras": carreras}
+
+
 @router.get("/correos-institucionales")
 async def correos_institucionales():
     """Dominios de correo de cada institución. El registro los usa para recomendar el correo

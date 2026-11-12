@@ -131,6 +131,7 @@ export default function PaginaCuestionario() {
         institucion_id: datos.institucion_id,
         sede: datos.sede,
         carrera: datos.carrera.trim(),
+        carrera_otra: Boolean(datos.carrera_otra),
         anio_ingreso: datos.anio_ingreso === '' ? null : Number(datos.anio_ingreso),
       }
       : { ciudad_origen: datos.ciudad_origen.trim(), region_origen: datos.region_origen, direccion: datos.direccion.trim() }

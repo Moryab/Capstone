@@ -22,8 +22,7 @@ const OPCIONES_ESTUDIANTE = [
   { a: '/', texto: 'Inicio', movil: 'Inicio', Icono: IconoInicio },
   { a: '/mis-publicaciones', oferente: true, texto: 'Mis publicaciones', movil: 'Publicaciones', Icono: IconoLista },
   { a: '/alojamientos', texto: 'Buscar alojamiento', movil: 'Buscar', Icono: IconoLupa },
-  // No caben 7 botones en el celular: «Encontrar roomie» queda en el inicio
-  { a: '/roomies', texto: 'Encontrar roomie', Icono: IconoPersonas },
+  { a: '/roomies', texto: 'Encontrar roomie', movil: 'Roomies', Icono: IconoPersonas },
   { a: '/propuestas', texto: 'Propuestas de match', movil: 'Match', Icono: IconoMatch },
   // En el celular, «Mensajes» va arriba junto a la campana (abajo no caben más botones)
   { a: '/mensajes', texto: 'Mensajes', Icono: IconoMensajes, mensajes: true },
@@ -51,7 +50,7 @@ const GRUPOS_ADMIN = [
 const OPCIONES_ADMIN = GRUPOS_ADMIN.flatMap((g) => g.opciones)
 
 // Menú de la cuenta (ver perfil / cerrar sesión). Se cierra con Escape o al hacer clic afuera
-function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, className }) {
+function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, className, abrirConfig }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -82,6 +81,12 @@ function MenuCuenta({ usuario, cerrarSesion, abierto, setAbierto, idMenu, classN
       {/* EP-02 · HU-21 */}
       {estudiante && usuario.verificacion_estado !== 'verificado' && (
         <Link to="/perfil/verificacion" className="i-menu-opcion"><IconoEscudo /> Verificar que soy estudiante</Link>
+      )}
+      {/* En el celular la configuración va aquí: su lugar en la barra de abajo es para «Roomies» */}
+      {abrirConfig && (
+        <button type="button" className="i-menu-opcion" aria-haspopup="dialog" onClick={() => { setAbierto(false); abrirConfig() }}>
+          <IconoTuerca /> Configuración
+        </button>
       )}
       <button type="button" className="i-menu-opcion peligro" onClick={cerrarSesion}>
         <IconoSalir /> Cerrar sesión
@@ -221,18 +226,15 @@ export default function Navegacion({
           <IconoCampana /> {contador}
         </button>
       </header>
-      <nav className="i-nav-movil" aria-label="Principal (móvil)" style={{ gridTemplateColumns: `repeat(${enMovil.length + (admin ? 1 : 2)}, 1fr)` }}>
+      <nav className="i-nav-movil" aria-label="Principal (móvil)" style={{ gridTemplateColumns: `repeat(${enMovil.length + 1}, 1fr)` }}>
         {enMovil.map(opcionMovil)}
-        {!admin && (
-          <button type="button" className="i-movil-item" onClick={abrirConfig} aria-haspopup="dialog"><IconoTuerca /><span>Ajustes</span></button>
-        )}
         <div className="i-cuenta movil">
           {botonCuenta('i-movil-item', false, `${idMenu}-movil`)}
         </div>
       </nav>
       {/* En móvil el menú se abre como hoja desde abajo; comparte estado con el de escritorio */}
       <MenuCuenta usuario={usuario} cerrarSesion={cerrarSesion} abierto={menuAbierto}
-        setAbierto={setMenuAbierto} idMenu={`${idMenu}-movil`} className="hoja" />
+        setAbierto={setMenuAbierto} idMenu={`${idMenu}-movil`} className="hoja" abrirConfig={abrirConfig} />
     </>
   )
 }

@@ -129,7 +129,9 @@ export default function DetalleUsuario() {
           <dl className="verificacion-detalle">
             <Dato etiqueta="Institución">{perfil.institucion}</Dato>
             <Dato etiqueta="Sede">{perfil.sede}</Dato>
-            <Dato etiqueta="Carrera">{perfil.carrera}</Dato>
+            <Dato etiqueta="Carrera">
+              {perfil.carrera && <>{perfil.carrera}{perfil.carrera_otra && <span className="a-carrera-otra" title="No estaba en la lista de su institución">Escrita a mano</span>}</>}
+            </Dato>
             <Dato etiqueta="Año de ingreso">{perfil.anio_ingreso}</Dato>
             <Dato etiqueta="Origen">
               {[perfil.ciudad_origen, perfil.region_origen].filter(Boolean).join(', ') || null}

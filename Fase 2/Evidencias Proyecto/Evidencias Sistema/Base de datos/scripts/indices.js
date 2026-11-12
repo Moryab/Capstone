@@ -21,6 +21,7 @@ db.comunas.createIndex({ codigo: 1 }, { unique: true, name: "codigo_1" });
 db.comunas.createIndex({ centro: "2dsphere" }, { name: "centro_2dsphere" });
 db.instituciones.createIndex({ codigo: 1 }, { unique: true, name: "codigo_1" });
 db.instituciones.createIndex({ "sedes.coordenadas": "2dsphere" }, { name: "sedes.coordenadas_2dsphere" });
+db.carreras.createIndex({ institucion_id: 1, nombre: 1 }, { unique: true, name: "institucion_id_1_nombre_1" });
 
 db.publicaciones.createIndex({ codigo: 1 }, { unique: true, name: "codigo_1" });
 db.publicaciones.createIndex({ "ubicacion.coordenadas": "2dsphere" }, { name: "ubicacion.coordenadas_2dsphere" });

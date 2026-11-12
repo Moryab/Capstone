@@ -1,6 +1,13 @@
 /* Las pestañas de «Mi perfil» nunca parten su texto en dos líneas: en pantallas angostas se achican */
-.pestana { white-space: nowrap; }
+.pestana { min-width: 0; white-space: nowrap; }
+.pestana-corto { display: none; }
 @media (max-width: 560px) {
-  .pestanas { width: 100%; }
-  .pestana { padding: 9px 2px; font-size: 0.78rem; }
+  /* Columnas iguales que pueden achicarse bajo el largo del texto (si no, se salían de la barra) */
+  .pestanas { width: 100%; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); }
+  .pestana { display: flex; align-items: center; justify-content: center; padding: 9px 2px; font-size: 0.78rem; }
+  .pestana-largo { display: none; }
+  .pestana-corto { display: inline; }
+}
+@media (max-width: 380px) {
+  .pestana { font-size: 0.72rem; letter-spacing: -0.01em; }
 }

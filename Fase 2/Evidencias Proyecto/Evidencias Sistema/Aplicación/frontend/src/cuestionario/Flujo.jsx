@@ -189,15 +189,19 @@ export default function Flujo({
     else cambiarPregunta(i - 1, -1)
   }, [alSalir, cambiarPregunta, soloUna])
 
+  // Un campo (nombre, valor) o varios a la vez ({ carrera, carrera_otra })
   const cambiarPerfil = (nombre, valor) => {
-    const nuevo = { ...perfilRef.current, [nombre]: valor }
-    // Al cambiar de institución la sede anterior ya no sirve; si tiene una sola, se elige sola
-    if (nombre === 'institucion_id') {
-      const elegida = catalogo?.instituciones.find((i) => i.id === valor)
+    const cambios = typeof nombre === 'object' ? nombre : { [nombre]: valor }
+    const nuevo = { ...perfilRef.current, ...cambios }
+    // Al cambiar de institución la sede y la carrera anteriores ya no sirven; si tiene una sola sede, se elige sola
+    if ('institucion_id' in cambios) {
+      const elegida = catalogo?.instituciones.find((i) => i.id === cambios.institucion_id)
       nuevo.sede = elegida?.sedes.length === 1 ? elegida.sedes[0] : ''
+      nuevo.carrera = ''
+      nuevo.carrera_otra = false
     }
     setPerfil(nuevo)
-    setErrores((e) => ({ ...e, [nombre]: undefined, general: undefined }))
+    setErrores((e) => ({ ...e, ...Object.fromEntries(Object.keys(cambios).map((c) => [c, undefined])), general: undefined }))
   }
 
   const elegirOpcion = useCallback((valor, tarjeta) => {

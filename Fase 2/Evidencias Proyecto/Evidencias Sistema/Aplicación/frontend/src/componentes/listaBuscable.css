@@ -1,0 +1,67 @@
+/* Selector de carrera (componentes/ListaBuscable.jsx: carrera y comuna de origen): un campo que filtra mientras se escribe y
+   despliega la lista bajo él. Mismo aspecto que los demás campos (.campo de index.css) */
+
+.lb-caja { position: relative; }
+.lb-caja input { padding-right: 40px; }
+/* Flecha como la de los <select> */
+.lb-flecha {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  border-right: 2px solid var(--texto-suave);
+  border-bottom: 2px solid var(--texto-suave);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 180ms ease;
+}
+.lb-caja input[aria-expanded='true'] ~ .lb-flecha { transform: translateY(-20%) rotate(225deg); }
+
+.lb-lista {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  max-height: min(300px, 45vh);
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -18px rgb(11 31 58 / 0.45);
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lb-lista { animation: lb-abre 160ms cubic-bezier(0.23, 1, 0.32, 1); transform-origin: top; }
+}
+@keyframes lb-abre { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+
+.lb-lista li {
+  padding: 9px 12px;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  color: var(--texto);
+  cursor: pointer;
+  border-radius: 9px;
+}
+.lb-lista li[data-activa] { background: var(--campo); }
+/* Con detalle (por ejemplo, la región de una comuna): el nombre a la izquierda y el detalle a la derecha */
+.lb-lista li:has(small) { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; }
+.lb-lista li small { flex: none; max-width: 55%; overflow: hidden; font-size: 0.78rem; color: var(--texto-suave); text-overflow: ellipsis; white-space: nowrap; }
+.lb-lista li[aria-selected='true'] { font-weight: 600; color: var(--primario); }
+.lb-lista .lb-vacio { color: var(--texto-suave); cursor: default; }
+/* La opción extra («No encuentro mi carrera»), siempre al final y separada */
+.lb-lista .lb-extra {
+  margin-top: 4px;
+  padding-top: 11px;
+  font-weight: 600;
+  color: var(--primario);
+  border-top: 1px solid var(--borde);
+  border-radius: 0 0 9px 9px;
+}
+.campo-ayuda .enlace-boton { font-size: inherit; }

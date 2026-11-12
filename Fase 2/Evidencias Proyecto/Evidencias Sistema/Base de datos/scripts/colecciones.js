@@ -98,6 +98,28 @@ aplicar("instituciones", {
 });
 
 // ============================================================
+// CARRERAS
+// Carreras de pregrado de cada institución (scripts/carreras.js, desde el SIES): el estudiante
+// elige la suya de una lista según su institución, para que no se escriba mal
+// ============================================================
+aplicar("carreras", {
+  validator: {
+    "$jsonSchema": {
+      bsonType: "object",
+      required: ["_id","institucion_id","nombre","activa"],
+      properties: {
+        _id: {"bsonType":"objectId"},
+        institucion_id: {"bsonType":"objectId"},
+        nombre: {"bsonType":"string"},
+        area: {"bsonType":["string","null"]},
+        fuente: {"bsonType":"string"},
+        activa: {"bsonType":"bool"}
+      }
+    }
+  }
+});
+
+// ============================================================
 // USUARIOS
 // ============================================================
 aplicar("usuarios", {
@@ -199,6 +221,8 @@ aplicar("usuarios", {
           properties: {
             institucion_id: {"bsonType":"objectId"},
             carrera: {"bsonType":"string"},
+            // true si no estaba en la lista y la escribió a mano («No encuentro mi carrera»)
+            carrera_otra: {"bsonType":"bool"},
             anio_ingreso: {"bsonType":["int","null"]},
             sede: {"bsonType":"string"},
             direccion: {"bsonType":"string"},

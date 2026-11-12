@@ -3,10 +3,11 @@ import { useSesion } from '../sesion/SesionContext.jsx'
 import './pestanasPerfil.css'
 
 const PESTANAS = [
-  { a: '/perfil', texto: 'Ver perfil' },
-  { a: '/perfil/editar', texto: 'Editar perfil' },
-  { a: '/perfil/cuestionario', texto: 'Hábitos' },
-  { a: '/perfil/verificacion', texto: 'Verificación', conEstado: true },
+  // `corto`: el nombre en el celular, donde las cuatro pestañas comparten un ancho chico
+  { a: '/perfil', texto: 'Ver perfil', corto: 'Perfil' },
+  { a: '/perfil/editar', texto: 'Editar perfil', corto: 'Editar' },
+  { a: '/perfil/cuestionario', texto: 'Hábitos', corto: 'Hábitos' },
+  { a: '/perfil/verificacion', texto: 'Verificación', corto: 'Verificación', conEstado: true },
 ]
 // Punto junto a «Verificación»: solo cuando fue rechazada, porque pide una acción (enviar otro
 // comprobante). Los demás resultados ya se avisan con la notificación
@@ -22,9 +23,10 @@ export default function PestanasPerfil() {
   return (
     <nav className="pestanas" style={{ '--pestana': activa, '--n': PESTANAS.length }} aria-label="Secciones de mi perfil">
       <span className="pestanas-indicador" aria-hidden="true" />
-      {PESTANAS.map(({ a, texto, conEstado }) => (
-        <NavLink key={a} to={a} end className={clase}>
-          {texto}
+      {PESTANAS.map(({ a, texto, corto, conEstado }) => (
+        <NavLink key={a} to={a} end className={clase} aria-label={texto}>
+          <span className="pestana-largo" aria-hidden="true">{texto}</span>
+          <span className="pestana-corto" aria-hidden="true">{corto}</span>
           {conEstado && rechazada && (
             <span className="pestana-estado" data-estado="rechazado">
               <span className="visualmente-oculto">: rechazada, envía otro comprobante</span>

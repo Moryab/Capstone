@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 import Avatar from '../componentes/Avatar.jsx'
 import Campo from '../componentes/Campo.jsx'
+import SelectorCarrera from '../componentes/SelectorCarrera.jsx'
+import SelectorComuna, { cambiosDeRegion } from '../componentes/SelectorComuna.jsx'
 import FechaNacimiento, { OpcionesBoton } from '../componentes/FechaNacimiento.jsx'
 import { IconoUbicacion } from '../componentes/Iconos.jsx'
 import { IconoSede } from '../componentes/IconosAlojamiento.jsx'
@@ -10,13 +12,14 @@ import { IconoMensajes, IconoUsuario } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { IconoTelefono } from '../perfil/iconos.jsx'
 import { CargandoPerfil } from './LayoutPerfil.jsx'
-import { describirFaltantes, GENEROS } from '../perfil.js'
+import {
+  ANIO_INGRESO_MAX, ANIO_INGRESO_MIN, describirFaltantes, errorAnioIngreso, GENEROS, sinSignos,
+} from '../perfil.js'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { formatearTelefono } from '../formatos.js'
 import './editarPerfil.css'
 
 const MAX_DESCRIPCION = 300
-const ANIO_ACTUAL = new Date().getFullYear()
 
 // Campos editables; la API devuelve null en los que aún no se completan
 const CAMPOS = [
@@ -26,10 +29,13 @@ const CAMPOS = [
 ]
 
 // El teléfono llega como +56912345678 y se muestra separado: 9 1234 5678
-const aFormulario = (perfil) => Object.fromEntries(CAMPOS.map((campo) => {
-  const valor = perfil[campo] == null ? '' : String(perfil[campo])
-  return [campo, campo === 'telefono' ? formatearTelefono(valor) : valor]
-}))
+const aFormulario = (perfil) => ({
+  ...Object.fromEntries(CAMPOS.map((campo) => {
+    const valor = perfil[campo] == null ? '' : String(perfil[campo])
+    return [campo, campo === 'telefono' ? formatearTelefono(valor) : valor]
+  })),
+  carrera_otra: Boolean(perfil.carrera_otra), // escrita a mano, fuera de la lista de su institución
+})
 
 // Una sección del formulario: a la izquierda qué es y para qué se usa; a la derecha, sus campos
 function Seccion({ id, Icono, titulo, descripcion, children }) {
@@ -102,9 +108,12 @@ export default function EditarPerfil() {
       // Al cambiar de institución la sede anterior deja de servir; si hay una sola, se elige sola
       const elegida = catalogo.instituciones.find((i) => i.id === value)
       nuevos.sede = elegida?.sedes.length === 1 ? elegida.sedes[0] : ''
+      // y la carrera, que se elige de la lista de cada institución
+      nuevos.carrera = ''
+      nuevos.carrera_otra = false
     }
     setDatos(nuevos)
-    setErrores({ ...errores, [name]: undefined, ...(name === 'institucion_id' && { sede: undefined }) })
+    setErrores({ ...errores, [name]: undefined, ...(name === 'institucion_id' && { sede: undefined, carrera: undefined }) })
   }
 
   // Para los campos que no son un <input> (fecha en partes y género)
@@ -122,6 +131,11 @@ export default function EditarPerfil() {
 
   const enviar = async (e) => {
     e.preventDefault()
+    // El año de ingreso fuera de rango se marca al escribir: no se envía hasta corregirlo
+    if (errorAnioIngreso(datos.anio_ingreso)) {
+      document.querySelector('[name="anio_ingreso"]')?.focus()
+      return
+    }
     setEnviando(true)
     setMensaje({ tipo: '', texto: '' })
     try {
@@ -155,8 +169,8 @@ export default function EditarPerfil() {
     valor: i.id,
     texto: i.nombre === i.sigla ? i.nombre : `${i.nombre} (${i.sigla})`,
   }))
-  const opcionesSede = sedes.map((sede) => ({ valor: sede, texto: sede }))
   const opcionesRegion = catalogo.regiones.map((region) => ({ valor: region, texto: region }))
+  const opcionesSede = sedes.map((sede) => ({ valor: sede, texto: sede }))
   const nombreCompleto = [perfil.nombre, perfil.ap_paterno].filter(Boolean).map(mayusculaInicial).join(' ')
 
   return (
@@ -217,25 +231,38 @@ export default function EditarPerfil() {
               error={errores.sede} opciones={opcionesSede} disabled={!institucion} required
               ayuda={!institucion ? 'Primero elige tu institución.' : undefined} />
             <Campo etiqueta="Año de ingreso (opcional)" nombre="anio_ingreso" type="number"
-              value={datos.anio_ingreso} onChange={cambiar} error={errores.anio_ingreso}
-              min={1980} max={ANIO_ACTUAL} inputMode="numeric" />
+              value={datos.anio_ingreso} onChange={cambiar} onKeyDown={sinSignos}
+              error={errores.anio_ingreso ?? errorAnioIngreso(datos.anio_ingreso)}
+              min={ANIO_INGRESO_MIN} max={ANIO_INGRESO_MAX} placeholder={String(ANIO_INGRESO_MAX)} inputMode="numeric" />
           </div>
-          <Campo etiqueta="Carrera" nombre="carrera" value={datos.carrera} onChange={cambiar}
-            error={errores.carrera} maxLength={100} required />
+          <SelectorCarrera institucionId={datos.institucion_id} valor={datos.carrera} otra={datos.carrera_otra}
+            error={errores.carrera} alCambiar={(cambios) => {
+              setDatos((d) => ({ ...d, ...cambios }))
+              setErrores((e) => ({ ...e, carrera: undefined }))
+            }} />
         </Seccion>
 
         <Seccion id="ep-origen" Icono={IconoUbicacion} titulo="Origen y residencia"
           descripcion="Ayuda a otros estudiantes a conocerte. La dirección no se muestra en tu perfil.">
           <div className="ep-fila">
-            <Campo etiqueta="Ciudad de origen" nombre="ciudad_origen" value={datos.ciudad_origen}
-              onChange={cambiar} error={errores.ciudad_origen} maxLength={80} required />
+            {/* Primero la región; la ciudad se busca entre las comunas de esa región */}
             <Campo etiqueta="Región de origen" nombre="region_origen" value={datos.region_origen}
-              onChange={cambiar} error={errores.region_origen} opciones={opcionesRegion} required />
+              onChange={(e) => {
+                const cambios = cambiosDeRegion(e.target.value, datos.ciudad_origen)
+                setDatos((d) => ({ ...d, ...cambios }))
+                setErrores((er) => ({ ...er, region_origen: undefined, ciudad_origen: undefined }))
+              }}
+              error={errores.region_origen} opciones={opcionesRegion} required />
+            <SelectorComuna region={datos.region_origen} valor={datos.ciudad_origen} error={errores.ciudad_origen}
+              alCambiar={(cambios) => {
+                setDatos((d) => ({ ...d, ...cambios }))
+                setErrores((e) => ({ ...e, ciudad_origen: undefined }))
+              }} />
           </div>
           <Campo etiqueta="Dirección de tu ciudad de origen" nombre="direccion"
             value={datos.direccion} onChange={cambiar} error={errores.direccion} maxLength={150}
-            autoComplete="street-address" required
-            ayuda="Si aún no tienes alojamiento, indica dónde te estás quedando." />
+            autoComplete="street-address" required placeholder="Por ejemplo: Los Carrera 1250, depto. 304"
+            ayuda="Calle y número. Si aún no tienes alojamiento, indica dónde te estás quedando." />
         </Seccion>
 
         <Seccion id="ep-sobre" Icono={IconoMensajes} titulo="Sobre ti"
