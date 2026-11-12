@@ -36,6 +36,15 @@ def normalizar_telefono(telefono: str) -> str:
     return f"+56{digitos}"
 
 
+def validar_password(v: str) -> str:
+    """CA-01.4: al menos 8 caracteres, con letras y números."""
+    if len(v) < 8:
+        raise ValueError("La contraseña debe tener al menos 8 caracteres")
+    if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
+        raise ValueError("La contraseña debe combinar letras y números")
+    return v
+
+
 def fecha_a_datetime(fecha: date) -> datetime:
     """Mongo no tiene tipo fecha sin hora; se guarda a medianoche UTC."""
     return datetime.combine(fecha, datetime.min.time(), timezone.utc)
@@ -95,12 +104,7 @@ class RegistroIn(DatosPersonales):
     @field_validator("password")
     @classmethod
     def password_segura(cls, v):
-        # CA-01.4
-        if len(v) < 8:
-            raise ValueError("La contraseña debe tener al menos 8 caracteres")
-        if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
-            raise ValueError("La contraseña debe combinar letras y números")
-        return v
+        return validar_password(v)
 
     @field_validator("confirmacion")
     @classmethod
@@ -141,6 +145,36 @@ class CambioCorreoIn(BaseModel):
     @classmethod
     def correo_minusculas(cls, v):
         return v.lower()
+
+
+class RecuperarIn(BaseModel):
+    """«¿Olvidaste tu contraseña?»: el correo de la cuenta."""
+
+    correo: EmailStr
+
+    @field_validator("correo")
+    @classmethod
+    def correo_minusculas(cls, v):
+        return v.lower()
+
+
+class NuevaPasswordIn(RecuperarIn, CodigoIn):
+    """El código que llegó al correo y la contraseña nueva, con las mismas reglas del registro."""
+
+    password: str
+    confirmacion: str
+
+    @field_validator("password")
+    @classmethod
+    def password_segura(cls, v):
+        return validar_password(v)
+
+    @field_validator("confirmacion")
+    @classmethod
+    def passwords_coinciden(cls, v, info: ValidationInfo):
+        if "password" in info.data and v != info.data["password"]:
+            raise ValueError("La contraseña y su confirmación no coinciden")
+        return v
 
 
 class TokenOut(BaseModel):

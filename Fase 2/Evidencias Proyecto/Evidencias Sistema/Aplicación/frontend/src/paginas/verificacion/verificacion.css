@@ -40,6 +40,7 @@
   cursor: pointer;
 }
 .v-paso-salir:hover { color: var(--marca); border-color: var(--primario); }
+a.v-paso-salir { display: inline-flex; align-items: center; text-decoration: none; }
 .v-paso .tarjeta { margin: 8px auto 40px; }
 .v-paso-etiqueta {
   margin: 0 0 6px;
