@@ -199,7 +199,9 @@ html.tema-oscuro .chat-ver-perfil:hover { background: var(--primario-hover); }
 .chat-volver svg { width: 22px; height: 22px; }
 .chat-volver:hover { background: var(--ch-tinte); }
 
-.chat-mensajes { flex: 1; min-height: 0; padding: 20px clamp(16px, 3vw, 36px); overflow-y: auto; scroll-behavior: smooth; }
+/* Columna flexible: el estado vacío ocupa justo el alto disponible (sin desbordar ni cortarse) y la
+   silueta queda al fondo. Sin scroll-behavior: el salto al abrir es instantáneo; el suave lo pide el código */
+.chat-mensajes { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 20px clamp(16px, 3vw, 36px); overflow-y: auto; overscroll-behavior: contain; }
 .chat-anteriores { display: block; margin: 0 auto 16px; }
 .chat-burbujas { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .chat-dia { align-self: center; margin: 14px 0 6px; }
@@ -341,7 +343,8 @@ html.tema-oscuro .chat-enviar { color: var(--sobre-primario); background: var(--
 .chat-estado p { max-width: 38ch; margin: 0; line-height: 1.5; color: var(--texto-suave); }
 .chat-estado-acciones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
 .chat-estado-acciones .boton { margin: 0; }
-.chat-primer-mensaje { min-height: 100%; padding: 12px; }
+.chat-primer-mensaje { flex: 1 0 auto; padding: 12px; }
+.chat-silueta-mensajes { margin-top: auto; }
 
 .chat-ilustracion { width: min(240px, 70%); height: auto; overflow: visible; }
 .chat-ilustracion-chica { width: min(180px, 60%); }
@@ -392,21 +395,30 @@ html.tema-oscuro .il-linea-clara { stroke: #04201d; }
   .chat-panel { animation-delay: 120ms; }
   /* Las conversaciones de la lista entran en cascada la primera vez que aparecen */
   .chat-items:not(.chat-silueta) > li { animation: ch-aparecer 300ms var(--ch-curva) backwards; animation-delay: calc(var(--orden, 0) * 35ms); }
-  /* Al cambiar de conversación: la nueva llega con un fundido y un desenfoque breve, que funde
-     las dos en vez de mostrar un salto */
-  .chat-conversacion:not(.chat-silueta) { animation: ch-cambiar 300ms var(--ch-curva); }
+  /* Al cambiar de conversación la cabecera cambia al instante; solo el área de mensajes hace un
+     fundido corto desde 0.6 (nunca desde transparente, así no parpadea) */
+  .chat-mensajes { animation: ch-fundido 140ms ease-out; }
+  /* La silueta de los mensajes espera un momento: si cargan rápido, no se alcanza a ver */
+  .chat-silueta-mensajes { animation: ch-aparecer-suave 200ms ease-out 180ms backwards; }
   /* Un mensaje que llega (o que envías) sube y aparece; los que ya estaban no se mueven */
   .chat-burbuja.entra { animation: ch-entrar 380ms var(--ch-curva) both; }
   .chat-burbuja.mia.entra { transform-origin: bottom right; }
   .chat-burbuja.entra:not(.mia) { transform-origin: bottom left; }
-  .chat-estado { animation: ch-aparecer 420ms var(--ch-curva); }
+  /* Los estados vacíos aparecen solo con opacidad, sin desplazarse: quedan fijos en su lugar */
+  .chat-estado:not(.chat-primer-mensaje) { animation: ch-aparecer-suave 260ms ease-out; }
   .il-flota { animation: ch-flotar 6s ease-in-out infinite; }
+  /* El saludo: el globo se mece apenas y el texto de abajo nunca se mueve */
+  .chat-primer-mensaje .il-flota { animation: ch-mecer 7s ease-in-out infinite; transform-box: fill-box; transform-origin: 30% 100%; }
+  .chat-primer-mensaje .il-destello { animation: ch-destello 3.5s ease-in-out infinite; }
   .il-flota-tarde { animation-delay: -3s; }
   .sil, .sil-burbuja { animation: ch-pulso 1.6s ease-in-out infinite; }
 }
 @keyframes ch-aparecer { from { opacity: 0; transform: translateY(6px); } }
 @keyframes ch-subir { from { opacity: 0; transform: translateY(14px); } }
-@keyframes ch-cambiar { from { opacity: 0; transform: translateX(8px); filter: blur(2px); } }
+@keyframes ch-fundido { from { opacity: 0.6; } }
+@keyframes ch-aparecer-suave { from { opacity: 0; } }
+@keyframes ch-mecer { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-3px) rotate(-1.5deg); } }
+@keyframes ch-destello { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @keyframes ch-desde-derecha { from { opacity: 0; transform: translateX(28px); } }
 @keyframes ch-desde-izquierda { from { opacity: 0; transform: translateX(-28px); } }
 @keyframes ch-entrar { from { opacity: 0; transform: translateY(10px) scale(0.97); } }
@@ -438,5 +450,5 @@ html.tema-oscuro .il-linea-clara { stroke: #04201d; }
 @media (max-width: 899px) and (prefers-reduced-motion: no-preference) {
   .chat.con-conversacion .chat-panel { animation: ch-desde-derecha 320ms var(--ch-curva) backwards; }
   .chat:not(.con-conversacion) .chat-lista { animation: ch-desde-izquierda 320ms var(--ch-curva) backwards; }
-  .chat.con-conversacion .chat-conversacion:not(.chat-silueta) { animation: none; }
+  .chat.con-conversacion .chat-mensajes { animation: none; }
 }

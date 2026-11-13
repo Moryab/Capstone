@@ -521,15 +521,28 @@ async def ver_publicacion(publicacion_id: str, _admin: dict = Depends(solo_admin
 async def accion_sobre_publicacion(
     publicacion_id: str, datos: AccionPublicacionIn, admin: dict = Depends(solo_admin)
 ):
-    """CA-30.1 a CA-30.4: ocultar o eliminar con un motivo y un comentario."""
+    """CA-30.1 a CA-30.4: ocultar o eliminar con un motivo y un comentario. Para una falta menor se
+    puede advertir al oferente: la publicación sigue visible, la advertencia se suma a su cuenta y
+    queda en el historial de la publicación."""
     oid = id_publicacion(publicacion_id)
     publicacion = await validar_sobre_publicacion(datos.accion, oid)
+    oferente = None
+    if datos.accion == "advertir":
+        oferente = await db.usuarios.find_one({"_id": publicacion["oferente_id"]})
+        if not oferente or oferente["estado_cuenta"] != "activa":
+            raise HTTPException(status.HTTP_409_CONFLICT, "Solo se puede advertir a un oferente con la cuenta activa")
     accion, resolucion = ACCIONES[datos.accion]
     accion_id, ahora = ObjectId(), datetime.now(timezone.utc)
 
     # CA-30.6: si tenía reportes abiertos, quedan vinculados a esta acción y resueltos
     cerrados = await cerrar_abiertos("publicacion", oid, cierre_de_reporte(resolucion, admin, accion_id, ahora))
-    estados = await aplicar_sobre_publicacion(datos.accion, publicacion, datos.justificacion, accion_id, ahora)
+    if oferente:
+        await db.usuarios.update_one(
+            {"_id": oferente["_id"]}, {"$inc": {"advertencias_recibidas": 1}, "$set": {"fecha_actualizacion": ahora}}
+        )
+        estados = (publicacion["estado"], publicacion["estado"])
+    else:
+        estados = await aplicar_sobre_publicacion(datos.accion, publicacion, datos.justificacion, accion_id, ahora)
     if cerrados:
         await db.publicaciones.update_one({"_id": oid}, {"$inc": {"cantidad_reportes_pendiente": -len(cerrados)}})
     await registrar_accion(
@@ -538,6 +551,8 @@ async def accion_sobre_publicacion(
     )
 
     titulo, texto = AVISOS[datos.accion]
+    if oferente:
+        texto = "RoomMatch te envió una advertencia por tu publicación «{titulo}»"
     comentario = datos.justificacion.rstrip(".")
     await notificar(
         publicacion["oferente_id"], "accion_moderacion", titulo,
@@ -546,6 +561,8 @@ async def accion_sobre_publicacion(
         ("publicacion", oid),
     )
     await avisar_reportantes(cerrados)
+    if oferente:
+        return {"mensaje": f"Se envió una advertencia a {nombre_propio(oferente)}"}
     return {"mensaje": "Publicación ocultada" if datos.accion == "ocultar" else "Publicación eliminada"}
 
 

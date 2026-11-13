@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { api } from '../../api.js'
-import Campo from '../../componentes/Campo.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import { MAX_JUSTIFICACION } from '../../reportes.js'
 import { MODOS, textoModo } from './datos.js'
@@ -83,56 +82,72 @@ export default function CambiarRol({ usuarioId, nombre, modo, alTerminar }) {
   }
 
   return (
-    <section className="reporte-accion a-cambiar-rol" aria-labelledby="titulo-rol">
-      <h2 id="titulo-rol">Rol en RoomMatch</h2>
-      <p className="a-rol-actual">Rol actual: <EtiquetaRol modo={modo} /></p>
+    <section className="md-tarjeta du-rol" aria-labelledby="titulo-rol">
+      <div className="du-tarjeta-cabeza">
+        <p className="md-rotulo" id="titulo-rol">Rol en RoomMatch</p>
+        <EtiquetaRol modo={modo} />
+      </div>
 
       {!destino && (
         <>
-          <p className="revision-sub">
+          <p className="md-decision-ayuda du-sin-margen">
             Cámbialo solo si es necesario, por ejemplo si quedó con el rol equivocado. Antes de aplicarlo verás qué cambiará.
           </p>
-          <div className="acciones">
+          <div className="md-enlaces">
             {opciones.map((o) => (
-              <button key={o.valor} type="button" className="a-boton" onClick={() => elegir(o.valor)}>
+              <button key={o.valor} type="button" className="md-enlace du-rol-boton" onClick={() => elegir(o.valor)}>
                 Cambiar a {o.texto.toLowerCase()}
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
               </button>
             ))}
           </div>
         </>
       )}
 
-      {destino && !resumen && !error && <p className="cargando" role="status">Revisando qué cambiaría…</p>}
+      {destino && !resumen && !error && (
+        <div className="du-silueta-bloque" role="status" aria-label="Revisando qué cambiaría">
+          <span /><span /><span />
+        </div>
+      )}
       {destino && !resumen && error && (
         <>
-          <p className="alerta" role="alert">{error}</p>
-          <div className="acciones"><button type="button" className="a-boton" onClick={cancelar}>Volver</button></div>
+          <p className="dv-alerta du-alerta-error" role="alert">{error}</p>
+          <div className="md-enlaces"><button type="button" className="md-enlace" onClick={cancelar}>Volver</button></div>
         </>
       )}
 
       {destino && resumen?.con_convivencia && (
         <>
-          <p className="alerta" role="alert">
+          <p className="dv-alerta" role="alert">
             No se puede cambiar el rol mientras tenga una convivencia activa. Podrá cambiarse cuando la convivencia termine.
           </p>
-          <div className="acciones"><button type="button" className="a-boton" onClick={cancelar}>Volver</button></div>
+          <div className="md-enlaces"><button type="button" className="md-enlace" onClick={cancelar}>Volver</button></div>
         </>
       )}
 
       {destino && resumen && !resumen.con_convivencia && (
-        <form onSubmit={pedirConfirmacion} noValidate>
-          <p className="revision-sub">Al pasar a <strong>{textoModo(destino).toLowerCase()}</strong>:</p>
-          <ul className="a-consecuencias">
-            {consecuencias(destino, resumen).map((t) => <li key={t}>{t}</li>)}
-            <li>Se le enviará un aviso con la justificación.</li>
-          </ul>
-          <Campo etiqueta="Justificación" nombre="justificacion" id="rol-justificacion" multilinea rows={2} autoFocus
-            value={justificacion} onChange={(e) => { setJustificacion(e.target.value); setError('') }}
-            error={error} maxLength={MAX_JUSTIFICACION} required
-            ayuda="La persona verá este motivo en su aviso." />
-          <div className="acciones">
-            <button type="button" className="a-boton" onClick={cancelar} disabled={enviando}>Cancelar</button>
-            <button type="submit" className="a-boton primario" disabled={enviando}>Cambiar a {textoModo(destino).toLowerCase()}</button>
+        <form className="du-rol-form du-aparecer" onSubmit={pedirConfirmacion} noValidate>
+          <div className="md-avisos">
+            <p className="md-avisos-titulo">Al pasar a {textoModo(destino).toLowerCase()}</p>
+            <ul>
+              {consecuencias(destino, resumen).map((t) => <li key={t}>{t}</li>)}
+              <li>Se le enviará un aviso con la justificación.</li>
+            </ul>
+          </div>
+          <label className="md-campo">
+            <span className="md-campo-etiqueta">Justificación</span>
+            <textarea rows={3} value={justificacion} maxLength={MAX_JUSTIFICACION} autoFocus aria-invalid={Boolean(error) || undefined}
+              onChange={(e) => { setJustificacion(e.target.value); setError('') }}
+              placeholder="Ej.: se registró como buscador, pero arrienda una pieza." />
+            {error
+              ? <span className="md-campo-pie du-error" role="alert">{error}</span>
+              : <span className="md-campo-pie">La persona verá este motivo en su aviso.</span>}
+          </label>
+          <div className="dv-botones">
+            <button type="button" className="md-enlace" onClick={cancelar} disabled={enviando}>Cancelar</button>
+            <button type="submit" className="md-aplicar" disabled={enviando || !justificacion.trim()}>
+              {enviando ? 'Cambiando…' : `Cambiar a ${textoModo(destino).toLowerCase()}`}
+            </button>
           </div>
           <Confirmar abierto={confirmando} titulo={`¿Cambiar a ${textoModo(destino).toLowerCase()}?`} tono=""
             mensaje={`${nombre} pasará a ser ${textoModo(destino).toLowerCase()}. ${consecuencias(destino, resumen)[0]}`}

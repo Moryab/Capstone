@@ -45,9 +45,10 @@ MotivoIncumplimiento = Literal[
 
 
 class AccionPublicacionIn(JustificacionIn):
-    """HU-30: el motivo del incumplimiento y el comentario (la justificación) son obligatorios."""
+    """HU-30: el motivo del incumplimiento y el comentario (la justificación) son obligatorios.
+    «advertir» deja la publicación como está y le suma una advertencia al oferente (falta menor)."""
 
-    accion: Literal["ocultar", "eliminar"]
+    accion: Literal["advertir", "ocultar", "eliminar"]
     motivo: MotivoIncumplimiento
 
 

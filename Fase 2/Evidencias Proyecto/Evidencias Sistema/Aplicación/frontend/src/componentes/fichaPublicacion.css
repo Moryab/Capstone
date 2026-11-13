@@ -645,3 +645,11 @@ li.parecido > .fp-habito-estado { color: var(--fp-ambar); }
 .fp-tu-sede-texto strong { color: var(--marca); }
 .fp-tu-sede-texto .fp-tu-sede-km { font-size: 1.05rem; color: var(--primario); white-space: nowrap; }
 .fp-tu-sede-nota { margin-top: 4px; font-size: 0.8rem; line-height: 1.4; color: var(--texto-suave); }
+
+/* Con el mapa al lado, la tarjeta de dirección mide al menos lo mismo que el mapa (sin la nota de abajo)
+   y «Tu sede» queda centrado en el espacio que sobra bajo la dirección, no pegado al borde */
+@container ficha (min-width: 981px) {
+  .fp-ubicacion > .fp-casa { display: flex; flex-direction: column; min-height: clamp(380px, 32vw, 500px); }
+  .fp-casa:has(.fp-tu-sede) { padding-bottom: 22px; }
+  .fp-casa > .fp-tu-sede { margin-block: auto; }
+}

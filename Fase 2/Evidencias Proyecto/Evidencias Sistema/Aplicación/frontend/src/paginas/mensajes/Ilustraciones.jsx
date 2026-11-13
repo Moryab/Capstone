@@ -106,3 +106,15 @@ export function SiluetaConversacion() {
     </div>
   )
 }
+
+// Solo el área de mensajes mientras cargan (la cabecera ya se ve): tres burbujas tenues al fondo, como
+// donde quedarán los mensajes. Aparece con un pequeño retraso: si la carga es rápida, no se alcanza a ver
+export function SiluetaMensajes() {
+  return (
+    <ol className="chat-burbujas chat-silueta-mensajes" aria-hidden="true">
+      {[['', 38], ['mia', 46], ['', 28]].map(([clase, ancho], i) => (
+        <li key={i} className={`chat-burbuja sil-burbuja ${clase}`} style={{ width: `${ancho}%` }} />
+      ))}
+    </ol>
+  )
+}

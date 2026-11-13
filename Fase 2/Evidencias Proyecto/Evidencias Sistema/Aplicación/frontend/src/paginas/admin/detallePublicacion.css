@@ -1,0 +1,163 @@
+/* =====================================================================
+   Ficha de una publicación en el administrador (DetallePublicacionAdmin.jsx). Prefijo dp-. Se apoya en
+   detalleModeracion.css (panel, tarjetas y decisión) y en ui/detalle.css (cabecera, cifras, listas,
+   bandas y siluetas). Aquí va lo propio: la foto principal, el oferente, los motivos del
+   incumplimiento, el historial como línea de tiempo y la vista del estudiante dentro del panel
+   ===================================================================== */
+
+/* Foto principal en la cabecera, con un anillo del color del estado. Tamaño fijo en 4:3 */
+.dp-foto {
+  --anillo: var(--a-acento-claro);
+  position: relative;
+  flex: none;
+  width: 148px;
+  aspect-ratio: 4 / 3;
+  padding: 5px;
+  background: conic-gradient(from 210deg, var(--anillo), color-mix(in srgb, var(--anillo) 25%, transparent), var(--anillo));
+  border-radius: 24px;
+  box-shadow: 0 16px 30px -18px var(--anillo);
+}
+.dp-foto[data-estado='suspendida'] { --anillo: #f2c94c; }
+.dp-foto[data-estado='eliminada'] { --anillo: var(--a-error); }
+.dp-foto[data-estado='pausada'] { --anillo: var(--a-neutro); }
+.dp-foto[data-estado='completa'] { --anillo: var(--a-info); }
+.dp-foto > img, .dp-foto-vacia {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--a-tinte);
+  border: 4px solid var(--a-sup);
+  border-radius: 19px;
+}
+.dp-foto[data-estado='eliminada'] > img, .dp-foto[data-estado='suspendida'] > img { filter: grayscale(0.6); }
+.dp-foto-vacia { display: grid; place-items: center; color: var(--a-acento); }
+.dp-foto-vacia svg { width: 36px; height: 36px; }
+.dp-foto-cuenta {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  background: var(--a-titulo);
+  border: 2px solid var(--a-sup);
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+html.tema-oscuro .dp-foto-cuenta { color: #06101d; }
+
+/* El oferente, como una píldora que lleva a su ficha */
+.dp-oferente {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 10px 4px 4px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--a-titulo);
+  text-decoration: none;
+  background: var(--a-sup);
+  border: 1px solid var(--a-borde);
+  border-radius: 999px;
+  transition: border-color 160ms ease, transform 140ms var(--a-curva);
+}
+.dp-oferente > span:not(.avatar):first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-oferente .insignia-verificado, .dp-oferente .insignia-sin-verificar { font-size: 0.7rem; }
+.dp-oferente > svg { width: 14px; height: 14px; color: var(--a-suave); transition: transform 200ms var(--a-curva); }
+.dp-oferente:active { transform: scale(0.98); }
+.dp-oferente:focus-visible { outline: 3px solid var(--a-acento-claro); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .dp-oferente:hover { border-color: color-mix(in srgb, var(--a-acento) 45%, var(--a-borde)); }
+  .dp-oferente:hover > svg { color: var(--a-acento); transform: translateX(2px); }
+}
+
+/* Motivo del incumplimiento: píldoras para elegir */
+.dp-motivos { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.dp-motivos legend { margin-bottom: 8px; padding: 0; }
+.dp-motivos-lista { display: flex; flex-wrap: wrap; gap: 8px; }
+.dp-motivo {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--a-texto);
+  cursor: pointer;
+  background: var(--a-sup);
+  border: 1.5px solid var(--a-borde);
+  border-radius: 999px;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 140ms var(--a-curva);
+}
+.dp-motivo input { position: absolute; opacity: 0; pointer-events: none; }
+.dp-motivo:has(input:focus-visible) { outline: 3px solid var(--a-acento-claro); outline-offset: 2px; }
+.dp-motivo:active { transform: scale(0.97); }
+.dp-motivo[data-elegido] { color: var(--a-error); background: var(--a-error-fondo); border-color: var(--a-error); }
+@media (hover: hover) and (pointer: fine) {
+  .dp-motivo:hover:not([data-elegido]) { border-color: color-mix(in srgb, var(--a-error) 45%, var(--a-borde)); }
+}
+
+/* Historial de moderación: una línea de tiempo con un punto del color de cada acción */
+.dp-evento {
+  --tono: var(--a-neutro);
+  --tono-fondo: var(--a-neutro-fondo);
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 6px;
+}
+.dp-evento[data-tono='ok'] { --tono: var(--a-ok); --tono-fondo: var(--a-ok-fondo); }
+.dp-evento[data-tono='espera'] { --tono: var(--a-espera); --tono-fondo: var(--a-espera-fondo); }
+.dp-evento[data-tono='error'] { --tono: var(--a-error); --tono-fondo: var(--a-error-fondo); }
+.dp-evento[data-tono='vino'] { --tono: var(--a-vino); --tono-fondo: var(--a-vino-fondo); }
+.dp-evento:not(:last-child)::before {
+  position: absolute;
+  top: 22px;
+  bottom: -8px;
+  left: 8px;
+  width: 2px;
+  content: '';
+  background: var(--a-borde);
+  border-radius: 2px;
+}
+.dp-evento-punto { width: 18px; height: 18px; margin-top: 3px; background: var(--tono); border: 4px solid var(--a-sup); border-radius: 50%; box-shadow: 0 0 0 3px var(--tono-fondo); }
+.dp-evento-cuerpo { display: grid; gap: 8px; min-width: 0; }
+.dp-evento-cuerpo p { margin: 0; }
+.dp-evento-titulo { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.dp-evento-titulo strong { font-size: 0.94rem; color: var(--tono); }
+.dp-evento-motivo { padding: 2px 10px; font-size: 0.76rem; font-weight: 700; color: var(--a-texto); background: var(--a-sup-2); border: 1px solid var(--a-borde); border-radius: 999px; }
+.dp-evento .md-cita { padding: 10px 14px; font-size: 0.88rem; border-left-color: var(--tono); }
+.dp-evento-meta { font-size: 0.8rem; color: var(--a-suave); }
+
+/* Publicación eliminada: la tarjeta de moderación con su estado vacío centrado */
+.du .dp-cerrada { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+.dp-cerrada .du-vacio { flex-direction: column; justify-content: center; text-align: center; }
+.dp-cerrada .du-vacio > div { justify-items: center; }
+
+/* La vista del estudiante: la misma ficha que ve un estudiante, con su propio panel y su cabecera */
+.dp-vista { display: grid; gap: 14px; padding-top: 22px; border-top: 1px dashed var(--a-borde-fuerte); }
+.dp-vista-cabeza { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.dp-vista-nota { padding: 5px 12px; font-size: 0.8rem; font-weight: 600; color: var(--a-espera); background: var(--a-espera-fondo); border-radius: 999px; }
+/* Los botones del estudiante se ven igual, pero no responden */
+.dp-vista [data-vista] { cursor: default; }
+
+/* Silueta de la foto */
+.dp-s-foto { flex: none; width: 148px; height: auto; aspect-ratio: 4 / 3; border-radius: 24px; }
+
+/* Movimiento propio de la ilustración */
+@media (prefers-reduced-motion: no-preference) {
+  .dp .md-ilus-bandera { transform-box: fill-box; transform-origin: left center; }
+  .dp-ilus-pin { animation: dp-pin 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+  .dp-ilus-precio { animation: dp-precio 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: right center; }
+  .dp-evento { animation: md-entrar 420ms var(--a-curva) backwards; }
+}
+@keyframes dp-pin { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes dp-precio { 50% { transform: rotate(-4deg); } }
+
+@media (max-width: 560px) {
+  .dp-foto, .dp-s-foto { width: 128px; }
+}

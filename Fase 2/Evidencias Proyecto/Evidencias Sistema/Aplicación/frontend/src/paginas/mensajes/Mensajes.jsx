@@ -112,7 +112,8 @@ function Bandeja({ id, revisarMensajes }) {
 
             <section className="chat-panel" aria-label="Conversación">
               {id ? (
-                <Conversacion key={id} id={id} alCambiar={alCambiar} />
+                // `previa`: la fila de la lista, para mostrar la cabecera al instante mientras llegan los mensajes
+                <Conversacion key={id} id={id} previa={conversaciones?.find((c) => c.id === id)} alCambiar={alCambiar} />
               ) : (
                 <div className="chat-estado">
                   <IlustracionElegir />

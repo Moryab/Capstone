@@ -6,7 +6,7 @@ import InsigniaVerificacion from '../../componentes/InsigniaVerificacion.jsx'
 import { formatearPesos } from '../../publicaciones.js'
 import { mayusculaInicial as mayuscula } from '../../inicio/utilidades.js'
 import { horaDe, mismoDia, nombreDe, tituloDia } from './formato.js'
-import { IlustracionSaludo, SiluetaConversacion } from './Ilustraciones.jsx'
+import { IlustracionSaludo, SiluetaConversacion, SiluetaMensajes } from './Ilustraciones.jsx'
 
 const REVISAR_MS = 4000 // cada cuánto se piden los mensajes nuevos de la conversación abierta
 const MAX_MENSAJE = 1000 // el mismo de backend/app/schemas/conversaciones.py
@@ -34,16 +34,28 @@ function TarjetaPublicacion({ pub }) {
   )
 }
 
+/*
+ * Lo último que se vio de cada conversación, por id. Al volver a una ya abierta se muestra al instante
+ * (sin silueta ni parpadeo) y se actualiza por detrás. Solo vive mientras la pestaña está abierta
+ */
+const cache = new Map()
+
 const unir = (actuales, nuevos) => {
   const ids = new Set(actuales.map((m) => m.id))
   return [...actuales, ...nuevos.filter((m) => !ids.has(m.id))]
 }
 
 /** Una conversación: los mensajes (los nuevos llegan solos cada pocos segundos) y el cuadro para escribir. */
-export default function Conversacion({ id, alCambiar }) {
+export default function Conversacion({ id, previa, alCambiar }) {
   const { pathname, state } = useLocation()
   const navegar = useNavigate()
-  const [estado, setEstado] = useState({ conv: null, mensajes: [], hayAnteriores: false, error: '' })
+  // Con caché: lo de la última vez. Sin caché: la cabecera sale de la fila de la lista (`previa`) y los
+  // mensajes quedan «cargando». Nunca se muestra nada de otra conversación: el estado es de este id
+  const [estado, setEstado] = useState(() => {
+    const guardado = cache.get(id)
+    if (guardado) return { ...guardado, cargado: true, error: '' }
+    return { conv: previa ? { id, otro: previa.otro } : null, mensajes: [], hayAnteriores: false, cargado: false, error: '' }
+  })
   // Al llegar desde un alojamiento («Enviar mensaje al oferente»), el mensaje lo adjunta y se sugiere un texto
   const [adjunto, setAdjunto] = useState(() => state?.publicacion ?? null)
   const [texto, setTexto] = useState(() => (state?.publicacion
@@ -56,22 +68,42 @@ export default function Conversacion({ id, alCambiar }) {
   const ultimoId = useRef(null) // lo usa el intervalo sin reiniciarse con cada mensaje
   const scroll = useRef({ modo: 'final', alto: 0 }) // qué hacer con el scroll al cambiar los mensajes
   // Los mensajes que ya estaban al abrir (o al cargar los anteriores) no se animan; solo los que llegan
-  const yaVistos = useRef(new Set())
+  const yaVistos = useRef(new Set(cache.get(id)?.mensajes.map((m) => m.id)))
 
-  const { conv, mensajes, hayAnteriores, error } = estado
+  const { conv, mensajes, hayAnteriores, cargado, error } = estado
   useEffect(() => {
     ultimoId.current = mensajes.at(-1)?.id ?? null
   }, [mensajes])
 
-  // Carga inicial (los últimos 50) y lectura de la conversación
+  // Lo que se ve queda guardado para la próxima vez que se abra esta conversación
+  useEffect(() => {
+    if (cargado && conv) cache.set(id, { conv, mensajes, hayAnteriores })
+  }, [id, cargado, conv, mensajes, hayAnteriores])
+
+  // La cabecera puede salir de la lista si esta llega después de abrir la conversación
+  useEffect(() => {
+    if (previa) setEstado((e) => (e.conv ? e : { ...e, conv: { id, otro: previa.otro } }))
+  }, [id, previa])
+
+  // Carga inicial (los últimos 50) y lectura de la conversación. `vigente` descarta la respuesta si
+  // mientras tanto se abrió otra conversación (este componente se desmonta al cambiar de id)
   useEffect(() => {
     let vigente = true
     api(`/conversaciones/${id}/mensajes`)
       .then((r) => {
         if (!vigente) return
-        scroll.current.modo = 'final'
-        r.mensajes.forEach((m) => yaVistos.current.add(m.id))
-        setEstado({ conv: r.conversacion, mensajes: r.mensajes, hayAnteriores: r.hay_anteriores, error: '' })
+        const caja = lista.current
+        const abajo = !caja || caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80
+        setEstado((e) => {
+          // Desde la caché: si no cambió nada, no se vuelve a dibujar (y el scroll no se mueve)
+          const iguales = e.cargado && e.mensajes.length === r.mensajes.length
+            && e.mensajes.at(-1)?.id === r.mensajes.at(-1)?.id
+          if (iguales) return { ...e, conv: r.conversacion }
+          // Los que ya se veían (o los de la primera carga) no se animan; solo los nuevos desde la caché
+          if (!e.cargado) r.mensajes.forEach((m) => yaVistos.current.add(m.id))
+          scroll.current.modo = !e.cargado || abajo ? 'final' : 'quieto'
+          return { conv: r.conversacion, mensajes: r.mensajes, hayAnteriores: r.hay_anteriores, cargado: true, error: '' }
+        })
         alCambiar()
       })
       .catch((err) => vigente && setEstado((e) => ({ ...e, error: err.message })))
@@ -101,12 +133,22 @@ export default function Conversacion({ id, alCambiar }) {
     return () => clearInterval(intervalo)
   }, [revisar])
 
-  // Después de dibujar: bajar al último mensaje o mantener la posición al cargar los anteriores
+  // Antes de pintar: al abrir la conversación se baja al final de inmediato (sin animación), así nunca se
+  // ve el scroll recorriendo los mensajes. Los mensajes nuevos bajan con suavidad; al cargar los
+  // anteriores se mantiene la posición
+  const primeraVez = useRef(true)
   useLayoutEffect(() => {
     const caja = lista.current
     if (!caja) return
-    if (scroll.current.modo === 'final') caja.scrollTop = caja.scrollHeight
-    else if (scroll.current.modo === 'anteriores') caja.scrollTop = caja.scrollHeight - scroll.current.alto
+    if (primeraVez.current && mensajes.length) {
+      primeraVez.current = false
+      caja.scrollTop = caja.scrollHeight
+    } else if (scroll.current.modo === 'final') {
+      const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      caja.scrollTo({ top: caja.scrollHeight, behavior: quieto ? 'auto' : 'smooth' })
+    } else if (scroll.current.modo === 'anteriores') {
+      caja.scrollTop = caja.scrollHeight - scroll.current.alto
+    }
     scroll.current.modo = 'quieto'
   }, [mensajes])
 
@@ -193,6 +235,7 @@ export default function Conversacion({ id, alCambiar }) {
       </div>
     )
   }
+  // Solo si se entra directo por la URL antes de que llegue la lista: aún no se sabe con quién es
   if (!conv) return <SiluetaConversacion />
 
   const { otro } = conv
@@ -216,13 +259,15 @@ export default function Conversacion({ id, alCambiar }) {
         )}
       </header>
 
-      <div ref={lista} className="chat-mensajes">
+      <div ref={lista} className="chat-mensajes" aria-busy={!cargado}>
+        {/* Mientras llegan los mensajes: una silueta discreta en el mismo espacio (nada se reacomoda) */}
+        {!cargado && <SiluetaMensajes />}
         {hayAnteriores && (
           <button type="button" className="enlace-boton chat-anteriores" onClick={cargarAnteriores} disabled={cargandoAnteriores}>
             {cargandoAnteriores ? 'Cargando…' : 'Ver mensajes anteriores'}
           </button>
         )}
-        {mensajes.length === 0 && (
+        {cargado && mensajes.length === 0 && (
           <div className="chat-estado chat-primer-mensaje">
             <IlustracionSaludo />
             <p>Escríbele a {mayuscula(otro.nombre)} para comenzar la conversación.</p>
