@@ -189,33 +189,50 @@ async def buscar_reporte(reporte_id: str) -> dict:
 
 async def persona(usuario_id: ObjectId | None) -> PersonaReporteOut | None:
     doc = usuario_id and await db.usuarios.find_one(
-        {"_id": usuario_id}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1}
+        {"_id": usuario_id},
+        {"nombre": 1, "ap_paterno": 1, "ap_materno": 1, "correo": 1, "perfil.foto_url": 1, "fecha_registro": 1},
     )
     if not doc:
         return None
-    return PersonaReporteOut(id=str(doc["_id"]), nombre=nombre_completo(doc), correo=doc["correo"])
+    return PersonaReporteOut(
+        id=str(doc["_id"]), nombre=nombre_completo(doc), correo=doc["correo"],
+        foto_url=(doc.get("perfil") or {}).get("foto_url"), fecha_registro=doc.get("fecha_registro"),
+    )
 
 
 async def elemento_reportado(reporte: dict) -> ElementoReportadoOut | None:
     """Resumen de lo reportado. Incluye lo que un estudiante ya no puede ver, como una publicación
     eliminada: el administrador debe poder revisarlo igual."""
     oid = reporte["elemento_reportado_id"]
+    recibidos = await db.reportes.count_documents(
+        {"tipo_elemento": reporte["tipo_elemento"], "elemento_reportado_id": oid}
+    )
     if reporte["tipo_elemento"] == "usuario":
         doc = await db.usuarios.find_one({"_id": oid})
         return doc and ElementoReportadoOut(
             id=str(oid),
             titulo=nombre_completo(doc),
             estado=doc["estado_cuenta"],
+            foto_url=(doc.get("perfil") or {}).get("foto_url"),
+            reportes_recibidos=recibidos,
             correo=doc["correo"],
             verificacion_estado=doc.get("verificacion", {}).get("estado", "no_verificado"),
+            fecha_registro=doc.get("fecha_registro"),
+            advertencias=doc.get("advertencias_recibidas", 0),
+            publicaciones_activas=await db.publicaciones.count_documents({"oferente_id": oid, "estado": "activa"}),
         )
     doc = await db.publicaciones.find_one({"_id": oid})
+    fotos = (doc or {}).get("fotos", [])
     return doc and ElementoReportadoOut(
         id=str(oid),
         titulo=doc["titulo"],
         estado=doc["estado"],
+        foto_url=next((f["url"] for f in fotos if f.get("es_principal")), fotos[0]["url"] if fotos else None),
+        reportes_recibidos=recibidos,
+        tipo=doc["tipo"],
         comuna=doc["ubicacion"]["comuna_nombre"],
         costo_mensual=doc["costo_mensual"],
+        cupos_disponibles=doc.get("cupos_disponibles"),
         oferente=await persona(doc["oferente_id"]),
     )
 

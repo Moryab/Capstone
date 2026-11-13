@@ -1474,27 +1474,9 @@ p.compat-oferente { font-size: 0.85rem; }
 }
 .etiqueta-estado.aprobada { color: var(--exito); background: var(--exito-fondo); }
 .etiqueta-estado.rechazada { color: var(--error); background: var(--error-fondo); }
-.revision { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; margin-bottom: 20px; }
 .revision-sub { margin: 0 0 12px; font-size: 0.9rem; color: var(--texto-suave); }
-.comprobante-vista {
-  display: block;
-  width: 100%;
-  height: 560px;
-  object-fit: contain;
-  background: var(--campo);
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-}
-.comprobante-abrir { display: inline-block; margin-top: 8px; font-size: 0.88rem; font-weight: 600; color: var(--primario); }
 .revision-persona { display: flex; align-items: center; gap: 12px; margin: 8px 0 14px; }
 .revision-persona a { text-decoration: none; color: var(--primario); }
-.revision-perfil .info { margin: 12px 0 0; }
-.revision-decision { padding-top: 16px; border-top: 1px solid var(--borde); }
-@media (max-width: 760px) {
-  .revision { grid-template-columns: 1fr; }
-  .comprobante-vista { height: 420px; }
-}
-.revision-revocar, .revision-decision > .acciones { margin-top: 16px; }
 
 /* ===== Vista previa del propio perfil («Ver como me ven»): igual al perfil de otro estudiante ===== */
 .vista-publica-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }

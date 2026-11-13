@@ -60,6 +60,9 @@ class PersonaReporteOut(BaseModel):
     id: str
     nombre: str
     correo: str
+    # Para la tarjeta de quien reportó o del oferente en el detalle del reporte
+    foto_url: str | None = None
+    fecha_registro: datetime | None = None
 
 
 class ElementoReportadoOut(BaseModel):
@@ -68,12 +71,20 @@ class ElementoReportadoOut(BaseModel):
     id: str
     titulo: str
     estado: str  # estado de la cuenta o de la publicación
+    # Lo que ayuda a decidir: cuántas veces lo han reportado (en total, contando este reporte)
+    foto_url: str | None = None
+    reportes_recibidos: int = 0
     # Perfil
     correo: str | None = None
     verificacion_estado: str | None = None
+    fecha_registro: datetime | None = None
+    advertencias: int = 0
+    publicaciones_activas: int = 0
     # Publicación
+    tipo: str | None = None
     comuna: str | None = None
     costo_mensual: int | None = None
+    cupos_disponibles: int | None = None
     oferente: PersonaReporteOut | None = None
 
 
