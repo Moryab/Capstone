@@ -624,3 +624,24 @@ li.parecido > .fp-habito-estado { color: var(--fp-ambar); }
   .fp-mapa .mapa-lienzo.mapa-chico, .fp-mapa-cargando { height: 280px; }
   .fp-ubicacion { margin-top: 28px; }
 }
+
+/* «Tu sede» en la tarjeta de dirección: a qué distancia queda de este alojamiento */
+.fp-tu-sede {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 16px;
+  padding: 14px;
+  background: color-mix(in srgb, #f2c94c 14%, var(--tarjeta));
+  border: 1px solid color-mix(in srgb, #f2c94c 45%, transparent);
+  border-radius: 14px;
+}
+.fp-tu-sede-icono { display: grid; place-items: center; width: 38px; height: 38px; color: #0b1f3a; background: #f2c94c; border-radius: 12px; }
+.fp-tu-sede-icono svg { width: 20px; height: 20px; }
+.fp .fp-tu-sede p { margin: 0; }
+.fp-tu-sede-rotulo { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: var(--texto-suave); text-transform: uppercase; }
+.fp-tu-sede-texto { margin-top: 2px; font-size: 0.93rem; line-height: 1.45; color: var(--texto); }
+.fp-tu-sede-texto strong { color: var(--marca); }
+.fp-tu-sede-texto .fp-tu-sede-km { font-size: 1.05rem; color: var(--primario); white-space: nowrap; }
+.fp-tu-sede-nota { margin-top: 4px; font-size: 0.8rem; line-height: 1.4; color: var(--texto-suave); }

@@ -312,7 +312,7 @@ export default function FichaPublicacion({ pub, acciones, herramientas, children
       <section className="fp-ubicacion" id="fp-ubicacion" aria-labelledby="fp-titulo-ubicacion">
         <div className="fp-mapa">
           <Suspense fallback={<div className="fp-mapa-cargando" aria-label="Cargando el mapa" />}>
-            <MapaUbicacion ubicacion={ubicacion} esPropia={pub.es_propia} />
+            <MapaUbicacion ubicacion={ubicacion} tipo={pub.tipo} esPropia={pub.es_propia} sede={pub.sede} />
           </Suspense>
         </div>
 
@@ -339,6 +339,24 @@ export default function FichaPublicacion({ pub, acciones, herramientas, children
               </div>
             </dl>
           </div>
+
+          {/* A qué distancia queda la sede de quien mira (en línea recta, como en el mapa) */}
+          {pub.sede && !pub.es_propia && pub.distancia_km != null && (
+            <div className="fp-bloque fp-tu-sede">
+              <span className="fp-tu-sede-icono" aria-hidden="true"><IconoSede /></span>
+              <div>
+                <p className="fp-tu-sede-rotulo">Tu sede</p>
+                <p className="fp-tu-sede-texto">
+                  <strong>{pub.sede.institucion} · {pub.sede.nombre}</strong> está a{' '}
+                  <strong className="fp-tu-sede-km">{pub.distancia_km.toLocaleString('es-CL')} km</strong> de este alojamiento
+                </p>
+                <p className="fp-tu-sede-nota">
+                  {ubicacion.punto ? 'En línea recta.' : `Aproximado: medido desde el centro de ${ubicacion.comuna_nombre}.`}
+                  {pub.sede.direccion && <> La sede está en {pub.sede.direccion}, {pub.sede.comuna}.</>}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

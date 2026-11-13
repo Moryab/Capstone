@@ -158,7 +158,23 @@ html.tema-oscuro .al-contador { color: var(--sobre-primario); }
 
 /* ---------- Chips de los filtros aplicados (la fila siempre ocupa su lugar) ---------- */
 .al-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 34px; margin: 14px 4px 20px; }
-.al-chips-ninguno { font-size: 0.88rem; color: var(--texto-suave); }
+/* Sin filtros: un aviso suave con ícono, legible sobre el fondo */
+.al-chips-ninguno {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--texto);
+  background: color-mix(in srgb, var(--tarjeta) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primario) 22%, var(--borde));
+  border-radius: 999px;
+  box-shadow: 0 6px 16px -14px rgb(11 31 58 / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.al-chips-ninguno > svg { flex: none; width: 17px; height: 17px; color: var(--primario); }
 .al-chips-ninguno a { color: var(--primario); font-weight: 600; }
 .al-chip {
   display: inline-flex;
@@ -461,3 +477,7 @@ html.tema-oscuro .al-comuna input:checked + span, html.tema-oscuro .al-comuna in
   .al-grilla { gap: 18px; }
 }
 
+
+/* «Cerca de mi sede»: a cuántos km, con los mismos botones de opción única */
+.al-radio { display: grid; gap: 6px; margin-top: 4px; }
+.al-radio .al-segmentos { width: 100%; }

@@ -459,23 +459,30 @@ function PaginaPropuestas() {
 
       {mensaje && <p className="exito pp-aviso" role="status">{mensaje}</p>}
 
+      {/* Buscador: el mismo interruptor ilustrado y la misma tarjeta que el oferente */}
       {buscador && (
-        <section className={`pp-interruptor${datos.buscando ? ' activo' : ''}`} aria-labelledby="titulo-buscando">
-          <div>
-            <h2 id="titulo-buscando">Estoy buscando alojamiento</h2>
-            <p>
+        <section className="pp-recibir" data-activo={datos.buscando || undefined} aria-labelledby="titulo-buscando">
+          <div className="pp-recibir-texto">
+            <h2 id="titulo-buscando">
+              {datos.con_convivencia ? 'Ya tienes dónde vivir' : datos.buscando ? 'Estás buscando alojamiento' : 'Búsqueda en pausa'}
+            </h2>
+            <p id="ayuda-buscando">
               {datos.con_convivencia
                 ? 'Ya tienes una convivencia activa, así que no recibes propuestas nuevas.'
                 : datos.buscando
                   ? 'Te proponemos hasta 3 alojamientos a la vez, con compatibilidad alta y según tus preferencias de búsqueda guardadas.'
                   : 'Actívalo para que RoomMatch te proponga alojamientos. Si solo ofreces uno, déjalo apagado.'}
             </p>
+            {!datos.con_convivencia && (
+              <p className="pp-recibir-cupos">
+                {datos.buscando
+                  ? `${datos.propuestas.length} de 3 propuestas abiertas`
+                  : 'No recibes propuestas de alojamientos'}
+              </p>
+            )}
           </div>
-          <button type="button" role="switch" aria-checked={datos.buscando} aria-labelledby="titulo-buscando"
-            className={`interruptor${datos.buscando ? ' activo' : ''}`} onClick={alternarBusqueda}
-            disabled={cambiando || datos.con_convivencia}>
-            <span />
-          </button>
+          <InterruptorEscena activo={datos.buscando} etiquetadoPor="titulo-buscando" descritoPor="ayuda-buscando"
+            deshabilitado={cambiando || datos.con_convivencia} alCambiar={() => alternarBusqueda()} />
         </section>
       )}
 

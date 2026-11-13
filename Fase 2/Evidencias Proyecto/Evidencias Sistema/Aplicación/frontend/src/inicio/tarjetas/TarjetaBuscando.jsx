@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../../api.js'
+import InterruptorEscena from '../../componentes/InterruptorEscena.jsx'
 import { formatearPesos, textoDe, TIPOS } from '../../publicaciones.js'
 import { useSesion } from '../../sesion/SesionContext.jsx'
 import { IconoFlecha } from '../iconos.jsx'
@@ -189,7 +190,6 @@ export default function TarjetaBuscando() {
   const [error, setError] = useState('')
   const [errorPreguntas, setErrorPreguntas] = useState('')
   const [anuncio, setAnuncio] = useState('')
-  const [ondas, setOndas] = useState(0)
   const [preferencias, setPreferencias] = useState(undefined) // undefined: cargando
   const [comunas, setComunas] = useState([])
   const [institucion, setInstitucion] = useState(null)
@@ -247,7 +247,6 @@ export default function TarjetaBuscando() {
   const cambiarBusqueda = async (nuevo) => {
     setPedido(nuevo)
     setAnuncio(nuevo ? 'Búsqueda de alojamiento activada' : 'Búsqueda de alojamiento pausada')
-    if (nuevo && !activo) setOndas((n) => n + 1)
     try {
       const r = await api('/matches/busqueda', { metodo: 'PUT', datos: { buscando: nuevo } })
       setMensaje(r.propuestas_nuevas > 0 ? `${r.mensaje}. Ya tienes ${r.propuestas_nuevas} propuesta(s) nueva(s).` : r.mensaje)
@@ -372,24 +371,14 @@ export default function TarjetaBuscando() {
           <p className="i-buscar-control-titulo" id="i-buscar-control-titulo">
             <IconoChispa /> Recomendaciones de match
           </p>
-          <button ref={interruptor} type="button" role="switch" aria-checked={activo}
-            aria-labelledby="i-buscar-control-titulo" aria-describedby="i-buscar-control-ayuda"
-            aria-disabled={enviando}
-            className="i-buscar-interruptor" data-encendido={interruptorEncendido} onClick={alternar}>
-            <span className="i-riel">
-              {ondas > 0 && <span key={ondas} className="i-riel-onda" aria-hidden="true" />}
-              <span className="i-riel-si" aria-hidden="true">Sí</span>
-              <span className="i-riel-no" aria-hidden="true">No</span>
-              <span className="i-pulgar" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                  <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" />
-                </svg>
-              </span>
-            </span>
+          {/* El mismo interruptor ilustrado del oferente en «Propuestas de match» */}
+          <div className="i-buscar-interruptor" data-encendido={interruptorEncendido}>
+            <InterruptorEscena ref={interruptor} activo={activo} encendido={interruptorEncendido} ocupado={enviando}
+              etiquetadoPor="i-buscar-control-titulo" descritoPor="i-buscar-control-ayuda" alCambiar={alternar} />
             <span className="i-buscar-leyenda" aria-hidden="true">
               {estado === 'preguntando' && !activo ? 'Falta confirmar' : activo ? 'Activadas' : 'Desactivadas'}
             </span>
-          </button>
+          </div>
           <p className="i-buscar-control-ayuda" id="i-buscar-control-ayuda">
             {estado === 'preguntando'
               ? 'Confirma lo que buscas para activarlas.'

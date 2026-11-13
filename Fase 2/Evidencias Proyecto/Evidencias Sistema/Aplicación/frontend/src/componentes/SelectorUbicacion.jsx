@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { Circle, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
-import { CENTRO_INICIAL, CAPA_OSM, ESTILO_ZONA, iconoPin } from './mapaComun.js'
-
-const RADIO_ZONA_M = 300 // el mismo de backend/app/ubicacion.py
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { CENTRO_INICIAL, CAPA_MAPA, iconoPin } from './mapaComun.js'
 
 const redondear = ({ lat, lng }) => ({ lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) })
 
@@ -46,26 +44,22 @@ export default function SelectorUbicacion({ centro, punto, onCambio, error }) {
     <div className="campo selector-ubicacion">
       <p className="selector-titulo" id="ubicacion-punto">Punto en el mapa</p>
       <p className="campo-ayuda" id="ubicacion-punto-ayuda">
-        Toca el mapa o arrastra el marcador para ajustarlo. Los demás ven una zona de unos {RADIO_ZONA_M} m.
+        Toca el mapa o arrastra el marcador para ajustarlo. Así aparecerá tu alojamiento en el mapa.
       </p>
       <MapContainer center={posicion ?? centro ?? CENTRO_INICIAL} zoom={posicion || centro ? 14 : 11}
         className="mapa-lienzo mapa-chico" aria-labelledby="ubicacion-punto" aria-describedby="ubicacion-punto-ayuda">
-        <TileLayer {...CAPA_OSM} />
+        <TileLayer {...CAPA_MAPA} />
         <AlTocar onTocar={onCambio} />
         <SeguirComuna centro={centro} />
         <SeguirPunto punto={punto} />
         {posicion && (
-          <>
-            <Circle center={posicion} radius={RADIO_ZONA_M} pathOptions={{ ...ESTILO_ZONA, dashArray: '6 6' }}
-              interactive={false} />
-            <Marker position={posicion} icon={iconoPin} draggable title="Punto exacto del alojamiento"
-              eventHandlers={{ dragend: (e) => onCambio(redondear(e.target.getLatLng())) }} />
-          </>
+          <Marker position={posicion} icon={iconoPin} draggable title="Punto del alojamiento"
+            eventHandlers={{ dragend: (e) => onCambio(redondear(e.target.getLatLng())) }} />
         )}
       </MapContainer>
       {posicion ? (
         <p className="campo-ayuda">
-          El círculo es la zona que verán los demás.{' '}
+          Este es el punto que verán los estudiantes.{' '}
           <button type="button" className="enlace-boton" onClick={() => onCambio(null)}>Quitar el punto</button>
         </p>
       ) : null}

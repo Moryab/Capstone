@@ -13,6 +13,7 @@ from app.config import settings
 from app.db import client
 from app.media import CARPETA_FOTOS, URL_MEDIA
 from app.modos import migrar_modos
+from app.routers.publicaciones import migrar_ubicaciones
 from app.routers.verificacion import migrar_revocaciones
 from app.routers import (
     admin,
@@ -42,6 +43,7 @@ async def lifespan(app: FastAPI):
     await asegurar_parametros()  # EP-08: versión v1 de los pesos del algoritmo
     await migrar_modos()  # rol buscador/oferente de las cuentas anteriores a ese cambio
     await migrar_revocaciones()  # revocaciones anteriores a guardarse en la solicitud
+    await migrar_ubicaciones()  # publicaciones con la zona desplazada de antes: a su punto exacto
     # EP-08 · HU-18: avisos y recordatorios para evaluar la convivencia
     revision = asyncio.create_task(revisar_periodicamente())
     yield

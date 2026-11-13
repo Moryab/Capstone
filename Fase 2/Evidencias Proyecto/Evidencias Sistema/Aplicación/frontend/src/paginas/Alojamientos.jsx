@@ -9,7 +9,7 @@ import { IconoCamara, IconoPersona, IconoUbicacion } from '../componentes/Iconos
 import '../componentes/mapa.css'
 import {
   aPreferencias, aURL, desdePreferencias, desdeURL, EXTRAS_FILTRO, FILTROS_VACIOS, hayFiltros,
-  OPCIONES_REGLA, REGLAS_FILTRO, sinPreferencias, soloCosto, validarCosto, ZONAS,
+  OPCIONES_REGLA, RADIOS_KM, radioDe, REGLAS_FILTRO, sinPreferencias, soloCosto, validarCosto, ZONAS,
 } from '../busqueda.js'
 import { formatearPesos, GENEROS_PREFERIDOS, textoDe, textoDistancia, TIPOS } from '../publicaciones.js'
 import './alojamientos.css'
@@ -160,7 +160,7 @@ export default function Alojamientos() {
   const { pathname, search } = useLocation()
   const { avisar } = useAvisoBreve()
   // «vista=mapa» va en la dirección para volver igual desde un detalle, pero no es un filtro ni se
-  // envía a la API. Ya no hay selector de orden: con «Cerca de mi institución» los resultados se
+  // envía a la API. Ya no hay selector de orden: con «Cerca de mi sede» los resultados se
   // ordenan del más cercano al más lejano; sin él, del más reciente al más antiguo
   const enMapa = params.get('vista') === 'mapa'
   const buscarURL = params.get('buscar') ?? ''
@@ -220,7 +220,7 @@ export default function Alojamientos() {
   const cambiar = (e) => {
     const { name, value, type, checked } = e.target
     const nuevo = { ...borrador, [name]: type === 'checkbox' ? checked : value }
-    // «Cerca de mi institución» reemplaza la lista de comunas, que se oculta
+    // «Cerca de mi sede» reemplaza la lista de comunas, que se oculta
     if (name === 'cerca_institucion' && checked) nuevo.comunas = []
     setBorrador(nuevo)
     setErrores({ ...errores, [name]: undefined })
@@ -341,7 +341,7 @@ export default function Alojamientos() {
       quitar: { costo_min: '', costo_max: '' },
     },
     aplicados.cerca_institucion && {
-      id: 'cerca', texto: `Cerca de ${institucion?.sigla ?? 'mi institución'}`, quitar: { cerca_institucion: false },
+      id: 'cerca', texto: `A ${radioDe(aplicados)} km de ${institucion?.sigla ?? 'mi sede'}`, quitar: { cerca_institucion: false, radio_km: '' },
     },
     ...aplicados.comunas.map((id) => ({
       id: `comuna-${id}`, texto: nombreComuna(id), quitar: { comunas: aplicados.comunas.filter((c) => c !== id) },
@@ -386,6 +386,9 @@ export default function Alojamientos() {
       <div className="al-chips" aria-label="Filtros aplicados">
         {chips.length === 0 ? (
           <span className="al-chips-ninguno">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 7.5h0" />
+            </svg>
             {opciones && !institucion
               ? <span><Link to="/perfil/editar">Indica tu institución y sede</Link> para ver los alojamientos cerca de tu sede.</span>
               : 'Sin filtros: estás viendo todos los alojamientos, los más recientes primero.'}
@@ -426,7 +429,8 @@ export default function Alojamientos() {
         {datos && datos.total > 0 && enMapa && (
           <div className="al-vista">
             <Suspense fallback={<div className="al-mapa-silueta sil" />}>
-              <MapaAlojamientos consulta={claveFiltros} desde={pathname + search} />
+              <MapaAlojamientos consulta={claveFiltros} desde={pathname + search}
+                alActivarCerca={() => ir({ ...aplicados, cerca_institucion: true, comunas: [] })} />
             </Suspense>
           </div>
         )}
@@ -485,13 +489,22 @@ export default function Alojamientos() {
               <label className="casilla">
                 <input type="checkbox" name="cerca_institucion" checked={borrador.cerca_institucion}
                   onChange={cambiar} disabled={!institucion} />
-                Cerca de mi institución{institucion && ` (${institucion.sigla})`}
+                Cerca de mi sede{institucion && ` (${institucion.sigla})`}
               </label>
               {errores.cerca_institucion && <p className="campo-error">{errores.cerca_institucion}</p>}
               {opciones && !institucion && (
                 <p className="campo-ayuda"><Link to="/perfil/editar">Indica tu institución en tu perfil</Link> para usar esta opción.</p>
               )}
-              {borrador.cerca_institucion && <p className="campo-ayuda">Se muestran las comunas cercanas a tu sede.</p>}
+              {borrador.cerca_institucion && (
+                <div className="al-radio">
+                  <Segmentos etiqueta="Distancia máxima a tu sede" valor={radioDe(borrador)}
+                    opciones={RADIOS_KM.map((km) => ({ valor: km, texto: `${km} km` }))}
+                    alCambiar={(km) => setBorrador({ ...borrador, radio_km: String(km) })} />
+                  <p className="campo-ayuda">
+                    Alojamientos a {radioDe(borrador)} km o menos de tu sede, en línea recta. En el mapa es el círculo.
+                  </p>
+                </div>
+              )}
 
               {!borrador.cerca_institucion && zonas.map((zona) => {
                 const ids = zona.comunas.map((c) => c.id)

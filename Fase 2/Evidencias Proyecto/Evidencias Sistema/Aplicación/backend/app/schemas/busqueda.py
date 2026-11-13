@@ -1,10 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.publicaciones import MAX_COSTO, TipoAlojamiento
 
 TAMANO_PAGINA = 10  # CA-09.1
+# «Cerca de mi sede» en la búsqueda: a cuántos km de la sede, como máximo
+RADIOS_KM = (1, 2, 5, 10)
+RADIO_KM_DEFECTO = 2
 
 
 class Preferencias(BaseModel):
@@ -46,6 +49,15 @@ class FiltrosBusqueda(Preferencias):
     orden: Literal["reciente", "cercania"] = "reciente"
     # Texto libre: cada palabra debe aparecer en el título, la descripción, la comuna o el sector
     buscar: str = Field(default="", max_length=100)
+    # Con «Cerca de mi sede»: los alojamientos a esta distancia o menos de la sede, en línea recta
+    radio_km: int = RADIO_KM_DEFECTO
+
+    @field_validator("radio_km")
+    @classmethod
+    def radio_permitido(cls, v: int) -> int:
+        if v not in RADIOS_KM:
+            raise ValueError(f"Elige una distancia de {', '.join(map(str, RADIOS_KM))} km")
+        return v
 
 
 def filtro_preferencias(p: Preferencias) -> dict:

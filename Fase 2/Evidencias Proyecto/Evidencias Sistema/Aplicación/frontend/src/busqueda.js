@@ -7,6 +7,7 @@ export const FILTROS_VACIOS = {
   costo_max: '',
   comunas: [],
   cerca_institucion: false,
+  radio_km: '', // vacío = RADIO_DEFECTO; solo cuenta con «Cerca de mi sede»
   tipo_alojamiento: '',
   requiere_mascotas: '',
   requiere_fumar: '',
@@ -18,6 +19,11 @@ export const FILTROS_VACIOS = {
 
 const TEXTOS = ['costo_min', 'costo_max', 'tipo_alojamiento', 'requiere_mascotas', 'requiere_fumar', 'requiere_visitas']
 const CASILLAS = ['cerca_institucion', 'gastos_incluidos', 'amoblado', 'estacionamiento']
+
+// «Cerca de mi sede»: a cuántos km de la sede (los mismos de la API, schemas/busqueda.py)
+export const RADIOS_KM = [1, 2, 5, 10]
+export const RADIO_DEFECTO = 2
+export const radioDe = (filtros) => Number(filtros.radio_km) || RADIO_DEFECTO
 
 // CA-12.1: «da lo mismo» no filtra; las otras dos exigen que la regla coincida
 export const REGLAS_FILTRO = [
@@ -37,11 +43,11 @@ export const EXTRAS_FILTRO = [
   { clave: 'estacionamiento', texto: 'Estacionamiento' },
 ]
 
-// Zonas del Gran Concepción según el campo `sector` de cada comuna
+// Provincias de la Región del Biobío según el campo `sector` de cada comuna
 export const ZONAS = [
-  { valor: 'centro', texto: 'Zona centro' },
-  { valor: 'norte', texto: 'Zona norte' },
-  { valor: 'sur', texto: 'Zona sur' },
+  { valor: 'concepcion', texto: 'Provincia de Concepción' },
+  { valor: 'biobio', texto: 'Provincia de Biobío' },
+  { valor: 'arauco', texto: 'Provincia de Arauco' },
 ]
 
 export function desdeURL(params) {
@@ -50,6 +56,7 @@ export function desdeURL(params) {
     ...Object.fromEntries(TEXTOS.map((clave) => [clave, params.get(clave) ?? ''])),
     ...Object.fromEntries(CASILLAS.map((clave) => [clave, params.get(clave) === 'true'])),
     comunas: params.getAll('comunas'),
+    radio_km: params.get('radio_km') ?? '',
   }
 }
 
@@ -63,6 +70,8 @@ export function aURL(filtros, pagina = 1) {
     if (filtros[clave]) params.set(clave, 'true')
   }
   for (const id of filtros.comunas) params.append('comunas', id)
+  // El radio solo va con «Cerca de mi sede», y solo si no es el de siempre
+  if (filtros.cerca_institucion && radioDe(filtros) !== RADIO_DEFECTO) params.set('radio_km', radioDe(filtros))
   if (pagina > 1) params.set('pagina', pagina)
   return params
 }

@@ -45,7 +45,9 @@ aplicar("comunas", {
             coordinates: {"bsonType":"array","minItems":2,"maxItems":2,"items":{"bsonType":"number"}}
           }
         },
-        sector: {"bsonType":"string"}
+        // Provincia de la comuna: «concepcion», «arauco» o «biobio» (agrupa el filtro de búsqueda)
+        sector: {"bsonType":"string"},
+        provincia: {"bsonType":"string"}
       }
     }
   }

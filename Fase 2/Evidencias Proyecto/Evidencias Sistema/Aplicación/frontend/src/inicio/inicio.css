@@ -817,96 +817,8 @@ html.tema-oscuro .i-pagina[data-fondo='conexion']::before { filter: blur(3px) in
   .i-buscar-control-enlace:hover svg { transform: translateX(3px); }
 }
 
-/* Interruptor: riel con «Sí/No», pulgar con lupa y el estado al lado */
-.i-buscar-interruptor {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: -4px;
-  padding: 4px;
-  font: inherit;
-  background: none;
-  border: 0;
-  border-radius: 16px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.i-buscar-interruptor[aria-disabled='true'] { cursor: progress; }
-.i-riel {
-  position: relative;
-  display: block;
-  width: 96px;
-  height: 44px;
-  background: var(--i-borde);
-  border-radius: 999px;
-  box-shadow: inset 0 1px 2px rgb(15 42 58 / 0.14);
-}
-/* El color activo es una capa que aparece con opacidad */
-.i-riel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--i-acento);
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 260ms var(--b-curva);
-}
-.i-buscar-interruptor[data-encendido='true'] .i-riel::before { opacity: 1; }
-.i-riel-si, .i-riel-no {
-  position: absolute;
-  top: 50%;
-  font: 700 0.82rem/1 'Outfit', system-ui, sans-serif;
-  transform: translateY(-50%);
-  transition: opacity 200ms var(--b-curva);
-}
-.i-riel-no { right: 15px; color: var(--i-suave); }
-/* --i-sup: blanco sobre el verde oscuro (claro) y azul noche sobre el verde menta (oscuro) */
-.i-riel-si { left: 16px; color: var(--i-sup); opacity: 0; }
-.i-buscar-interruptor[data-encendido='true'] .i-riel-no { opacity: 0; }
-.i-buscar-interruptor[data-encendido='true'] .i-riel-si { opacity: 1; }
-.i-pulgar {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  transition: transform 320ms var(--b-curva);
-}
-/* El fondo del pulgar es una capa aparte: al presionar se estira con scaleX hacia el centro
-   del riel, como un interruptor físico, sin deformar la lupa */
-.i-pulgar::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: #fff;
-  border-radius: 999px;
-  box-shadow: 0 2px 6px rgb(15 42 58 / 0.22);
-  transform-origin: left center;
-  transition: transform 160ms var(--b-curva);
-}
-.i-pulgar svg {
-  position: relative;
-  width: 18px;
-  height: 18px;
-  color: var(--l-suave); /* el pulgar siempre es blanco: colores fijos en ambos temas */
-  transition: color 260ms var(--b-curva), transform 320ms var(--b-curva);
-}
-.i-buscar-interruptor[data-encendido='true'] .i-pulgar { transform: translateX(52px); }
-.i-buscar-interruptor[data-encendido='true'] .i-pulgar::before { transform-origin: right center; }
-.i-buscar-interruptor[data-encendido='true'] .i-pulgar svg { color: var(--l-teal); transform: rotate(-12deg); }
-.i-buscar-interruptor:active .i-pulgar::before { transform: scaleX(1.2); }
-/* Onda de una sola vez al activar (el componente la vuelve a montar en cada activación) */
-.i-riel-onda {
-  position: absolute;
-  inset: -4px;
-  border: 2px solid var(--l-teal-claro);
-  border-radius: 999px;
-  opacity: 0;
-  pointer-events: none;
-  animation: i-buscar-estallido 480ms var(--b-curva);
-}
+/* Interruptor: el mismo ilustrado de «Propuestas de match» (componentes/InterruptorEscena) y su estado */
+.i-buscar-interruptor { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .i-buscar-leyenda { font-size: 0.75rem; font-weight: 600; white-space: nowrap; color: var(--i-suave); transition: color 260ms var(--b-curva); }
 .i-buscar-interruptor[data-encendido='true'] .i-buscar-leyenda { color: var(--i-acento); }
 
@@ -921,10 +833,6 @@ html.tema-oscuro .i-pagina[data-fondo='conexion']::before { filter: blur(3px) in
 }
 @keyframes i-buscar-entrar {
   from { opacity: 0; transform: translateY(8px); }
-}
-@keyframes i-buscar-estallido {
-  0% { opacity: 0.8; transform: scale(0.95); }
-  100% { opacity: 0; transform: scale(1.25); }
 }
 
 /* ---------- Preguntando y buscando: la tarjeta se vuelve protagonista ----------
@@ -1013,8 +921,6 @@ html.tema-oscuro .i-pagina[data-fondo='conexion']::before { filter: blur(3px) in
 }
 .i-buscar:is([data-estado='preguntando'], [data-estado='activo']) .i-boton-texto { color: rgb(255 255 255 / 0.85); }
 /* El riel apagado sobre fondo oscuro */
-.i-buscar:is([data-estado='preguntando'], [data-estado='activo']) .i-riel { background: rgb(255 255 255 / 0.16); box-shadow: none; }
-.i-buscar:is([data-estado='preguntando'], [data-estado='activo']) .i-riel-si { color: var(--l-noche); }
 
 /* ---------- Cambio de rol: franja a todo el ancho, más discreta que las tarjetas principales ---------- */
 .i-area-rol { grid-column: 1 / -1; }

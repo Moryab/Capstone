@@ -5,7 +5,6 @@ from typing import Literal
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from app.schemas.perfil import calcular_edad
-from app.ubicacion import RADIO_ZONA_M
 
 TipoAlojamiento = Literal["habitacion", "departamento"]
 GeneroPreferido = Literal["femenino", "masculino", "indiferente"]
@@ -171,18 +170,17 @@ class OferenteOut(BaseModel):
     carrera: str | None = None
 
 
-def ubicacion_out(ubicacion: dict, ver_punto: bool) -> dict:
-    """`zona` es lo que ven todos: el círculo aproximado o, sin punto marcado, el centro de la comuna
-    (radio_m en None). `punto` es el exacto, solo para quien puede verlo."""
+def ubicacion_out(ubicacion: dict) -> dict:
+    """`zona` es donde se muestra el alojamiento: el punto marcado o, sin él, el centro de la comuna.
+    `punto` es el marcado (None si no hay). Como la calle y el número son públicos, lo ven todos."""
     datos = {k: v for k, v in ubicacion.items() if k not in ("coordenadas", "punto_exacto")}
     lng, lat = ubicacion["coordenadas"]["coordinates"]
     exacto = ubicacion.get("punto_exacto")
     return {
         **datos,
         "comuna_id": str(ubicacion["comuna_id"]),
-        "zona": {"lat": lat, "lng": lng, "radio_m": RADIO_ZONA_M if exacto else None},
-        "punto": {"lat": exacto["coordinates"][1], "lng": exacto["coordinates"][0]}
-        if exacto and ver_punto else None,
+        "zona": {"lat": lat, "lng": lng, "radio_m": None},
+        "punto": {"lat": exacto["coordinates"][1], "lng": exacto["coordinates"][0]} if exacto else None,
     }
 
 
@@ -206,14 +204,15 @@ class PublicacionOut(BaseModel):
     fecha_ultima_modificacion: datetime | None = None  # CA-07.5
     oferente: OferenteOut | None = None
     es_propia: bool
-    # Distancia en línea recta desde la zona del alojamiento hasta la sede del perfil de quien mira
+    # Distancia en línea recta desde el alojamiento hasta la sede del perfil de quien mira
     distancia_km: float | None = None
+    # Solo en el detalle: la sede del perfil de quien mira, para mostrarla en el mapa junto al alojamiento
+    sede: dict | None = None
 
     @classmethod
     def desde_doc(
-        cls, doc: dict, es_propia: bool, oferente: dict | None = None, ver_punto: bool = False
+        cls, doc: dict, es_propia: bool, oferente: dict | None = None
     ) -> "PublicacionOut":
-        """`ver_punto`: el punto exacto se entrega a su dueño y al administrador (ver_punto=True)."""
         return cls(
             id=str(doc["_id"]),
             codigo=doc["codigo"],
@@ -225,7 +224,7 @@ class PublicacionOut(BaseModel):
             costo_mensual=doc["costo_mensual"],
             genero_preferido=doc.get("genero_preferido") or "indiferente",
             estado=doc["estado"],
-            ubicacion=ubicacion_out(doc["ubicacion"], es_propia or ver_punto),
+            ubicacion=ubicacion_out(doc["ubicacion"]),
             gastos=doc["gastos"],
             reglas=doc["reglas"],
             caracteristicas=doc.get("caracteristicas", {}),

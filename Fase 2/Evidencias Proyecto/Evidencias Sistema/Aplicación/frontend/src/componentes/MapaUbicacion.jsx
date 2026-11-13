@@ -1,34 +1,64 @@
-import { Circle, MapContainer, Marker, TileLayer } from 'react-leaflet'
-import { CAPA_OSM, ESTILO_ZONA, iconoPin, iconoTexto } from './mapaComun.js'
+import { useEffect } from 'react'
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
+import { aLatLng, CAPA_MAPA, iconoAlojamiento, iconoSede, iconoTexto } from './mapaComun.js'
 
-function explicacion({ zona, punto, comuna_nombre: comuna }, esPropia) {
-  if (punto && esPropia) {
-    return `El marcador es el punto exacto y solo lo ves tú. Los demás ven el círculo: una zona de unos ${zona.radio_m} m.`
-  }
-  if (punto) return 'El marcador es el punto exacto que marcó el oferente: solo lo ve administración. Los estudiantes ven el círculo.'
-  if (zona.radio_m) return `Zona aproximada de unos ${zona.radio_m} m. La dirección exacta se coordina con el oferente.`
+function explicacion({ punto, comuna_nombre: comuna }, esPropia, conSede) {
+  const sede = conSede ? ' La línea punteada la une con tu sede.' : ''
+  if (punto) return `El marcador está en la dirección del alojamiento.${sede}`
   if (esPropia) return `No marcaste el punto en el mapa, así que se muestra el centro de ${comuna}. Puedes marcarlo desde «Editar».`
-  return `El oferente no marcó el punto en el mapa: se muestra el centro de ${comuna}.`
+  return `El oferente no marcó el punto en el mapa: se muestra el centro de ${comuna}.${sede}`
 }
 
-/** La ubicación en el detalle de una publicación: la zona que ven todos y, a quien puede, el punto exacto. */
-export default function MapaUbicacion({ ubicacion, esPropia }) {
+// Con la sede a la vista, el mapa encuadra a ambos; sin ella, se centra en el alojamiento
+function Encuadre({ puntos }) {
+  const mapa = useMap()
+  useEffect(() => {
+    if (puntos.length > 1) mapa.fitBounds(puntos, { padding: [56, 56], maxZoom: 16 })
+  }, [mapa, puntos])
+  return null
+}
+
+/**
+ * La ubicación en el detalle de una publicación: solo el alojamiento (con la casa o el edificio de su
+ * tipo) y, si quien mira indicó su sede, la sede y una línea entre ambos.
+ */
+export default function MapaUbicacion({ ubicacion, tipo, esPropia, sede }) {
   const { zona, punto } = ubicacion
-  const centroZona = [zona.lat, zona.lng]
+  const posicion = punto ? [punto.lat, punto.lng] : [zona.lat, zona.lng]
+  const posicionSede = sede && !esPropia ? aLatLng(sede.coordenadas) : null
+  const puntos = posicionSede ? [posicion, posicionSede] : [posicion]
+
   return (
     <div className="mapa-alojamientos">
-      <MapContainer center={punto ? [punto.lat, punto.lng] : centroZona} zoom={zona.radio_m ? 15 : 13}
-        scrollWheelZoom={false} className="mapa-lienzo mapa-chico">
-        <TileLayer {...CAPA_OSM} />
-        {zona.radio_m ? (
-          <Circle center={centroZona} radius={zona.radio_m} pathOptions={ESTILO_ZONA} interactive={false} />
-        ) : (
-          <Marker position={centroZona} icon={iconoTexto('<span class="mapa-burbuja grupo">Centro de la comuna</span>')}
-            interactive={false} />
-        )}
-        {punto && <Marker position={[punto.lat, punto.lng]} icon={iconoPin} title="Punto exacto" />}
-      </MapContainer>
-      <p className="mapa-nota">{explicacion(ubicacion, esPropia)}</p>
+      <div className="mapa-marco">
+        <MapContainer center={posicion} zoom={punto ? 16 : 13} scrollWheelZoom={false} className="mapa-lienzo mapa-chico">
+          <TileLayer {...CAPA_MAPA} />
+          <Encuadre puntos={puntos} />
+          {posicionSede && (
+            <>
+              <Polyline positions={puntos} interactive={false}
+                pathOptions={{ color: '#0b1f3a', weight: 2.5, opacity: 0.55, dashArray: '2 8', lineCap: 'round' }} />
+              <Marker position={posicionSede} icon={iconoSede} title={`Tu sede: ${sede.institucion} ${sede.nombre}`}>
+                <Popup>
+                  <p className="mapa-popup-titulo">{sede.institucion_nombre ?? sede.institucion}</p>
+                  <p className="mapa-popup-sede">
+                    {sede.nombre}
+                    <br />
+                    {sede.direccion ? `${sede.direccion}, ${sede.comuna}` : sede.comuna}
+                  </p>
+                </Popup>
+              </Marker>
+            </>
+          )}
+          {punto ? (
+            <Marker position={posicion} icon={iconoAlojamiento(tipo)} title="Ubicación del alojamiento" zIndexOffset={500} />
+          ) : (
+            <Marker position={posicion} icon={iconoTexto('<span class="mapa-burbuja grupo"><span>Centro de la comuna</span></span>')}
+              interactive={false} />
+          )}
+        </MapContainer>
+      </div>
+      <p className="mapa-nota">{explicacion(ubicacion, esPropia, Boolean(posicionSede))}</p>
     </div>
   )
 }

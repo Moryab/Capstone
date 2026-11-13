@@ -5,12 +5,18 @@ import './interruptorEscena.css'
  * roomies y corazones de match. Activo: el botón (una casa) rueda a la derecha, abre la puerta y
  * enciende la luz; en pausa vuelve a la izquierda con la puerta cerrada.
  * Es un switch accesible: `activo`, `alCambiar(nuevo)` y los ids de su etiqueta y su descripción.
+ * Lo usan el oferente («Recibir propuestas») y el buscador («Estoy buscando alojamiento»).
+ * Opcionales: `encendido` (cómo se ve, si difiere de `activo`: en el inicio se enciende apenas se abren
+ * las preguntas, antes de confirmar), `ocupado` (mientras responde el servidor: sigue enfocable) y `ref`.
  */
-export default function InterruptorEscena({ activo, alCambiar, etiquetadoPor, descritoPor, deshabilitado }) {
+export default function InterruptorEscena({
+  activo, alCambiar, etiquetadoPor, descritoPor, deshabilitado, encendido = activo, ocupado, ref,
+}) {
   return (
-    <button type="button" role="switch" aria-checked={activo} aria-labelledby={etiquetadoPor}
-      aria-describedby={descritoPor} disabled={deshabilitado} className="ie" data-activo={activo || undefined}
-      onClick={() => alCambiar(!activo)}>
+    <button ref={ref} type="button" role="switch" aria-checked={activo} aria-labelledby={etiquetadoPor}
+      aria-describedby={descritoPor} disabled={deshabilitado} aria-busy={ocupado || undefined}
+      className="ie" data-activo={encendido || undefined} data-ocupado={ocupado || undefined}
+      onClick={() => !ocupado && alCambiar(!activo)}>
       {/* Activo: la red de conexiones y los corazones (a la izquierda, el botón queda a la derecha) */}
       <span className="ie-activo" aria-hidden="true">
         <svg className="ie-red" viewBox="0 0 80 44" preserveAspectRatio="xMinYMid meet">

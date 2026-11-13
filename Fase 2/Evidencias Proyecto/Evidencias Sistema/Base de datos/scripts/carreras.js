@@ -1,5 +1,5 @@
 // Carreras de pregrado de cada institución, para elegirlas de una lista en el perfil (servicio inicializar-bd).
-// Fuente: Oferta Académica 2026 del SIES (Mineduc, mifuturo.cl), sedes del Gran Concepción. Los nombres
+// Fuente: Oferta Académica 2026 del SIES (Mineduc, mifuturo.cl), sedes de la Región del Biobío. Los nombres
 // vienen en mayúsculas y sin tildes: aquí van ya escritos como se leen. Las versiones vespertinas («PEV»)
 // y las distintas jornadas o mallas se unen en una sola carrera. «area» es el área del conocimiento
 // (CINE-F 2013) con que el SIES agrupa las carreras de nombre distinto.
@@ -7,7 +7,7 @@
 
 db = db.getSiblingDB(process.env.MONGO_DB || "roommatch");
 
-// 708 carreras en total
+// 1000 carreras en total
 const CARRERAS = {
  "UNAB": [
   [
@@ -199,6 +199,28 @@ const CARRERAS = {
    "Salud y Bienestar"
   ]
  ],
+ "U. Bolivariana": [
+  [
+   "Derecho",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Odontología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Pedagogía en Educación Diferencial con mención Discapacidad Intelectual y Trastornos del Lenguaje",
+   "Educación"
+  ],
+  [
+   "Psicología",
+   "Ciencias Sociales, Periodismo e Información"
+  ]
+ ],
  "UCSC": [
   [
    "Administrador de Programas Sociales",
@@ -273,8 +295,16 @@ const CARRERAS = {
    "Administración de Empresas y Derecho"
   ],
   [
+   "Ingeniería de Ejecución en Administración de Empresas mención Finanzas y Comercio Internacional",
+   "Administración de Empresas y Derecho"
+  ],
+  [
    "Ingeniería de Ejecución en Informática",
    "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Ingeniería de Ejecución en Prevención de Riesgos y Medio Ambiente",
+   "Servicios"
   ],
   [
    "Ingeniería de Ejecución Industrial",
@@ -417,6 +447,10 @@ const CARRERAS = {
    "Salud y Bienestar"
   ],
   [
+   "Técnico Universitario Agropecuario",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
    "Técnico Universitario en Actividad Física y Salud",
    "Servicios"
   ],
@@ -457,6 +491,10 @@ const CARRERAS = {
    "Salud y Bienestar"
   ],
   [
+   "Técnico Universitario en Gastronomía Intercultural",
+   "Servicios"
+  ],
+  [
    "Técnico Universitario en Logística",
    "Administración de Empresas y Derecho"
   ],
@@ -470,6 +508,10 @@ const CARRERAS = {
   ],
   [
    "Técnico Universitario en Refrigeración y Climatización Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Topografía",
    "Ingeniería, Industria y Construcción"
   ]
  ],
@@ -579,6 +621,10 @@ const CARRERAS = {
    "Ciencias naturales, matemáticas y estadística"
   ],
   [
+   "Ingeniería Agroindustrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
    "Ingeniería Ambiental",
    "Ingeniería, Industria y Construcción"
   ],
@@ -647,6 +693,18 @@ const CARRERAS = {
    "Administración de Empresas y Derecho"
   ],
   [
+   "Ingeniería de Ejecución en Agroindustrias",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución en Geomensura",
+   "Ciencias naturales, matemáticas y estadística"
+  ],
+  [
+   "Ingeniería de Ejecución Forestal",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
    "Ingeniería en Biotecnología Marina y Acuicultura",
    "Ingeniería, Industria y Construcción"
   ],
@@ -659,12 +717,20 @@ const CARRERAS = {
    "Ciencias naturales, matemáticas y estadística"
   ],
   [
+   "Ingeniería en Prevención de Riesgos",
+   "Servicios"
+  ],
+  [
    "Ingeniería Estadística",
    "Ciencias naturales, matemáticas y estadística"
   ],
   [
    "Ingeniería Forestal",
    "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
+   "Ingeniería Geomática",
+   "Ciencias naturales, matemáticas y estadística"
   ],
   [
    "Ingeniería Matemática",
@@ -835,8 +901,16 @@ const CARRERAS = {
    "Educación"
   ],
   [
+   "Pedagogía en Matemáticas y Educación Tecnológica",
+   "Educación"
+  ],
+  [
    "Periodismo",
    "Ciencias Sociales, Periodismo e Información"
+  ],
+  [
+   "Programa de Continuidad de Estudios en Ingeniería Comercial mención Control de Gestión",
+   "Administración de Empresas y Derecho"
   ],
   [
    "Psicología",
@@ -873,6 +947,104 @@ const CARRERAS = {
   [
    "Traducción / Interpretación en Idiomas Extranjeros",
    "Artes y Humanidades"
+  ]
+ ],
+ "UDLA": [
+  [
+   "Arquitectura",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Derecho",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Educación Parvularia",
+   "Educación"
+  ],
+  [
+   "Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Fonoaudiología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Ingeniería Civil Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería Comercial",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Minas",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Kinesiología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Licenciatura en Ciencias de la Actividad Física",
+   "Servicios"
+  ],
+  [
+   "Medicina Veterinaria",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
+   "Nutrición y Dietética",
+   "Salud y Bienestar"
+  ],
+  [
+   "Pedagogía en Educación Básica",
+   "Educación"
+  ],
+  [
+   "Pedagogía en Educación Diferencial",
+   "Educación"
+  ],
+  [
+   "Pedagogía en Educación Física",
+   "Educación"
+  ],
+  [
+   "Pedagogía en Inglés",
+   "Educación"
+  ],
+  [
+   "Psicología",
+   "Ciencias Sociales, Periodismo e Información"
+  ],
+  [
+   "Terapia Ocupacional",
+   "Salud y Bienestar"
+  ],
+  [
+   "Trabajo Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Traducción e Interpretación en Inglés",
+   "Artes y Humanidades"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior Veterinario",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
   ]
  ],
  "UBB": [
@@ -1243,9 +1415,25 @@ const CARRERAS = {
   [
    "Trabajo Social",
    "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Enfermería e Instrumentación Quirúrgica",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Farmacia",
+   "Salud y Bienestar"
   ]
  ],
  "UST": [
+  [
+   "Agronomía, Plan Continuidad de Estudios",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
   [
    "Analista Programador",
    "Tecnología de la Información y la Comunicación (TIC)"
@@ -1299,6 +1487,10 @@ const CARRERAS = {
    "Servicios"
   ],
   [
+   "Ingeniería Agrícola",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
    "Ingeniería Civil Industrial",
    "Ingeniería, Industria y Construcción"
   ],
@@ -1317,6 +1509,10 @@ const CARRERAS = {
   [
    "Ingeniería Comercial, Continuidad de Estudios",
    "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución Agropecuaria",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
   ],
   [
    "Ingeniería de Ejecución en Administración",
@@ -1340,6 +1536,10 @@ const CARRERAS = {
   ],
   [
    "Ingeniería en Administración de RRHH",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Administración mención Gestión Pública",
    "Administración de Empresas y Derecho"
   ],
   [
@@ -1447,6 +1647,10 @@ const CARRERAS = {
    "Salud y Bienestar"
   ],
   [
+   "Técnico Agrícola y Ganadero",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
    "Técnico en Administración",
    "Administración de Empresas y Derecho"
   ],
@@ -1541,6 +1745,132 @@ const CARRERAS = {
   [
    "Técnico en Veterinaria y Producción Pecuaria",
    "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ]
+ ],
+ "UTFSM": [
+  [
+   "Ingeniería Comercial",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Control e Instrumentación Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución en Gestión de la Calidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Gestión Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución en Gestión y Control Ambiental",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución en Mantenimiento Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución en Proyectos Estructurales",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución Mecánica de Procesos y Mantenimiento Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución Químico mención Control",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Biotecnología",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Informática",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Ingeniería en Mantenimiento Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Prevención de Riesgos Laborales y Ambientales",
+   "Servicios"
+  ],
+  [
+   "Técnico Universitario Dibujante Proyectista",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico Universitario en Automatización y Control",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Biotecnología",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Ciencia de Datos",
+   "Ciencias naturales, matemáticas y estadística"
+  ],
+  [
+   "Técnico Universitario en Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Control Medio Ambiente",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Electricidad",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Electrónica",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Informática",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Técnico Universitario en Mantenimiento Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Mecánica Automotriz",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Mecánica Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Prevención de Riesgos",
+   "Servicios"
+  ],
+  [
+   "Técnico Universitario en Química con mención en Química Industrial",
+   "Ciencias naturales, matemáticas y estadística"
+  ],
+  [
+   "Técnico Universitario en Robótica y Mecatrónica",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico Universitario en Telecomunicaciones y Redes",
+   "Ingeniería, Industria y Construcción"
   ]
  ],
  "INACAP": [
@@ -1647,6 +1977,10 @@ const CARRERAS = {
   [
    "Hotelería y Servicios",
    "Servicios"
+  ],
+  [
+   "Ingeniería Agrícola",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
   ],
   [
    "Ingeniería Comercial",
@@ -1833,6 +2167,10 @@ const CARRERAS = {
    "Servicios"
   ],
   [
+   "Técnico Agrícola",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
    "Técnico en Administración de Empresas Financieras",
    "Administración de Empresas y Derecho"
   ],
@@ -2011,6 +2349,10 @@ const CARRERAS = {
    "Administración de Empresas y Derecho"
   ],
   [
+   "Ingeniería en Informática",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
    "Ingeniería en Mecánica Automotriz y Autotrónica",
    "Ingeniería, Industria y Construcción"
   ],
@@ -2119,6 +2461,10 @@ const CARRERAS = {
    "Tecnología de la Información y la Comunicación (TIC)"
   ],
   [
+   "Técnico en Dibujo de Arquitectura y Obras Civiles",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
    "Técnico en Diseño de Vestuario",
    "Artes y Humanidades"
   ],
@@ -2136,6 +2482,10 @@ const CARRERAS = {
   ],
   [
    "Técnico en Electricidad y Electrónica",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico en Electricidad y Energías Renovables",
    "Ingeniería, Industria y Construcción"
   ],
   [
@@ -2203,6 +2553,10 @@ const CARRERAS = {
    "Tecnología de la Información y la Comunicación (TIC)"
   ],
   [
+   "Técnico en Mantenimiento Eléctrico Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
    "Técnico en Mantenimiento Mecánico",
    "Ingeniería, Industria y Construcción"
   ],
@@ -2213,6 +2567,10 @@ const CARRERAS = {
   [
    "Técnico en Masoterapia",
    "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Mecánica Automotriz en Maquinaria Pesada",
+   "Ingeniería, Industria y Construcción"
   ],
   [
    "Técnico en Mecánica Automotriz y Autotrónica",
@@ -2231,6 +2589,10 @@ const CARRERAS = {
    "Servicios"
   ],
   [
+   "Técnico en Topografía",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
    "Técnico en Trabajo Social",
    "Salud y Bienestar"
   ],
@@ -2241,6 +2603,330 @@ const CARRERAS = {
   [
    "Técnico Jurídico",
    "Administración de Empresas y Derecho"
+  ]
+ ],
+ "IPVC": [
+  [
+   "Ingeniería de Ejecución en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Administración de Empresas (continuidad)",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Administración de Empresas, Continuidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Administración Pública",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Administración Pública (continuidad)",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Administración Pública, Continuidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería de Ejecución en Gestión de Seguridad Privada",
+   "Servicios"
+  ],
+  [
+   "Ingeniería de Ejecución en Gestión de Seguridad Privada (continuidad)",
+   "Servicios"
+  ],
+  [
+   "Ingeniería en Ciberseguridad",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Ingeniería en Gestión Logística",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Pedagogía en Inglés",
+   "Educación"
+  ],
+  [
+   "Podología",
+   "Salud y Bienestar"
+  ],
+  [
+   "psicopedagogia(continuidad)",
+   "Educación"
+  ],
+  [
+   "Psicopedagogía",
+   "Educación"
+  ],
+  [
+   "Psicopedagogía (continuidad)",
+   "Educación"
+  ],
+  [
+   "Servicio Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Trabajo Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Trabajo Social (continuidad)",
+   "Salud y Bienestar"
+  ],
+  [
+   "Trabajo Social, Continuidad",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas mención en Emprendimiento",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas mención en Recursos Humanos",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas mención Finanzas y Contabilidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas mención Recursos Humanos",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración en Salud",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración mención Gestión Municipal",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración Pública",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Asistente de la Educación",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Ciberseguridad",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Técnico de Nivel Superior en Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Contabilidad y Análisis de Cuentas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Diferencial",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Parvularia",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Parvularia mención Trastornos Específicos del Lenguaje",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Estética Corporal",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión Agroindustrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión de Recursos Humanos",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión de Seguridad Privada",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión Logística",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Logística y Operaciones Industriales",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Mantención Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Marketing y Ventas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Masoterapia",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Minas",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Odontología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Podología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Prevención de Riesgos",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Relaciones Públicas y Comunicación",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Terapias Naturales",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Trabajo Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico en Educación Diferencial",
+   "Educación"
+  ],
+  [
+   "Técnico en Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Traducción Inglés - Español",
+   "Artes y Humanidades"
+  ],
+  [
+   "Técnico Veterinario",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ]
+ ],
+ "IPDP": [
+  [
+   "Construcción Civil",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Contador Auditor",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Gastronomía",
+   "Servicios"
+  ],
+  [
+   "Ingeniería en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Administración Pública y Municipal",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Geomensura",
+   "Ciencias naturales, matemáticas y estadística"
+  ],
+  [
+   "Ingeniería en Gestión Forestal",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
+   "Ingeniería en Logística Operativa",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Prevención de Riesgos",
+   "Servicios"
+  ],
+  [
+   "Nutrición y Dietética",
+   "Salud y Bienestar"
+  ],
+  [
+   "Plan Especial de Técnico en Topografía",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Plan Especial de Técnico Nivel Superior en Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Plan Especial Ingeniería en Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Plan Especial Podología Clínica",
+   "Salud y Bienestar"
+  ],
+  [
+   "Plan Especial Técnico en Administración Pública y Municipal",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Profesional Internacional Gastronómico en Artes Culinarias",
+   "Servicios"
+  ],
+  [
+   "Psicopedagogía",
+   "Educación"
+  ],
+  [
+   "Relaciones Públicas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Servicio Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Parvularia",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Podología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico en Bibliotecología",
+   "Ciencias Sociales, Periodismo e Información"
+  ],
+  [
+   "Técnico en Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico Forestal",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
   ]
  ],
  "IPVG": [
@@ -2331,6 +3017,10 @@ const CARRERAS = {
   [
    "Ingeniería de Ejecución en Prevención de Riesgos - PE",
    "Servicios"
+  ],
+  [
+   "Ingeniería de Ejecución en Química y Medio Ambiente - PE",
+   "Ingeniería, Industria y Construcción"
   ],
   [
    "Ingeniería de Ejecución Industrial - PE",
@@ -2823,6 +3513,10 @@ const CARRERAS = {
    "Ingeniería, Industria y Construcción"
   ],
   [
+   "Técnico en Mantenimiento Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
    "Técnico en Mantenimiento Predictivo mención Minería",
    "Ingeniería, Industria y Construcción"
   ],
@@ -2847,6 +3541,10 @@ const CARRERAS = {
    "Servicios"
   ],
   [
+   "Técnico en Prevención de Riesgos Laborales",
+   "Servicios"
+  ],
+  [
    "Técnico en Producción Gráfica",
    "Artes y Humanidades"
   ],
@@ -2860,6 +3558,498 @@ const CARRERAS = {
   ],
   [
    "Técnico en Turismo y Hotelería",
+   "Servicios"
+  ]
+ ],
+ "IEB": [
+  [
+   "Contador Auditor con mención en Banca e Instituciones Financieras",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Contador de Empresas Financieras",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Administración de Empresas Financieras",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería Financiera",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico en Administración de Empresas Financieras",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico Financiero",
+   "Administración de Empresas y Derecho"
+  ]
+ ],
+ "IPG": [
+  [
+   "Construcción Civil (plan continuidad)",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Construcción Civil Nivel Profesional",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Construcción Civil Profesional",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución Industrial Plan Continuidad",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería de Ejecución Industrial Profesional",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Administración de Empresas Nivel Profesional Plan Continuidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Administración de Empresas Profesional",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Administración General Nivel Profesional Plan Continuidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Electricidad",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Electricidad Plan Continuidad",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Ingeniería en Gestión de Recursos Humanos Plan Continuidad",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Ingeniería en Prevención de Riesgos, Calidad y Ambiente Plan Continuidad",
+   "Servicios"
+  ],
+  [
+   "Ingeniería Industrial Plan Continuidad",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Psicopedagogía Plan Continuidad",
+   "Educación"
+  ],
+  [
+   "Psicopedagogía Profesional",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior Comercio Exterior mención Comercio Electrónico",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración General",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Construcción Civil",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Contabilidad General",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Básica",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Diferencial",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Parvularia",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Electricidad, mención Automatización",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Estética Integral",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Farmacia",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión de Seguridad y Vigilancia Privada",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión Documental y Archivística",
+   "Ciencias Sociales, Periodismo e Información"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión Logística",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión Pública y Municipal",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Maquinaria Naval",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Masoterapia",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Operaciones Portuarias",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Podología",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Prevención de Riesgos",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Prevención y Rehabilitación de Adicciones",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Procesos Industriales",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Programación y Análisis de Sistemas",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Técnico de Nivel Superior en Terapias Complementarias de Salud",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Topografía",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Trabajo Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Transporte Marítimo",
+   "Servicios"
+  ],
+  [
+   "Técnico en Enfermería de Nivel Superior",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico Preparador Físico de Nivel Superior",
+   "Servicios"
+  ]
+ ],
+ "IPP": [
+  [
+   "Ingeniería en Control de Gestión",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Servicio Social",
+   "Salud y Bienestar"
+  ]
+ ],
+ "CEDUC UCN": [
+  [
+   "Administración Bilingüe",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Administración de Empresas mención Logística",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Administración mención Gestión Pública",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Computación e Informática mención Ciberseguridad",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Computación e Informática mención Programación",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Educación de Párvulos",
+   "Educación"
+  ],
+  [
+   "Educación General",
+   "Educación"
+  ],
+  [
+   "Electricidad y Eficiencia Energética",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Electricidad y Electrónica Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Electromecánica",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Enfermería y Telemedicina",
+   "Salud y Bienestar"
+  ],
+  [
+   "Gastronomía Territorial e Intercultural",
+   "Servicios"
+  ],
+  [
+   "Instrumentación y Control Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Intervención y Rehabilitación Psicosocial",
+   "Salud y Bienestar"
+  ],
+  [
+   "Mantenimiento Industrial y Mecatrónica",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Maquinaria Pesada",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Mecánica de Equipo Pesado",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Prevención de Riesgos",
+   "Servicios"
+  ]
+ ],
+ "CFT Biobío": [
+  [
+   "Técnico de Nivel Superior en Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración Pública",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación Inicial",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Enfermería",
+   "Salud y Bienestar"
+  ],
+  [
+   "Técnico de Nivel Superior en Gastronomía Intercultural",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión de Calidad y Medioambiente",
+   "Ciencias naturales, matemáticas y estadística"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión de Recursos Naturales",
+   "Agricultura, Silvicultura, Pesca y Veterinaria"
+  ],
+  [
+   "Técnico de Nivel Superior en Informática mención Ciberseguridad",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Técnico de Nivel Superior en Logística y Abastecimiento",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Mantenimiento Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Marketing Digital mención Diseño",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Tecnologías Digitales y Ciberseguridad",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Técnico de Nivel Superior en Trabajo Social",
+   "Salud y Bienestar"
+  ]
+ ],
+ "CFT Lota-Arauco": [
+  [
+   "Administración de Empresas",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Administración de Redes y Soporte Computacional",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Administración Portuaria Pesquero Artesanal",
+   "Servicios"
+  ],
+  [
+   "Administración Pública",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Computación e Informática",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Construcción de Viviendas en Madera",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Construcción en Madera",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Dibujo y Proyecto Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Diseño y Programación Multimedia",
+   "Artes y Humanidades"
+  ],
+  [
+   "Diseño y Programación Web",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Educación de Párvulo",
+   "Educación"
+  ],
+  [
+   "Educación de Párvulos",
+   "Educación"
+  ],
+  [
+   "Educación Diferencial",
+   "Educación"
+  ],
+  [
+   "Electricidad Industrial y Sistemas Eléctricos",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Gestión Portuaria y Pesquera",
+   "Servicios"
+  ],
+  [
+   "Gestión Turística",
+   "Servicios"
+  ],
+  [
+   "Instrumentación y Automatización Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Logística",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Mecánica Industrial",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Prevención de Riesgos",
+   "Servicios"
+  ],
+  [
+   "Procesos Industriales Madereros",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Refrigeración Industrial y Aire Acondicionado",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Refrigeración Industrial y Climatización",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Trabajo Social",
+   "Salud y Bienestar"
+  ],
+  [
+   "Turismo y Gastronomía",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Administración Pública",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Analista Programador",
+   "Tecnología de la Información y la Comunicación (TIC)"
+  ],
+  [
+   "Técnico de Nivel Superior en Construcción",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Educación de Párvulos",
+   "Educación"
+  ],
+  [
+   "Técnico de Nivel Superior en Gestión de Recursos Humanos",
+   "Administración de Empresas y Derecho"
+  ],
+  [
+   "Técnico de Nivel Superior en Industrias de la Madera",
+   "Ingeniería, Industria y Construcción"
+  ],
+  [
+   "Técnico de Nivel Superior en Prevención de Riesgos y Gestión Sustentable",
+   "Servicios"
+  ],
+  [
+   "Técnico de Nivel Superior en Prevención de Riesgos y Sustentabilidad",
    "Servicios"
   ]
  ]

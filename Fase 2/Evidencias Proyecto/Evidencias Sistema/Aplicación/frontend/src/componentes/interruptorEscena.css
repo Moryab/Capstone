@@ -20,7 +20,8 @@
   isolation: isolate;
 }
 .ie:focus-visible { outline: 3px solid var(--foco, #5eead4); outline-offset: 3px; }
-.ie:disabled { cursor: progress; opacity: 0.7; }
+.ie:disabled { cursor: not-allowed; opacity: 0.55; }
+.ie[data-ocupado] { cursor: progress; }
 
 /* Activo: el degradado de marca aparece encima */
 .ie-activo { position: absolute; inset: 0; background: linear-gradient(135deg, #0b1f3a 0%, #0e3a4f 45%, #0f766e 100%); opacity: 0; transition: opacity 480ms ease; }

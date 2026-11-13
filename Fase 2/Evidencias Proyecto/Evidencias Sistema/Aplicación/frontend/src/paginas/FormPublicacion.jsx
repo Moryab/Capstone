@@ -363,9 +363,9 @@ function Formulario() {
             </div>
           </Seccion>
 
-          {/* CA-06.2: la dirección se muestra; el punto exacto del mapa, no (los demás ven una zona) */}
+          {/* CA-06.2: la dirección y el punto del mapa se muestran a los estudiantes */}
           <Seccion numero={3} titulo="Ubicación" completa={!faltan[3]} className="pf-seccion-ubicacion"
-            descripcion="Con la calle y el número marcamos el alojamiento en el mapa. Los demás estudiantes ven la dirección y una zona aproximada, no el punto exacto.">
+            descripcion="Con la calle y el número marcamos el alojamiento en el mapa. Los estudiantes ven la dirección y el punto en el mapa, y la distancia a su sede.">
             <div className="pf-ubicacion">
               <div className="pf-ubicacion-campos">
                 <div className="pf-fila">

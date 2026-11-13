@@ -1,37 +1,188 @@
-/* Mapa de alojamientos (Leaflet + OpenStreetMap) */
-.mapa-alojamientos { display: grid; gap: 8px; }
+/* Mapa de alojamientos (Leaflet + datos de OpenStreetMap con el estilo Voyager de CARTO) */
+.mapa-alojamientos { display: grid; gap: 10px; }
+.mapa-marco { position: relative; }
 .mapa-lienzo {
   width: 100%;
-  height: min(70vh, 560px);
+  height: min(70vh, 600px);
   min-height: 360px;
+  background: #eef0f1; /* mientras cargan los mosaicos, el tono del mapa y no un gris oscuro */
   border: 1px solid var(--borde);
-  border-radius: 16px;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgb(11 31 58 / 0.06), 0 18px 40px -28px rgb(11 31 58 / 0.45);
   z-index: 0; /* el mapa no debe quedar sobre la barra ni los menús */
 }
+/* El mapa base más tranquilo: menos color y contraste, así resaltan la sede y los precios (solo los
+   mosaicos; los marcadores van en otra capa y mantienen sus colores) */
+.mapa-lienzo .leaflet-tile-pane { filter: saturate(0.3) brightness(1.06) contrast(0.9); }
+
+/* La sede desde la que se busca, sobre el mapa */
+.mapa-sede-ficha {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  background: color-mix(in srgb, var(--tarjeta) 88%, transparent);
+  border: 1px solid color-mix(in srgb, #f2c94c 45%, var(--borde));
+  border-radius: 18px;
+  box-shadow: 0 10px 28px -22px rgb(11 31 58 / 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.mapa-sede-icono {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  color: #0b1f3a;
+  background: linear-gradient(135deg, #f7dc7a, #f2c94c);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgb(11 31 58 / 0.08);
+}
+.mapa-sede-icono svg { width: 24px; height: 24px; }
+.mapa-sede-texto { display: grid; gap: 2px; min-width: 0; }
+.mapa-sede-texto p { margin: 0; }
+.mapa-sede-rotulo { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; color: var(--texto-suave); text-transform: uppercase; }
+.mapa-sede-nombre { font: 600 1.02rem/1.3 'Outfit', system-ui, sans-serif; color: var(--marca); }
+.mapa-sede-direccion { display: flex; gap: 6px; align-items: center; font-size: 0.88rem; color: var(--texto); }
+.mapa-sede-direccion svg { flex: none; width: 16px; height: 16px; color: var(--primario); }
+.mapa-sede-lado { display: grid; gap: 8px; justify-items: end; }
+.mapa-sede-cuenta { margin: 0; font-size: 0.84rem; color: var(--texto-suave); white-space: nowrap; }
+.mapa-sede-cuenta strong { font-size: 1rem; color: var(--primario); }
+.mapa-sede-boton {
+  padding: 7px 16px;
+  font: 600 0.85rem 'Work Sans', system-ui, sans-serif;
+  color: #0b1f3a;
+  cursor: pointer;
+  background: #f2c94c;
+  border: 0;
+  border-radius: 999px;
+  transition: background-color 160ms ease, transform 140ms ease-out;
+}
+.mapa-sede-boton:hover { background: #f7dc7a; }
+.mapa-sede-boton:active { transform: scale(0.97); }
+.mapa-sede-boton:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .mapa-sede-ficha { grid-template-columns: auto minmax(0, 1fr); padding: 12px 14px; }
+  .mapa-sede-lado { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-items: start; }
+  .mapa-sede-cuenta { white-space: normal; }
+}
+
+/* Leyenda, abajo a la izquierda sobre el mapa */
+.mapa-leyenda {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  max-width: calc(100% - 28px);
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: #1e293b;
+  list-style: none;
+  background: rgb(255 255 255 / 0.9);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px -8px rgb(11 31 58 / 0.35);
+  pointer-events: none;
+}
+.mapa-leyenda li { display: inline-flex; gap: 6px; align-items: center; }
+.mapa-leyenda span { width: 12px; height: 12px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px rgb(11 31 58 / 0.15); }
+.mapa-leyenda span.ley-icono { display: grid; place-items: center; width: 18px; height: 18px; color: #0b1f3a; background: none; border: 0; box-shadow: none; }
+.ley-icono svg { width: 16px; height: 16px; }
+.ley-sede { background: #f2c94c; }
+.mapa-leyenda span.ley-radio { background: rgb(63 209 184 / 0.25); border: 1.5px dashed #0f766e; box-shadow: none; }
+.ley-grupo { background: #0b1f3a; }
+@media (max-width: 640px) { .mapa-leyenda { bottom: 10px; left: 10px; gap: 4px 10px; font-size: 0.72rem; } }
 .mapa-nota { margin: 0; font-size: 0.85rem; color: var(--texto-suave); }
 
 /* Marcadores: el contenedor de Leaflet no debe pintar su fondo blanco por defecto */
 .mapa-marcador { background: none; border: 0; }
-.mapa-burbuja, .mapa-sede {
-  display: inline-block;
-  transform: translate(-50%, -100%);
-  padding: 4px 10px;
+/* Burbuja de precio con su punta hacia el punto del alojamiento */
+.mapa-burbuja {
+  position: relative;
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 5px 11px 5px 8px;
   font: 700 0.8rem 'Work Sans', system-ui, sans-serif;
+  color: #fff;
   white-space: nowrap;
-  border-radius: 999px;
-  box-shadow: 0 4px 12px rgb(11 31 58 / 0.25);
   cursor: pointer;
+  background: #0f766e;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgb(11 31 58 / 0.28);
+  transform: translate(-50%, calc(-100% - 7px));
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out;
 }
-.mapa-burbuja { color: #fff; background: var(--primario); border: 2px solid #fff; }
-.mapa-burbuja.grupo { background: var(--marca); }
-.mapa-sede { color: var(--marca); background: #f2c94c; border: 2px solid #fff; }
+.mapa-burbuja::after {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  content: '';
+  background: inherit;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: translateX(-50%) rotate(45deg);
+}
+.mapa-burbuja > svg { flex: none; width: 15px; height: 15px; }
+.mapa-burbuja > span { line-height: 1.1; }
+.mapa-burbuja.grupo { background: #0b1f3a; }
+.leaflet-marker-icon:hover .mapa-burbuja { transform: translate(-50%, calc(-100% - 10px)) scale(1.06); box-shadow: 0 8px 18px rgb(11 31 58 / 0.32); }
+
+/* Alfiler de la sede: dorado, con birrete y un halo que late suave */
+.mapa-sede-pin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: #0b1f3a;
+  background: linear-gradient(135deg, #f7dc7a, #f2c94c);
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 4px;
+  box-shadow: 0 8px 20px -4px rgb(11 31 58 / 0.45);
+  transform: rotate(-45deg);
+}
+.mapa-sede-pin svg { width: 22px; height: 22px; transform: rotate(45deg); }
+.mapa-sede-pin::before {
+  position: absolute;
+  inset: -10px;
+  content: '';
+  border: 2px solid rgb(242 201 76 / 0.7);
+  border-radius: 50%;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mapa-sede-pin::before { animation: mapa-halo 2.4s ease-out infinite; }
+}
+@keyframes mapa-halo { 0% { opacity: 0.9; transform: scale(0.7); } 100% { opacity: 0; transform: scale(1.5); } }
+.mapa-popup-sede { margin: 0; font-size: 0.85rem; color: #334155; }
 
 /* Ventana al tocar un marcador */
 .mapa-popup-titulo { margin: 0 0 8px; font-weight: 700; }
 .mapa-popup-titulo span { font-weight: 400; color: #475569; }
 .mapa-popup-lista { display: grid; gap: 8px; max-height: 260px; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
 .mapa-popup-lista li { display: flex; gap: 8px; align-items: center; }
-.mapa-popup-lista img, .mapa-sin-foto { flex: none; width: 52px; height: 40px; object-fit: cover; background: #e2e8f0; border-radius: 6px; }
+.mapa-popup-lista img { flex: none; width: 52px; height: 40px; object-fit: cover; background: #e2e8f0; border-radius: 8px; }
+.mapa-sin-foto {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 40px;
+  color: #0f766e;
+  background: linear-gradient(135deg, #e3f1ef, #cfe5e1);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgb(15 118 110 / 0.15);
+}
+.mapa-sin-foto.tipo-departamento { color: #0e3a4f; background: linear-gradient(135deg, #e6edf3, #cfdbe5); }
+.mapa-sin-foto svg { width: 22px; height: 22px; }
 .mapa-popup-lista div { display: grid; gap: 2px; font-size: 0.82rem; }
 .mapa-popup-lista a { font-weight: 700; color: var(--primario); }
 .mapa-propia { font-weight: 700; color: var(--primario); }
@@ -75,3 +226,64 @@
 .orden-selector label { font-weight: 600; color: var(--texto-suave); }
 .orden-selector select { padding: 6px 10px; font: inherit; border: 1px solid var(--borde); border-radius: 8px; background: var(--tarjeta); color: inherit; }
 .orden-ayuda { margin: -4px 0 12px; }
+
+/* Alfiler del alojamiento en el detalle: verde, con la casa o el edificio */
+.mapa-aloj-pin {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: #fff;
+  background: linear-gradient(135deg, #12766b, #0f766e);
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 4px;
+  box-shadow: 0 8px 20px -4px rgb(11 31 58 / 0.45);
+  transform: rotate(-45deg);
+}
+.mapa-aloj-pin svg { width: 20px; height: 20px; transform: rotate(45deg); }
+
+/* Aviso bajo el mapa: cómo leerlo y el atajo a «Cerca de mi sede». Mismo lenguaje que la franja de la sede */
+.mapa-aviso {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--tarjeta) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primario) 22%, var(--borde));
+  border-radius: 16px;
+  box-shadow: 0 10px 28px -24px rgb(11 31 58 / 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.mapa-aviso-icono {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--primario);
+  background: color-mix(in srgb, var(--primario) 12%, var(--tarjeta));
+  border-radius: 10px;
+}
+.mapa-aviso-icono svg { width: 19px; height: 19px; }
+.mapa-aviso-texto { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--texto); }
+.mapa-aviso-texto strong { color: var(--marca); }
+.mapa-aviso-texto a { font-weight: 600; color: var(--primario); }
+.mapa-aviso-boton {
+  padding: 8px 16px;
+  font: 600 0.85rem 'Work Sans', system-ui, sans-serif;
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--primario);
+  border: 0;
+  border-radius: 999px;
+  transition: background-color 160ms ease, transform 140ms ease-out;
+}
+.mapa-aviso-boton:hover { background: var(--primario-hover); }
+.mapa-aviso-boton:active { transform: scale(0.97); }
+.mapa-aviso-boton:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .mapa-aviso { grid-template-columns: auto minmax(0, 1fr); }
+  .mapa-aviso-boton { grid-column: 1 / -1; justify-self: stretch; }
+}
