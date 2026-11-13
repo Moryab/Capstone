@@ -10,6 +10,7 @@ import { CambioRolProvider } from '../rol/CambioRol.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { useAplicarTema, useTema } from '../tema/contexto.js'
 import Avisos from './Avisos.jsx'
+import AvisoNovedades from './AvisoNovedades.jsx'
 import Configuracion from './Configuracion.jsx'
 import Navegacion from './Navegacion.jsx'
 import { ResumenAdminProvider } from './ResumenAdmin.jsx'
@@ -32,6 +33,7 @@ const FONDOS = {
   // Estudiantes conectados entre sí: donde se buscan roomies y se responden los match
   '/roomies': 'conexion',
   '/propuestas': 'conexion',
+  '/evaluacion': 'conexion', // evaluar (y terminar) la convivencia
 }
 const fondoDe = (ruta) => FONDOS[ruta] ?? FONDOS[`/${ruta.split('/')[1]}`]
 
@@ -49,13 +51,17 @@ export default function Marco({ children }) {
   const [configAbierta, setConfigAbierta] = useState(false)
   const [avisosAbiertos, setAvisosAbiertos] = useState(false)
   const [noLeidas, setNoLeidas] = useState(0)
+  const [ultimoAviso, setUltimoAviso] = useState(null) // el aviso sin leer más reciente (AvisoNovedades)
   const contenido = useRef(null)
   // Admin: al cambiar de pestaña, el contenido sale desenfocándose y el nuevo se enfoca (transicion.js)
   useTransicionAdmin(contenido, pathname, admin)
 
   // Contador de la campana: al entrar, cada minuto y al leer avisos
   const revisarAvisos = useCallback(() => {
-    api('/notificaciones/resumen').then((r) => setNoLeidas(r.no_leidas)).catch(() => {})
+    api('/notificaciones/resumen').then((r) => {
+      setNoLeidas(r.no_leidas)
+      setUltimoAviso(r.ultimo ?? null)
+    }).catch(() => {})
   }, [])
   useEffect(() => {
     revisarAvisos()
@@ -100,6 +106,9 @@ export default function Marco({ children }) {
       <Configuracion abierto={configAbierta} alCerrar={() => setConfigAbierta(false)}
         tema={tema} cambiarTema={cambiarTema} />
       <Avisos abierto={avisosAbiertos} alCerrar={() => setAvisosAbiertos(false)} alCambiar={revisarAvisos} />
+      {/* Novedades: aviso pequeño en la esquina al entrar o cuando llega uno nuevo; lleva a la campana */}
+      <AvisoNovedades noLeidas={noLeidas} ultimo={ultimoAviso} panelAbierto={avisosAbiertos}
+        abrirAvisos={() => setAvisosAbiertos(true)} />
       </CambioRolProvider>
       </AvisoBreveProvider>
       </ResumenAdminProvider>

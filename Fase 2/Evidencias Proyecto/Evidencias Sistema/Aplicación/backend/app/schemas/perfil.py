@@ -222,10 +222,13 @@ class PerfilPublicoOut(BaseModel):
     # Contacto: solo con match confirmado entre ambos (o en el propio perfil)
     contacto_visible: bool = False
     telefono: str | None = None
+    # Si ya vive con alguien por RoomMatch, a la vista de todos: {"convivencias": n, "cupos_libres": n | None}
+    situacion: dict | None = None
 
     @classmethod
     def desde_doc(
-        cls, doc: dict, institucion: dict | None, es_propio: bool, con_contacto: bool = False
+        cls, doc: dict, institucion: dict | None, es_propio: bool, con_contacto: bool = False,
+        situacion: dict | None = None,
     ) -> "PerfilPublicoOut":
         perfil = doc.get("perfil", {})
         cuestionario = doc.get("cuestionario") or {}
@@ -256,4 +259,5 @@ class PerfilPublicoOut(BaseModel):
             es_propio=es_propio,
             contacto_visible=con_contacto,
             telefono=perfil.get("telefono") if con_contacto else None,
+            situacion=situacion,
         )

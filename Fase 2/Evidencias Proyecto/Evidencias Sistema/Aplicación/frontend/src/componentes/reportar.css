@@ -5,3 +5,6 @@
 .confirmar.reportar p.exito { color: inherit; }
 .confirmar.reportar p.alerta { color: var(--error); }
 .confirmar.reportar p.exito { color: var(--exito); }
+/* Sin cuenta verificada: el botón se ve apagado (al tocarlo, el diálogo explica por qué) */
+.boton.boton-reportar[aria-disabled] { cursor: not-allowed; opacity: 0.5; filter: grayscale(0.6); }
+.confirmar.reportar .acciones a.boton { text-decoration: none; }

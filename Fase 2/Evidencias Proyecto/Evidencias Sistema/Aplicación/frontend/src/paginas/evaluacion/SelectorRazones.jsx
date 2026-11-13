@@ -1,3 +1,5 @@
+import { IconoHabito } from '../../perfil/iconos.jsx'
+
 // HU-19: selector de hábitos con problemas, con la gravedad de cada uno. Lo usan el formulario de
 // evaluación (razones si no funciona, roces si funciona), la pantalla de razones y la de terminar
 
@@ -21,6 +23,18 @@ export const GRAVEDADES = [
 ]
 const MAX_DETALLE = 300
 
+// Ícono de cada hábito (los del cuestionario) y de los que no son del cuestionario
+const Trazo = ({ children }) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+    strokeLinejoin="round" aria-hidden="true" focusable="false">{children}</svg>
+)
+const ICONOS_EXTRA = {
+  gastos: <Trazo><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 9v.01M18 15v.01" /></Trazo>,
+  comunicacion: <Trazo><path d="M4 5h16v10H9l-5 4z" /><path d="M8 9h8M8 12h5" /></Trazo>,
+  otra: <Trazo><circle cx="6" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="18" cy="12" r="1.2" /></Trazo>,
+}
+const iconoDe = (valor) => ICONOS_EXTRA[valor] ?? <IconoHabito clave={valor} tamano={16} />
+
 export const textoDe = (lista, valor) => lista.find((o) => o.valor === valor)?.texto ?? valor
 
 // Lo que se envía al backend a partir de lo elegido ({razón: gravedad})
@@ -39,6 +53,7 @@ export function erroresRazones(elegidas, detalle) {
 export default function SelectorRazones({
   elegidas, setElegidas, detalle, setDetalle, errores, alCambiar,
   leyenda = '¿Qué no funcionó? Elige una o más razones', ayuda = null, antes = null, etiquetaOtra = '¿Cuál fue la otra razón?',
+  sinLeyenda = false, // el título ya lo da la sección que lo contiene
 }) {
   const alternar = (razon) => {
     setElegidas(({ [razon]: actual, ...resto }) => (actual ? resto : { ...resto, [razon]: 'moderada' }))
@@ -48,22 +63,23 @@ export default function SelectorRazones({
   return (
     <>
       <fieldset aria-describedby={[ayuda && 'ayuda-razones', errores.razones && 'error-razones'].filter(Boolean).join(' ') || undefined}>
-        <legend>{leyenda}</legend>
+        <legend className={sinLeyenda ? 'visualmente-oculto' : undefined}>{leyenda}</legend>
         {ayuda && <p id="ayuda-razones" className="campo-ayuda razones-ayuda">{ayuda}</p>}
         {antes}
         <ul className="razones-lista">
           {RAZONES.map(({ valor, texto }) => {
             const gravedad = elegidas[valor]
             return (
-              <li key={valor} className={`razon${gravedad ? ' elegida' : ''}`}>
+              <li key={valor} className={`razon${gravedad ? ' elegida' : ''}`} data-gravedad={gravedad}>
                 <label className="razon-nombre">
                   <input type="checkbox" checked={Boolean(gravedad)} onChange={() => alternar(valor)} />
+                  <span className="razon-icono">{iconoDe(valor)}</span>
                   {texto}
                 </label>
                 {gravedad && (
                   <div className="razon-gravedad" role="radiogroup" aria-label={`Qué tan grave fue: ${texto}`}>
                     {GRAVEDADES.map((g) => (
-                      <label key={g.valor} className={gravedad === g.valor ? 'elegida' : undefined}>
+                      <label key={g.valor} className={gravedad === g.valor ? 'elegida' : undefined} data-gravedad={g.valor}>
                         <input type="radio" name={`gravedad-${valor}`} checked={gravedad === g.valor}
                           onChange={() => setElegidas((e) => ({ ...e, [valor]: g.valor }))} />
                         {g.texto}

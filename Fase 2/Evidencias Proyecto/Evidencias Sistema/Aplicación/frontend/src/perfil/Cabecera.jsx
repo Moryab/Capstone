@@ -3,6 +3,16 @@ import { IconoCalendario, IconoPersona, IconoUbicacion } from '../componentes/Ic
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { textoGenero } from '../perfil.js'
 import { mayuscula } from './datos.js'
+import { IconoCorazon } from './iconos.jsx'
+
+// Si ya vive con alguien por RoomMatch: «En convivencia» y, si ofrece alojamiento, los cupos que le quedan
+export function textoConvivencia(perfil) {
+  const s = perfil.situacion
+  if (!s?.convivencias) return null
+  if (s.cupos_libres == null) return 'En convivencia'
+  if (s.cupos_libres === 0) return 'En convivencia · Sin cupos libres'
+  return `En convivencia · ${s.cupos_libres} ${s.cupos_libres === 1 ? 'cupo libre' : 'cupos libres'}`
+}
 
 const mesYAnio = (fecha) => new Date(fecha).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
 
@@ -14,6 +24,7 @@ const mesYAnio = (fecha) => new Date(fecha).toLocaleDateString('es-CL', { month:
 export default function Cabecera({ perfil, sobreAvatar, acciones }) {
   const edadYGenero = [perfil.edad && `${perfil.edad} años`, textoGenero(perfil.genero)].filter(Boolean).join(' · ')
   const origen = [perfil.ciudad_origen, perfil.region_origen].filter(Boolean).join(', ')
+  const convivencia = textoConvivencia(perfil)
 
   return (
     <header className="p2-cabecera">
@@ -35,6 +46,7 @@ export default function Cabecera({ perfil, sobreAvatar, acciones }) {
             {perfil.institucion && <> · {perfil.institucion_sigla || perfil.institucion}</>}
           </p>
           <ul className="p2-chips">
+            {convivencia && <li className="p2-chip-convivencia"><IconoCorazon tamano={16} /> {convivencia}</li>}
             {origen && <li><IconoUbicacion /> {origen}</li>}
             {edadYGenero && <li><IconoPersona /> {edadYGenero}</li>}
             <li><IconoCalendario /> Desde {mesYAnio(perfil.miembro_desde)}</li>

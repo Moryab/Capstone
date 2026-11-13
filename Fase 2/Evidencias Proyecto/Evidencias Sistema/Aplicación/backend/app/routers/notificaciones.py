@@ -41,8 +41,14 @@ async def mis_notificaciones(usuario: dict = Depends(usuario_actual)):
 
 @router.get("/resumen")
 async def resumen(usuario: dict = Depends(usuario_actual)):
-    """Solo la cantidad sin leer: la barra la consulta cada cierto tiempo."""
-    return {"no_leidas": await db.notificaciones.count_documents({"usuario_id": usuario["_id"], "leido": False})}
+    """La cantidad sin leer y el aviso sin leer más reciente: la barra lo consulta cada cierto tiempo
+    y, si hay algo nuevo, lo anuncia con un aviso pequeño en la esquina."""
+    sin_leer = {"usuario_id": usuario["_id"], "leido": False}
+    ultimo = await db.notificaciones.find_one(sin_leer, sort=[("fecha_notificacion", -1)])
+    return {
+        "no_leidas": await db.notificaciones.count_documents(sin_leer),
+        "ultimo": aviso_out(ultimo) if ultimo else None,
+    }
 
 
 @router.put("/leidas")

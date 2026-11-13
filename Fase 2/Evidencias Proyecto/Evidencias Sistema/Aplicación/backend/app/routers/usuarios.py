@@ -44,8 +44,23 @@ async def ver_perfil_publico(usuario_id: str, actual: dict = Depends(usuario_act
         ],
     }, {"_id": 1})
     return PerfilPublicoOut.desde_doc(
-        doc, institucion, es_propio=es_propio, con_contacto=es_propio or con_match is not None
+        doc, institucion, es_propio=es_propio, con_contacto=es_propio or con_match is not None,
+        situacion=await situacion_de(doc),
     )
+
+
+async def situacion_de(doc: dict) -> dict:
+    """Si la persona ya está en una convivencia confirmada y, si ofrece alojamiento, cuántos cupos le
+    quedan. Así quien visita su perfil sabe si aún busca roomie (un buscador en convivencia ya no)."""
+    convivencias = await db.matches.count_documents(
+        {"estado": "confirmado", "$or": [{"usuario_a_id": doc["_id"]}, {"usuario_b_id": doc["_id"]}]}
+    )
+    cupos_libres = None
+    if doc.get("modo") == "oferente":
+        cupos_libres = 0
+        async for p in db.publicaciones.find({"oferente_id": doc["_id"], "estado": "activa"}, {"cupos_disponibles": 1}):
+            cupos_libres += p.get("cupos_disponibles", 0)
+    return {"convivencias": convivencias, "cupos_libres": cupos_libres}
 
 
 @router.get("/{usuario_id}/publicaciones", response_model=list[PublicacionOut])

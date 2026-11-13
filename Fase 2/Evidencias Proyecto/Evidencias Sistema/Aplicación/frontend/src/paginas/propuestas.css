@@ -38,6 +38,28 @@
 .pp-interruptor p { margin: 0; font-size: 0.9rem; line-height: 1.45; color: var(--texto-suave); }
 .pp-interruptor .interruptor { flex: none; }
 
+/* ---------- «Recibir propuestas» del oferente: texto e interruptor ilustrado ---------- */
+.pp-recibir {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  padding: 20px 24px;
+  background: color-mix(in srgb, #0b1f3a 6%, var(--tarjeta));
+  border: 1px solid color-mix(in srgb, var(--borde) 60%, transparent);
+  border-radius: 20px;
+  box-shadow: var(--pp-sombra);
+  transition: background-color 400ms ease, border-color 400ms ease;
+}
+.pp-recibir[data-activo] { background: color-mix(in srgb, var(--primario) 7%, var(--tarjeta)); border-color: color-mix(in srgb, var(--primario) 35%, transparent); }
+.pp-recibir-texto { display: grid; gap: 6px; max-width: 70ch; }
+.pp-pagina .pp-recibir h2 { margin: 0; font: 600 1.15rem 'Outfit', system-ui, sans-serif; color: var(--marca); }
+.pp-recibir p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--texto-suave); }
+.pp-recibir .pp-recibir-cupos { display: inline-flex; gap: 8px; align-items: center; font-size: 0.84rem; font-weight: 600; color: var(--marca); }
+.pp-recibir-cupos::before { width: 8px; height: 8px; content: ''; background: var(--texto-suave); border-radius: 50%; }
+.pp-recibir[data-activo] .pp-recibir-cupos::before { background: var(--primario); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primario) 20%, transparent); }
+
 /* ---------- Secciones ---------- */
 .pp-seccion { margin-bottom: 34px; }
 .pp-pagina .pp-seccion > h2 { display: flex; gap: 10px; align-items: center; margin: 0 0 14px; font: 600 1.3rem 'Outfit', system-ui, sans-serif; color: var(--marca); }
@@ -76,7 +98,8 @@
   animation: pp-entrar 320ms var(--pp-curva) backwards;
   animation-delay: calc(var(--orden, 0) * 50ms);
 }
-.pp-tarjeta[data-rol='oferente'] { grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.75fr); }
+/* Oferente: la persona a todo el ancho; su alojamiento es solo una línea de referencia */
+.pp-tarjeta[data-rol='oferente'] { grid-template-columns: minmax(0, 1fr); }
 @keyframes pp-entrar {
   from { opacity: 0; transform: translateY(8px); }
 }
@@ -87,14 +110,7 @@
 
 /* Lado del alojamiento. En el buscador, foto e información son dos columnas de la tarjeta */
 .pp-lado-alojamiento { display: contents; }
-.pp-tarjeta[data-rol='oferente'] .pp-lado-alojamiento {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 18px;
-  background: color-mix(in srgb, var(--campo) 65%, var(--tarjeta));
-  border-left: 1px solid var(--pp-linea);
-}
+
 
 /* Foto: en el buscador llena el alto de la tarjeta (proporción cercana a 4:3); en el oferente, 16:10 */
 .pp-foto { position: relative; min-height: 220px; overflow: hidden; background: var(--campo); }
@@ -102,7 +118,6 @@
 /* Sin fotos: el dibujo entero, apoyado abajo; el fondo de la caja es su mismo color */
 .pp-foto:has(.pp-sin-foto) { background: #e3f1ef; }
 .pp-foto .pp-sin-foto { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.pp-tarjeta[data-rol='oferente'] .pp-foto { min-height: 0; aspect-ratio: 16 / 10; border-radius: 14px; }
 .pp-tipo {
   position: absolute;
   top: 12px;
@@ -120,9 +135,7 @@
 }
 
 .pp-alojamiento { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 20px 22px; }
-.pp-tarjeta[data-rol='oferente'] .pp-alojamiento { padding: 0; }
 .pp-precio { margin: 0; font: 700 1.6rem/1.1 'Outfit', system-ui, sans-serif; letter-spacing: -0.01em; color: var(--marca); font-variant-numeric: tabular-nums; }
-.pp-tarjeta[data-rol='oferente'] .pp-precio { font-size: 1.15rem; }
 .pp-precio span { font: 400 0.82rem 'Work Sans', system-ui, sans-serif; color: var(--texto-suave); }
 .pp-titulo {
   display: -webkit-box;
@@ -166,6 +179,27 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+}
+
+/* Referencia del alojamiento propio (vista del oferente): miniatura, título y datos en una línea */
+.pp-referencia {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--campo);
+  border-radius: 14px;
+}
+.pp-referencia-foto { position: relative; flex: none; width: 76px; aspect-ratio: 4 / 3; overflow: hidden; background: #e3f1ef; border-radius: 10px; }
+.pp-referencia-foto img, .pp-referencia-foto .pp-sin-foto { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.pp-referencia-texto { display: grid; flex: 1; gap: 1px; min-width: 0; }
+.pp-referencia-texto small { font-size: 0.74rem; color: var(--texto-suave); }
+.pp-referencia-texto strong { overflow: hidden; font: 600 0.98rem 'Outfit', system-ui, sans-serif; color: var(--marca); text-overflow: ellipsis; white-space: nowrap; }
+.pp-referencia-texto span { overflow: hidden; font-size: 0.82rem; color: var(--texto-suave); text-overflow: ellipsis; white-space: nowrap; }
+.pp-referencia .pp-ver { flex: none; align-self: center; margin: 0; }
+@media (max-width: 599px) {
+  .pp-referencia { flex-wrap: wrap; }
+  .pp-referencia .pp-ver { margin-left: 90px; }
 }
 
 /* «Ver alojamiento» y «Ver perfil»: botones suaves que llevan al detalle */
@@ -223,7 +257,38 @@
 .pp-estado-linea { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pp-estado, .pp-vence { display: inline-flex; align-items: center; padding: 5px 10px; font-size: 0.76rem; font-weight: 600; line-height: 1; border-radius: 999px; }
 .pp-estado { color: var(--primario); background: var(--pp-tinte); }
-.pp-urgente .pp-estado { color: #fff; background: #b45309; }
+.pp-urgente .pp-estado { gap: 7px; color: #fff; background: #b45309; }
+/* Punto que late en la etiqueta: alguien espera tu respuesta */
+.pp-urgente .pp-estado::before { width: 7px; height: 7px; content: ''; background: #fde68a; border-radius: 50%; }
+@media (prefers-reduced-motion: no-preference) {
+  .pp-urgente .pp-estado::before { animation: pp-latido 1.6s ease-in-out infinite; }
+}
+@keyframes pp-latido { 0%, 100% { box-shadow: 0 0 0 0 rgb(253 230 138 / 0.7); } 50% { box-shadow: 0 0 0 5px rgb(253 230 138 / 0); } }
+/* Toda la tarjeta en ámbar suave: se distingue de las demás de un vistazo */
+.pp-tarjeta.pp-urgente {
+  background: color-mix(in srgb, #f59e0b 6%, var(--tarjeta));
+  border-color: color-mix(in srgb, #b45309 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 14%, transparent), var(--pp-sombra);
+}
+/* Aviso sobre los botones */
+.pp-ya-acepto {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: #7c2d12;
+  background: color-mix(in srgb, #f59e0b 16%, var(--tarjeta));
+  border: 1px solid color-mix(in srgb, #b45309 35%, transparent);
+  border-radius: 14px;
+}
+.pp-ya-acepto strong { color: #92400e; }
+.pp-ya-acepto-icono { display: grid; flex: none; place-items: center; width: 30px; height: 30px; color: #fff; background: #b45309; border-radius: 50%; }
+.pp-ya-acepto-icono svg { width: 16px; height: 16px; }
+html.tema-oscuro .pp-ya-acepto { color: #fde68a; }
+html.tema-oscuro .pp-ya-acepto strong { color: #fcd34d; }
 .pp-confirmado .pp-estado { color: #fff; background: var(--primario); }
 .pp-esperando .pp-estado { color: var(--texto-suave); background: var(--campo); }
 .pp-vence { color: var(--texto-suave); background: var(--campo); }
@@ -295,9 +360,33 @@
 .pp-boton.boton { min-width: 130px; min-height: 42px; margin: 0; padding: 10px 20px; }
 .pp-rechazo { display: grid; gap: 10px; width: 100%; max-width: 420px; }
 .pp-rechazo .campo { margin: 0; }
-.pp-mensaje.enlace-boton { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
-.pp-enlace { font-size: 0.9rem; font-weight: 600; color: var(--primario); }
-.pp-terminar { font-size: 0.85rem; color: var(--error); }
+/* «Escribirle» y «Terminar convivencia»: botones de verdad (no enlaces subrayados), en segundo plano
+   respecto de la acción principal. Terminar va en rojo suave y al final: es definitivo */
+.pp-mensaje.enlace-boton, .pp-terminar, .pp-enlace {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 18px;
+  font: 600 0.88rem 'Work Sans', system-ui, sans-serif;
+  text-decoration: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 140ms ease-out;
+}
+.pp-mensaje.enlace-boton, .pp-enlace { color: var(--primario); background: var(--tarjeta); border: 1.5px solid color-mix(in srgb, var(--primario) 40%, transparent); }
+.pp-mensaje.enlace-boton svg { width: 18px; height: 18px; }
+.pp-terminar { margin-left: auto; color: var(--error); background: transparent; border: 1.5px solid color-mix(in srgb, var(--error) 30%, transparent); }
+.pp-terminar svg { width: 17px; height: 17px; }
+.pp-mensaje.enlace-boton:active, .pp-terminar:active, .pp-enlace:active { transform: scale(0.97); }
+.pp-terminar:focus-visible, .pp-enlace:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .pp-mensaje.enlace-boton:hover, .pp-enlace:hover { background: var(--pp-tinte); border-color: var(--primario); }
+  .pp-terminar:hover { background: var(--error-fondo); border-color: var(--error); }
+}
+@media (max-width: 599px) {
+  .pp-mensaje.enlace-boton, .pp-terminar { flex: 1 1 auto; justify-content: center; margin-left: 0; }
+}
 
 /* Tablet: en el buscador, foto e información arriba y la persona a lo ancho debajo */
 @media (max-width: 1023px) {
@@ -307,10 +396,6 @@
 }
 /* Oferente angosto y celular: todo en una columna */
 @media (max-width: 760px) {
-  .pp-tarjeta[data-rol='oferente'] { grid-template-columns: minmax(0, 1fr); }
-  .pp-tarjeta[data-rol='oferente'] .pp-lado-alojamiento { flex-direction: row; align-items: center; border-top: 1px solid var(--pp-linea); border-left: 0; }
-  .pp-tarjeta[data-rol='oferente'] .pp-foto { flex: none; width: 112px; }
-  .pp-tarjeta[data-rol='oferente'] .pp-tipo { display: none; } /* la miniatura es chica: el tipo la tapaba */
   .pp-detalle { white-space: normal; }
 }
 @media (max-width: 599px) {
@@ -346,6 +431,7 @@
 
 @media (max-width: 599px) {
   .pp-interruptor { align-items: flex-start; }
+  .pp-recibir { flex-direction: column; align-items: flex-start; padding: 18px; }
   .pp-vacio { flex-direction: column; align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {

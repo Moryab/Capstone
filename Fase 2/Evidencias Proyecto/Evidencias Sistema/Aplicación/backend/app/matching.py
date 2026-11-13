@@ -92,7 +92,11 @@ async def _proponer_a(buscador: dict) -> int:
     # Solo oferentes: nunca se proponen matches entre dos buscadores
     activos = {
         u["_id"]
-        async for u in db.usuarios.find({**CANDIDATOS, "modo": "oferente", "_id": {"$in": list(compatibles)}}, {"_id": 1})
+        async for u in db.usuarios.find({
+            **CANDIDATOS, "modo": "oferente", "_id": {"$in": list(compatibles)},
+            # El oferente puede pausar las propuestas aunque le queden cupos (PUT /matches/recibir)
+            "recibiendo_propuestas": {"$ne": False},
+        }, {"_id": 1})
     }
 
     consulta = {

@@ -45,7 +45,7 @@ function Alojamiento({ pub }) {
  * Sin propuesta solo informa (no hay botones para proponer ni contactar). `alCambiar` avisa
  * cuando cambia (por ejemplo, al confirmarse), para recargar el perfil y mostrar el teléfono.
  */
-export function TarjetaEstadoMatch({ match, nombre, alCambiar, miModo, suModo }) {
+export function TarjetaEstadoMatch({ match, nombre, alCambiar, miModo, suModo, situacion }) {
   // Un match solo une a quien busca con quien ofrece; con el mismo rol no hay propuesta posible
   const complementarios = Boolean(miModo && suModo && miModo !== suModo)
   const n = mayuscula(nombre)
@@ -124,7 +124,11 @@ export function TarjetaEstadoMatch({ match, nombre, alCambiar, miModo, suModo })
           {estado === 'cerrada'
             ? `La propuesta anterior con ${n} se cerró. `
             : ''}
-          {complementarios
+          {complementarios && situacion?.convivencias > 0 && situacion.cupos_libres == null
+            ? `${n} ya encontró dónde vivir y está en una convivencia, así que por ahora no recibe propuestas de match.`
+            : complementarios && situacion?.cupos_libres === 0
+              ? `${n} no tiene cupos libres en sus alojamientos, así que por ahora no recibe propuestas de match.`
+              : complementarios
             ? 'RoomMatch te propondrá estudiantes compatibles contigo según sus hábitos y alojamientos disponibles.'
             : textoMismoRol(miModo, suModo, n)}
         </p>

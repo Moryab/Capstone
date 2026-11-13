@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pymongo.errors import DuplicateKeyError
 
 from app.db import db, siguiente_codigo
-from app.deps import solo_admin, usuario_actual
+from app.deps import estudiante_verificado, solo_admin
 from app.routers.verificacion import nombre_completo
 from app.schemas.reportes import (
     ESTADOS_REPORTE, AccionReporteOut, ElementoReportadoOut, EstadoReporte, OtroReporteOut, PersonaReporteOut, ReporteDetalleOut,
@@ -60,7 +60,7 @@ async def crear_reporte(
 
 @router.post("/perfiles/{usuario_id}", status_code=status.HTTP_201_CREATED)
 async def reportar_perfil(
-    usuario_id: str, datos: ReportePerfilIn, usuario: dict = Depends(usuario_actual)
+    usuario_id: str, datos: ReportePerfilIn, usuario: dict = Depends(estudiante_verificado)
 ):
     """HU-24: reportar el perfil de otra persona."""
     try:
@@ -83,7 +83,7 @@ async def reportar_perfil(
 
 @router.post("/publicaciones/{publicacion_id}", status_code=status.HTTP_201_CREATED)
 async def reportar_publicacion(
-    publicacion_id: str, datos: ReportePublicacionIn, usuario: dict = Depends(usuario_actual)
+    publicacion_id: str, datos: ReportePublicacionIn, usuario: dict = Depends(estudiante_verificado)
 ):
     """HU-25: reportar una publicación ajena. Solo las activas: las demás no se pueden abrir."""
     try:

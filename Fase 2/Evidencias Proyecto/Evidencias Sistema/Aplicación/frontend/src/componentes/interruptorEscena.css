@@ -1,0 +1,101 @@
+/* Interruptor ilustrado (componentes/InterruptorEscena.jsx) con elementos de RoomMatch. En pausa: pista
+   gris tranquila y el botón a la izquierda; activo: degradado de marca con la red de conexiones y
+   corazones, y el botón rueda a la derecha. Prefijo ie- */
+.ie {
+  --ie-ancho: 132px;
+  --ie-alto: 60px;
+  --ie-boton: 50px;
+  --ie-curva: cubic-bezier(0.65, 0, 0.35, 1);
+  position: relative;
+  flex: none;
+  width: var(--ie-ancho);
+  height: var(--ie-alto);
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: linear-gradient(180deg, #dbe3ea 0%, #c8d3dc 100%);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 2px 5px rgb(11 31 58 / 0.18), 0 8px 18px -12px rgb(11 31 58 / 0.5);
+  isolation: isolate;
+}
+.ie:focus-visible { outline: 3px solid var(--foco, #5eead4); outline-offset: 3px; }
+.ie:disabled { cursor: progress; opacity: 0.7; }
+
+/* Activo: el degradado de marca aparece encima */
+.ie-activo { position: absolute; inset: 0; background: linear-gradient(135deg, #0b1f3a 0%, #0e3a4f 45%, #0f766e 100%); opacity: 0; transition: opacity 480ms ease; }
+.ie[data-activo] .ie-activo { opacity: 1; }
+.ie-red { position: absolute; top: 2px; left: 10px; width: 80px; height: 44px; }
+.ie-corazon {
+  position: absolute;
+  bottom: 18px;
+  width: 9px;
+  height: 9px;
+  background: #f2c94c;
+  opacity: 0;
+  transform: rotate(-45deg);
+}
+.ie-corazon::before, .ie-corazon::after { position: absolute; width: 9px; height: 9px; content: ''; background: inherit; border-radius: 50%; }
+.ie-corazon::before { top: -4.5px; left: 0; }
+.ie-corazon::after { top: 0; left: 4.5px; }
+.ie-corazon.chico { transform: rotate(-45deg) scale(0.7); background: #5eead4; }
+@media (prefers-reduced-motion: no-preference) {
+  .ie[data-activo] .ie-corazon { animation: ie-sube 2.8s ease-in-out infinite; }
+  .ie[data-activo] .ie-corazon.chico { animation-delay: 1.3s; }
+}
+.ie[data-activo] .ie-corazon { opacity: 0.9; }
+@keyframes ie-sube {
+  0% { opacity: 0; translate: 0 6px; }
+  30%, 70% { opacity: 0.95; }
+  100% { opacity: 0; translate: 0 -16px; }
+}
+
+/* En pausa: el ícono de pausa a la derecha */
+.ie-pausa { position: absolute; top: 50%; right: 22px; display: flex; gap: 4px; margin-top: -11px; transition: opacity 300ms ease; }
+.ie-pausa span { width: 5px; height: 16px; background: #7b8d9c; border-radius: 3px; }
+.ie[data-activo] .ie-pausa { opacity: 0; }
+
+/* La ciudad de los fondos, abajo: gris en pausa, verde azulado al activarse */
+.ie-ciudad { position: absolute; right: 0; bottom: 0; left: 0; width: 100%; height: 14px; fill: #b3c1cc; transition: fill 480ms ease; }
+.ie[data-activo] .ie-ciudad { fill: #12766b; }
+
+/* El botón rueda: la rueda gira y la casa se queda derecha */
+.ie-boton {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--ie-boton);
+  height: var(--ie-boton);
+  transition: transform 620ms var(--ie-curva);
+}
+.ie[data-activo] .ie-boton { transform: translateX(calc(var(--ie-ancho) - var(--ie-boton) - 10px)); }
+.ie-rueda {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, #ffffff 0 52%, transparent 53%),
+    conic-gradient(from 0deg, #9fb3c3 0 25%, #cfdbe4 0 50%, #9fb3c3 0 75%, #cfdbe4 0);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px -2px rgb(11 31 58 / 0.4);
+  transition: transform 620ms var(--ie-curva), background 480ms ease;
+}
+.ie[data-activo] .ie-rueda {
+  background:
+    radial-gradient(circle at 50% 50%, #ffffff 0 52%, transparent 53%),
+    conic-gradient(from 0deg, #0f766e 0 25%, #3fd1b8 0 50%, #0f766e 0 75%, #3fd1b8 0);
+  transform: rotate(360deg);
+}
+.ie-casa { position: relative; width: 28px; height: 28px; }
+.ie-ventana { fill: #9fb3c3; transition: fill 400ms ease; }
+.ie-puerta { fill: #0e3a4f; transition: fill 400ms ease, transform 400ms ease; transform-origin: 17.5px 21px; }
+/* Activo: la luz encendida y la puerta abierta */
+.ie[data-activo] .ie-ventana { fill: #f2c94c; }
+.ie[data-activo] .ie-puerta { fill: #12766b; transform: scaleX(0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ie-boton, .ie-rueda, .ie-activo, .ie-ciudad { transition-duration: 1ms; }
+}

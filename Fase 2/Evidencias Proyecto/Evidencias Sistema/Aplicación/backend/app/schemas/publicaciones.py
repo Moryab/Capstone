@@ -14,6 +14,7 @@ SERVICIOS = ("agua", "luz", "gas", "internet")
 MAX_FOTOS = 5  # CA-05.4
 MAX_CUPOS = 10
 MAX_COSTO = 5_000_000  # tope de sentido común para evitar errores de tipeo
+MIN_COSTO = 30_000  # un arriendo de $1 o $10 es un error de tipeo o una publicación falsa
 
 
 def texto_obligatorio(v: str) -> str:
@@ -124,7 +125,7 @@ class PublicacionIn(BaseModel):
     descripcion: str = Field(max_length=1000)
     cupos_totales: int = Field(ge=1, le=MAX_CUPOS)
     cupos_disponibles: int = Field(ge=0, le=MAX_CUPOS)
-    costo_mensual: int = Field(gt=0, le=MAX_COSTO)  # CA-06.1: pesos chilenos, mayor a 0
+    costo_mensual: int = Field(le=MAX_COSTO)  # CA-06.1: pesos chilenos, desde MIN_COSTO
     genero_preferido: GeneroPreferido = "indiferente"
     ubicacion: UbicacionIn
     gastos: Gastos
@@ -136,6 +137,13 @@ class PublicacionIn(BaseModel):
     @classmethod
     def obligatorios(cls, v):
         return texto_obligatorio(v) if isinstance(v, str) else v
+
+    @field_validator("costo_mensual")
+    @classmethod
+    def costo_realista(cls, v):
+        if v < MIN_COSTO:
+            raise ValueError(f"El arriendo debe ser de al menos ${MIN_COSTO:,}".replace(",", "."))
+        return v
 
     @field_validator("cupos_disponibles")
     @classmethod

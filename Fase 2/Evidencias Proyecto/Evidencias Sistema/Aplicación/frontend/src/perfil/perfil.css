@@ -669,3 +669,12 @@ html.tema-oscuro .p2-pub-sin-fotos .boton { background: var(--tarjeta); }
 .p2-calce-cumple { display: flex; gap: 8px; align-items: center; font-size: 0.9375rem; color: var(--p2-verde); }
 .p2-calce-conclusion { font-weight: 600; color: var(--texto); }
 .p2-calce-conclusion[data-tono='ok'] { color: var(--p2-verde); }
+
+/* Chip «En convivencia» de la cabecera: ya vive con alguien por RoomMatch */
+.p2-chips li.p2-chip-convivencia {
+  font-weight: 600;
+  color: var(--primario);
+  background: color-mix(in srgb, var(--primario) 10%, var(--tarjeta));
+  border-color: color-mix(in srgb, var(--primario) 35%, transparent);
+}
+.p2-chips li.p2-chip-convivencia svg { color: var(--primario); }

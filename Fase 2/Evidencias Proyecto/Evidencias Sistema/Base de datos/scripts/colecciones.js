@@ -174,6 +174,8 @@ aplicar("usuarios", {
         modo: {"bsonType":["string","null"],"enum":["buscador","oferente",null]},
         fecha_cambio_modo: {"bsonType":["date","null"]},
         buscando_alojamiento: {"bsonType":"bool"},
+        // Oferente: false si pausó las propuestas aunque le queden cupos (sin el campo, las recibe)
+        recibiendo_propuestas: {"bsonType":"bool"},
         eliminacion: {
           bsonType: "object",
           properties: {

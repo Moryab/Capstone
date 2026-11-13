@@ -9,7 +9,7 @@ export function ResumenRazones({ razones }) {
   return (
     <ul className="razones-resumen">
       {razones.map((r) => (
-        <li key={r.razon}>
+        <li key={r.razon} data-gravedad={r.gravedad}>
           <strong>{textoDe(RAZONES, r.razon)}</strong> <span>{textoDe(GRAVEDADES, r.gravedad)}</span>
         </li>
       ))}

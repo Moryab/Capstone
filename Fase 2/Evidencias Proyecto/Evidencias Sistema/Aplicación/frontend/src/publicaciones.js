@@ -44,6 +44,9 @@ export const SI_NO = [
 
 // Mismos límites que valida el backend (CA-05.4)
 export const MAX_FOTOS = 5
+// Arriendo mensual: mismo rango que valida la API (schemas/publicaciones.py)
+export const MIN_COSTO = 30_000
+export const MAX_COSTO = 5_000_000
 export const FOTO_MAX_MB = 5
 export const FOTO_TIPOS_PUBLICACION = ['image/jpeg', 'image/png']
 

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Literal
 
 from bson import ObjectId
@@ -26,6 +27,10 @@ HISTORIAL = 10  # propuestas cerradas que se muestran
 
 class BusquedaIn(BaseModel):
     buscando: bool
+
+
+class RecibirIn(BaseModel):
+    recibiendo: bool
 
 
 class RechazoIn(BaseModel):
@@ -131,15 +136,26 @@ async def mis_propuestas(usuario: dict = Depends(estudiante_verificado)):
     usuario = await db.usuarios.find_one({"_id": yo})
 
     mias = {"$or": [{"usuario_a_id": yo}, {"usuario_b_id": yo}]}
-    abiertas = [m async for m in db.matches.find({**mias, "estado": {"$in": ABIERTAS}}).sort("fecha_sugerencia", -1)]
+    # Las más compatibles primero (como «Posibles roomies»); con el mismo porcentaje, la más reciente
+    abiertas = [
+        m async for m in db.matches.find({**mias, "estado": {"$in": ABIERTAS}})
+        .sort([("pctj_compatibilidad", -1), ("fecha_sugerencia", -1)])
+    ]
     confirmados = [m async for m in db.matches.find({**mias, "estado": "confirmado"}).sort("fecha_confirmacion", -1)]
     cerradas = [m async for m in db.matches.find({**mias, "estado": {"$in": ["rechazado", "expirado", "finalizado"]}})]
     # Lo más reciente primero: el término de la convivencia o la respuesta a la propuesta
     cerradas.sort(key=lambda m: m.get("fecha_fin_convivencia") or m["fecha_respuesta"] or m["fecha_sugerencia"], reverse=True)
     cerradas = cerradas[:HISTORIAL]
+    # Oferente: si recibe propuestas y cuántos cupos libres le quedan en sus alojamientos activos
+    cupos_libres = 0
+    if usuario.get("modo") == "oferente":
+        async for p in db.publicaciones.find({"oferente_id": yo, "estado": "activa"}, {"cupos_disponibles": 1}):
+            cupos_libres += p.get("cupos_disponibles", 0)
     return {
         "modo": usuario.get("modo"),
         "buscando": bool(usuario.get("buscando_alojamiento")),
+        "recibiendo": usuario.get("recibiendo_propuestas", True),
+        "cupos_libres": cupos_libres,
         "con_convivencia": bool(usuario.get("match_activo_id")),
         "propuestas": await vista(abiertas, yo),
         "confirmados": await vista(confirmados, yo),
@@ -166,6 +182,31 @@ async def cambiar_busqueda(datos: BusquedaIn, usuario: dict = Depends(usuario_ac
         return {"mensaje": "Dejaste de recibir propuestas", "propuestas_nuevas": 0}
     nuevas = await generar_propuestas({**usuario, "buscando_alojamiento": True})
     return {"mensaje": "Te avisaremos cuando encontremos alojamientos compatibles", "propuestas_nuevas": nuevas}
+
+
+@router.put("/recibir")
+async def cambiar_recibir(datos: RecibirIn, usuario: dict = Depends(usuario_actual)):
+    """«Recibir propuestas» del oferente: puede pausarlas aunque le queden cupos libres, para que a
+    quienes buscan se les propongan otros alojamientos mientras tanto.
+
+    Igual que al apagar la búsqueda: se cierran las propuestas que nadie ha respondido; las que ya
+    aceptó alguien siguen abiertas para que pueda contestarlas.
+    """
+    if usuario.get("modo") != "oferente":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Solo quien ofrece un espacio recibe propuestas para sus alojamientos")
+    await db.usuarios.update_one({"_id": usuario["_id"]}, {"$set": {"recibiendo_propuestas": datos.recibiendo}})
+    if not datos.recibiendo:
+        cerradas = await db.matches.update_many(
+            {"usuario_b_id": usuario["_id"], "estado": "sugerido"},
+            {"$set": {"estado": "expirado", "fecha_respuesta": datetime.now(timezone.utc)}},
+        )
+        await generar_propuestas()  # quienes buscaban recuperan el espacio para otras opciones
+        return {
+            "mensaje": "Pausaste las propuestas. Puedes volver a activarlas cuando quieras",
+            "cerradas": cerradas.modified_count,
+        }
+    nuevas = await generar_propuestas()
+    return {"mensaje": "Volverás a recibir propuestas para tus alojamientos con cupos", "propuestas_nuevas": nuevas}
 
 
 async def propuesta_de(match_id: str, usuario: dict) -> dict:

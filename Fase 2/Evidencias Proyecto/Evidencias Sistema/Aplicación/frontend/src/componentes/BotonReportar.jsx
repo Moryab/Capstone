@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import { useSesion } from '../sesion/SesionContext.jsx'
+import { estaVerificado } from '../sesion/verificacion.js'
 import { MAX_DESCRIPCION, MOTIVOS_PERFIL, MOTIVOS_PUBLICACION } from '../reportes.js'
 import Campo from './Campo.jsx'
 import './reportar.css'
@@ -37,6 +40,8 @@ const SEGUN_TIPO = {
  */
 export default function BotonReportar({ tipo, id, nombre, texto }) {
   const textos = SEGUN_TIPO[tipo]
+  // Sin cuenta verificada solo se puede mirar: el botón se ve apagado y al tocarlo explica por qué
+  const verificado = estaVerificado(useSesion().usuario)
   const dialogo = useRef(null)
   const [abierto, setAbierto] = useState(false)
   const [datos, setDatos] = useState(VACIO)
@@ -92,7 +97,8 @@ export default function BotonReportar({ tipo, id, nombre, texto }) {
 
   return (
     <>
-      <button type="button" className="boton peligro-suave boton-reportar" onClick={() => setAbierto(true)}>
+      <button type="button" className="boton peligro-suave boton-reportar" onClick={() => setAbierto(true)}
+        aria-disabled={!verificado || undefined} title={verificado ? undefined : 'Verifica tu cuenta para reportar'}>
         <IconoBandera /> {texto ?? textos.boton}
       </button>
 
@@ -101,7 +107,15 @@ export default function BotonReportar({ tipo, id, nombre, texto }) {
         onCancel={(e) => { e.preventDefault(); cerrar() }}>
         <h2 id="reportar-titulo">{textos.titulo(nombre)}</h2>
 
-        {confirmacion ? (
+        {!verificado ? (
+          <>
+            <p>Para reportar necesitas tu cuenta verificada. Así los reportes vienen de estudiantes reales.</p>
+            <div className="acciones">
+              <button type="button" className="boton secundario" onClick={cerrar}>Cerrar</button>
+              <Link to="/perfil/verificacion" className="boton">Verificar mi cuenta</Link>
+            </div>
+          </>
+        ) : confirmacion ? (
           <>
             <p className="exito" role="status">{confirmacion}</p>
             <p>{textos.privacidad}</p>

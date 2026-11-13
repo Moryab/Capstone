@@ -15,7 +15,7 @@ import {
 import SinFoto from '../componentes/SinFoto.jsx'
 import { IconoHabito } from '../perfil/iconos.jsx'
 import {
-  aFormulario, aPayload, CARACTERISTICAS, formatearPesos, FORMULARIO_VACIO, GENEROS_PREFERIDOS, REGLAS,
+  aFormulario, aPayload, CARACTERISTICAS, formatearPesos, FORMULARIO_VACIO, GENEROS_PREFERIDOS, MAX_COSTO, MIN_COSTO, REGLAS,
   SERVICIOS, SI_NO, textoDe, TIPOS, ubicarDireccion,
 } from '../publicaciones.js'
 import './formPublicacion.css'
@@ -25,6 +25,8 @@ const SelectorUbicacion = lazy(() => import('../componentes/SelectorUbicacion.js
 
 const MAX_DESCRIPCION = 1000
 const MAX_REGLAS = 300
+// Campos que solo aceptan dígitos: el arriendo, los gastos aparte y los cupos
+const NUMERICOS = /^(costo_mensual|cupos_totales|cupos_disponibles|gastos\.\w+\.monto_estimado)$/
 
 const INCLUIDO = [
   { valor: 'si', texto: 'Incluido' },
@@ -75,6 +77,8 @@ function Formulario() {
   const [datos, setDatos] = useState(editando ? null : FORMULARIO_VACIO)
   const [fotos, setFotos] = useState([]) // al editar: las de la API; al publicar: archivos por subir
   const [errores, setErrores] = useState({})
+  // Campos numéricos que ya se dejaron: recién ahí se avisa si el número está fuera de rango
+  const [dejados, setDejados] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   // Búsqueda del punto con la calle y el número: '' | 'buscando' | 'listo' | 'calle' | 'sin_resultado' | 'falta' | 'error'
   const [ubicando, setUbicando] = useState({ estado: '', texto: '' })
@@ -168,7 +172,9 @@ function Formulario() {
   if (!datos || !comunas) return <p className="cargando">{mensaje.texto || 'Cargando…'}</p>
 
   const cambiar = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, type, checked } = e.target
+    // Montos y cupos: solo dígitos, así no se pueden escribir negativos, decimales ni «e»
+    const value = NUMERICOS.test(name) ? e.target.value.replace(/\D/g, '').slice(0, 7) : e.target.value
     if (['ubicacion.calle', 'ubicacion.numero', 'ubicacion.comuna_id'].includes(name)) direccionTocada.current = true
     setDatos({ ...datos, [name]: type === 'checkbox' ? checked : value })
     // Se limpia el error del campo y el del grupo que lo contiene (por ejemplo «gastos.luz»)
@@ -190,7 +196,9 @@ function Formulario() {
   }
 
   // Props comunes de cada campo: valor, cambio y su mensaje de error
-  const campo = (nombre) => ({ nombre, value: datos[nombre], onChange: cambiar, error: errores[nombre] })
+  const campo = (nombre) => ({ nombre, value: datos[nombre], onChange: cambiar,
+    onBlur: () => setDejados((d) => (d[nombre] ? d : { ...d, [nombre]: true })),
+    error: errores[nombre] ?? (dejados[nombre] ? avisos[nombre] : undefined) })
 
   // Al terminar se vuelve a «Mis publicaciones», que muestra el aviso arriba
   const avisar = (tipo, texto) => navegar('/mis-publicaciones', { state: { aviso: { tipo, texto } } })
@@ -246,10 +254,22 @@ function Formulario() {
   // Lo obligatorio que falta en cada sección: el índice, el visto de cada una y la barra de publicar
   // (la API vuelve a validarlo)
   const contar = (lista) => lista.filter(Boolean).length
+  // Avisos en vivo de los números fuera de rango (la API los vuelve a revisar)
+  const costo = Number(datos.costo_mensual)
+  const totales = Number(datos.cupos_totales)
+  const avisos = {
+    costo_mensual: datos.costo_mensual === '' ? undefined
+      : costo < MIN_COSTO ? `El arriendo debe ser de al menos ${formatearPesos(MIN_COSTO)}`
+        : costo > MAX_COSTO ? `El arriendo no puede superar ${formatearPesos(MAX_COSTO)}` : undefined,
+    cupos_totales: datos.cupos_totales !== '' && (totales < 1 || totales > 10) ? 'Entre 1 y 10 cupos' : undefined,
+    cupos_disponibles: datos.cupos_disponibles !== '' && Number(datos.cupos_disponibles) > (totales || 10)
+      ? 'No puede haber más cupos disponibles que cupos totales' : undefined,
+  }
   const faltan = {
-    1: contar([!datos.tipo, datos.titulo.trim().length < 5, !datos.descripcion.trim(), !datos.cupos_totales]),
+    1: contar([!datos.tipo, datos.titulo.trim().length < 5, !datos.descripcion.trim(), !datos.cupos_totales,
+      Boolean(avisos.cupos_totales || avisos.cupos_disponibles)]),
     2: contar([
-      !datos.costo_mensual,
+      !datos.costo_mensual || Boolean(avisos.costo_mensual),
       ...SERVICIOS.flatMap(({ clave }) => [
         !datos[`gastos.${clave}.incluido`],
         datos[`gastos.${clave}.incluido`] === 'no' && datos[`gastos.${clave}.monto_estimado`] === '',
@@ -309,9 +329,9 @@ function Formulario() {
               maxLength={MAX_DESCRIPCION} placeholder="Cómo es el espacio, qué incluye, cómo es la convivencia y qué hay cerca."
               ayuda={`${datos.descripcion.length}/${MAX_DESCRIPCION} caracteres`} />
             <div className="pf-fila">
-              <Campo etiqueta="Cupos totales" {...campo('cupos_totales')} type="number" min={1} max={10} required
+              <Campo etiqueta="Cupos totales" {...campo('cupos_totales')} inputMode="numeric" maxLength={2} required
                 ayuda="Cuántas personas pueden vivir en total." />
-              <Campo etiqueta="Cupos disponibles" {...campo('cupos_disponibles')} type="number" min={0} max={10} required
+              <Campo etiqueta="Cupos disponibles" {...campo('cupos_disponibles')} inputMode="numeric" maxLength={2} required
                 ayuda={editando ? 'Con 0 cupos la publicación deja de aparecer en las búsquedas.' : 'Cuántos cupos ofreces ahora.'} />
             </div>
           </Seccion>
@@ -319,9 +339,10 @@ function Formulario() {
           {/* CA-06.3: el arriendo y, por cada servicio, si está incluido o cuánto cuesta al mes */}
           <Seccion numero={2} titulo="Precio y gastos" completa={!faltan[2]}
             descripcion="Lo que se paga al mes: el arriendo y los servicios que no van incluidos.">
-            <Campo etiqueta="Arriendo mensual (CLP)" {...campo('costo_mensual')} type="number"
-              min={1} step={1000} inputMode="numeric" required placeholder="180000"
-              ayuda={datos.costo_mensual ? `Se mostrará como ${formatearPesos(Number(datos.costo_mensual))} al mes.` : 'Sin puntos ni signo peso.'} />
+            <Campo etiqueta="Arriendo mensual (CLP)" {...campo('costo_mensual')}
+              inputMode="numeric" maxLength={7} required placeholder="180000"
+              ayuda={datos.costo_mensual && !avisos.costo_mensual ? `Se mostrará como ${formatearPesos(costo)} al mes.`
+                : `Solo números, sin puntos ni signo peso. Desde ${formatearPesos(MIN_COSTO)}.`} />
             <div className="pf-servicios">
               {SERVICIOS.map(({ clave, texto }) => {
                 const aparte = datos[`gastos.${clave}.incluido`] === 'no'
@@ -332,8 +353,8 @@ function Formulario() {
                       error={errores[`gastos.${clave}.incluido`] ?? (aparte ? undefined : errores[`gastos.${clave}`])} />
                     {aparte && (
                       <Campo etiqueta={`¿Cuánto cuesta ${texto.toLowerCase()} al mes? (CLP)`}
-                        {...campo(`gastos.${clave}.monto_estimado`)} type="number" min={0} step={500}
-                        inputMode="numeric" required placeholder="15000"
+                        {...campo(`gastos.${clave}.monto_estimado`)}
+                        inputMode="numeric" maxLength={7} required placeholder="15000"
                         error={errores[`gastos.${clave}.monto_estimado`] ?? errores[`gastos.${clave}`]} />
                     )}
                   </div>

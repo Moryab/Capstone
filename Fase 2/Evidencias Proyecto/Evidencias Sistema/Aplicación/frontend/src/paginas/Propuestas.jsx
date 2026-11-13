@@ -10,8 +10,10 @@ import { IconoPersona, IconoUbicacion } from '../componentes/Iconos.jsx'
 import { IconoAuto, IconoCama, IconoDucha, IconoPostular, IconoSede, IconoSiguiente } from '../componentes/IconosAlojamiento.jsx'
 import IlustracionHabitacion from '../componentes/IlustracionHabitacion.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
+import InterruptorEscena from '../componentes/InterruptorEscena.jsx'
 import SinFoto from '../componentes/SinFoto.jsx'
 import { tituloCategoria } from '../cuestionario.js'
+import { IconoSalir } from '../inicio/iconos.jsx'
 import { mayusculaInicial } from '../inicio/utilidades.js'
 import { textoGenero } from '../perfil.js'
 import { IconoHabito } from '../perfil/iconos.jsx'
@@ -170,8 +172,9 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
   const personales = [otro.edad && `${otro.edad} años`, textoGenero(otro.genero)].filter(Boolean).join(', ')
   const estudios = [otro.carrera, otro.institucion_sigla].filter(Boolean).join(' · ')
 
-  // El alojamiento: al buscador se le muestra completo (es lo que elige); al oferente, en chico (es suyo)
-  const alojamiento = (
+  // El alojamiento completo: es lo que elige el buscador. Al oferente, que ya conoce el suyo, solo se
+  // le muestra una línea de referencia (para saber de cuál de sus publicaciones se trata)
+  const alojamiento = soyBuscador && (
     <div className="pp-lado-alojamiento">
       <div className="pp-foto">
         {/* Sin fotos, la habitación dibujada: entera a cualquier tamaño (no se agranda ni se recorta) */}
@@ -179,12 +182,11 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
         <span className="pp-tipo">{textoDe(TIPOS, pub.tipo)}</span>
       </div>
       <div className="pp-alojamiento">
-        {!soyBuscador && <p className="pp-rotulo">Para tu alojamiento</p>}
         {pub.costo_mensual != null && (
           <p className="pp-precio">{formatearPesos(pub.costo_mensual)}<span> / mes</span></p>
         )}
         {/* Lo que de verdad se paga: el arriendo más los gastos que van aparte */}
-        {soyBuscador && pub.costo_mensual != null && (
+        {pub.costo_mensual != null && (
           pub.gastos_aparte > 0
             ? <p className="pp-total">Unos <strong>{formatearPesos(pub.costo_mensual + pub.gastos_aparte)}</strong> al mes con gastos</p>
             : pub.gastos_incluidos && <p className="pp-total incluidos">Gastos incluidos en el arriendo</p>
@@ -198,9 +200,7 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
           <p className="pp-lugar"><IconoUbicacion /> {[pub.comuna, pub.sector].filter(Boolean).join(', ')}</p>
         )}
 
-        {soyBuscador ? (
-          <>
-            {/* Lo clave para decidir, con nombre y valor */}
+        {/* Lo clave para decidir, con nombre y valor */}
             <dl className="pp-ficha">
               {pub.distancia_km != null && (
                 <div><dt><IconoSede /> Tu sede</dt><dd>{`${pub.distancia_km.toLocaleString('es-CL')} km`}</dd></div>
@@ -219,24 +219,11 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
             <ReglasBreves pub={pub} />
             {pub.descripcion && <p className="pp-descripcion">{pub.descripcion}</p>}
             <Incluye pub={pub} />
-          </>
-        ) : (
-          <ul className="pp-datos">
-            {pub.cupos_disponibles != null && (
-              <li>
-                <IconoPersona />
-                {pub.cupos_disponibles === 0
-                  ? 'Sin cupos disponibles'
-                  : `${pub.cupos_disponibles} de ${pub.cupos_totales} ${pub.cupos_totales === 1 ? 'cupo disponible' : 'cupos disponibles'}`}
-              </li>
-            )}
-          </ul>
-        )}
 
         {enlazable && (
           <Link to={`/alojamientos/${pub.id}`} state={{ desde: '/propuestas' }} className="pp-ver">
-            {soyBuscador ? 'Ver alojamiento' : 'Ver tu publicación'}
-            {soyBuscador && pub.cantidad_fotos > 1 && <span className="pp-ver-extra">{pub.cantidad_fotos} fotos</span>}
+            Ver alojamiento
+            {pub.cantidad_fotos > 1 && <span className="pp-ver-extra">{pub.cantidad_fotos} fotos</span>}
             <IconoSiguiente />
           </Link>
         )}
@@ -246,7 +233,7 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
 
   return (
     <li className={`pp-tarjeta pp-${estado.tono}`} data-rol={p.rol} style={{ '--orden': Math.min(orden, 9) }}>
-      {soyBuscador && alojamiento}
+      {alojamiento}
 
       <div className="pp-lado-persona">
         {/* En qué va la propuesta y cuánto le queda */}
@@ -271,12 +258,49 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
           <AnilloCompatibilidad porcentaje={p.porcentaje} nivel={p.nivel} />
         </div>
 
+        {!soyBuscador && (
+          <div className="pp-referencia">
+            <span className="pp-referencia-foto" aria-hidden="true">
+              {pub.foto_url ? <img src={pub.foto_url} alt="" loading="lazy" /> : <IlustracionHabitacion className="pp-sin-foto" />}
+            </span>
+            <span className="pp-referencia-texto">
+              <small>Para tu alojamiento</small>
+              <strong>{pub.titulo}</strong>
+              <span>
+                {[
+                  pub.costo_mensual != null && `${formatearPesos(pub.costo_mensual)} / mes`,
+                  pub.comuna,
+                  pub.cupos_disponibles != null && (pub.cupos_disponibles === 0 ? 'Sin cupos' : `${pub.cupos_disponibles} de ${pub.cupos_totales} cupos`),
+                ].filter(Boolean).join(' · ')}
+              </span>
+            </span>
+            {enlazable && (
+              <Link to={`/alojamientos/${pub.id}`} state={{ desde: '/propuestas' }} className="pp-ver">
+                Ver tu publicación <IconoSiguiente />
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* El oferente decide por la persona: se ve lo que cuenta de sí */}
         {!soyBuscador && otro.descripcion && <p className="pp-sobre">{otro.descripcion}</p>}
 
         <PorQue categorias={p.categorias_coincidentes} />
 
         {abierta && <Respuestas p={p} />}
+
+        {/* La otra persona ya aceptó: solo falta mi respuesta para confirmar (se destaca) */}
+        {estado.tono === 'urgente' && p.mi_respuesta === 'pendiente' && (
+          <p className="pp-ya-acepto" role="status">
+            <span className="pp-ya-acepto-icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            </span>
+            <span>
+              <strong>{mayusculaInicial(otro.nombre)} ya aceptó.</strong>{' '}
+              Solo falta tu respuesta para confirmar el match.
+            </span>
+          </p>
+        )}
 
         {p.estado === 'confirmado' && (
           <p className="pp-confirmado">Match confirmado el {formatearFecha(p.fecha_confirmacion)}. ¡Su convivencia ya comenzó!</p>
@@ -343,12 +367,11 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
           )}
           {/* Cualquiera de los dos puede terminarla; el buscador queda libre para un nuevo match */}
           {p.estado === 'confirmado' && (
-            <Link to={`/evaluacion/${p.id}/terminar`} className="pp-terminar">Terminar convivencia</Link>
+            <Link to={`/evaluacion/${p.id}/terminar`} className="pp-terminar"><IconoSalir /> Terminar convivencia</Link>
           )}
         </div>
       </div>
 
-      {!soyBuscador && alojamiento}
     </li>
   )
 }
@@ -361,6 +384,7 @@ function PaginaPropuestas() {
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
   const [cambiando, setCambiando] = useState(false)
+  const [confirmarPausa, setConfirmarPausa] = useState(false)
 
   const cargar = useCallback(() => {
     return api('/matches')
@@ -386,6 +410,24 @@ function PaginaPropuestas() {
       setMensaje(err.message)
     } finally {
       setCambiando(false)
+    }
+  }
+
+  // Oferente: pausar o reanudar las propuestas para sus alojamientos
+  const cambiarRecibir = async (recibiendo) => {
+    setCambiando(true)
+    setMensaje('')
+    try {
+      const r = await api('/matches/recibir', { metodo: 'PUT', datos: { recibiendo } })
+      setMensaje(r.cerradas > 0
+        ? `${r.mensaje}. Se cerraron ${r.cerradas} ${r.cerradas === 1 ? 'propuesta que nadie había respondido' : 'propuestas que nadie había respondido'}.`
+        : r.propuestas_nuevas > 0 ? `${r.mensaje}. Ya tienes ${r.propuestas_nuevas} propuesta(s) nueva(s).` : r.mensaje)
+      await cargar()
+    } catch (err) {
+      setMensaje(err.message)
+    } finally {
+      setCambiando(false)
+      setConfirmarPausa(false)
     }
   }
 
@@ -437,6 +479,42 @@ function PaginaPropuestas() {
         </section>
       )}
 
+      {/* Oferente: puede pausar las propuestas aunque le queden cupos (así a quienes buscan se les
+          proponen otros alojamientos mientras tanto) */}
+      {!buscador && datos.modo === 'oferente' && (
+        <section className="pp-recibir" data-activo={datos.recibiendo || undefined} aria-labelledby="titulo-recibir">
+          <div className="pp-recibir-texto">
+            <h2 id="titulo-recibir">
+              {datos.recibiendo ? 'Estás recibiendo propuestas' : 'Propuestas en pausa'}
+            </h2>
+            <p id="ayuda-recibir">
+              {datos.recibiendo
+                ? 'RoomMatch te propone estudiantes compatibles mientras tus alojamientos tengan cupos libres. Si por ahora no buscas a nadie, pausa las propuestas: así a quienes buscan les aparecen otras opciones.'
+                : 'No recibes propuestas nuevas y tus alojamientos no se proponen a nadie. Las propuestas que alguien ya aceptó siguen abiertas para que respondas.'}
+            </p>
+            <p className="pp-recibir-cupos">
+              {datos.cupos_libres > 0
+                ? `${datos.cupos_libres} ${datos.cupos_libres === 1 ? 'cupo libre' : 'cupos libres'} en tus alojamientos`
+                : 'Tus alojamientos no tienen cupos libres: aunque esté activo, no llegarán propuestas'}
+            </p>
+          </div>
+          <InterruptorEscena activo={datos.recibiendo} etiquetadoPor="titulo-recibir" descritoPor="ayuda-recibir"
+            deshabilitado={cambiando}
+            alCambiar={(nuevo) => {
+              // Al pausar con propuestas sin responder, se avisa antes de cerrarlas
+              const sinResponder = paraMisAlojamientos.filter((p) => p.estado === 'sugerido').length
+              if (!nuevo && sinResponder > 0) setConfirmarPausa(sinResponder)
+              else cambiarRecibir(nuevo)
+            }} />
+        </section>
+      )}
+      {confirmarPausa && (
+        <Confirmar abierto tono="" titulo="¿Pausar las propuestas?"
+          mensaje={`Se cerrarán ${confirmarPausa} ${confirmarPausa === 1 ? 'propuesta que aún nadie responde' : 'propuestas que aún nadie responde'} y esas personas recibirán otras opciones. Las que alguien ya aceptó siguen abiertas.`}
+          textoConfirmar="Sí, pausar" textoOcupado="Pausando…" ocupado={cambiando}
+          onConfirmar={() => cambiarRecibir(false)} onCancelar={() => setConfirmarPausa(false)} />
+      )}
+
       {datos.confirmados.length > 0 && (
         <section className="pp-seccion">
           <h2>Tu convivencia</h2>
@@ -465,6 +543,8 @@ function PaginaPropuestas() {
                   : 'Activa «Estoy buscando alojamiento» para recibir propuestas.'}
                 {datos.buscando && <> Revisa también tus <Link to="/alojamientos">preferencias de búsqueda</Link>.</>}
               </p>
+            ) : !datos.recibiendo ? (
+              <p>Tus propuestas están en pausa. Actívalas arriba cuando quieras recibir estudiantes para tus cupos libres.</p>
             ) : (
               <p>
                 Cuando alguien muy compatible contigo busque alojamiento, te lo propondremos aquí.
