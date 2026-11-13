@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  IconoCerrar, IconoEditar, IconoEscudo, IconoFlecha, IconoLuna, IconoMatch, IconoSol, IconoUsuario, IconoVerificado,
+  IconoBandera, IconoCampana, IconoCerrar, IconoEditar, IconoEscudo, IconoFlecha, IconoLuna, IconoMatch, IconoSol,
+  IconoUsuario, IconoVerificado,
 } from '../inicio/iconos.jsx'
 import { NOMBRES_ROL, SIN_CAMBIO_CON_CONVIVENCIA, useCambioRol } from '../rol/CambioRol.jsx'
 import { IconoBuscador, IconoOferente } from '../rol/iconos.jsx'
@@ -23,6 +24,21 @@ function Interruptor({ oscuro, alCambiar, etiqueta }) {
   )
 }
 
+// Interruptor simple (sí / no) para las preferencias de avisos del administrador
+function FilaInterruptor({ icono, titulo, texto, activo, alCambiar, tono }) {
+  const id = useId()
+  return (
+    <div className="i-config-fila" data-tono={tono}>
+      <span className="i-config-icono" aria-hidden="true">{icono}</span>
+      <span className="i-config-textos"><strong id={id}>{titulo}</strong><span>{texto}</span></span>
+      <button type="button" role="switch" aria-checked={activo} aria-labelledby={id} className="i-switch"
+        onClick={() => alCambiar(!activo)}>
+        <span aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
+
 // Fila que lleva a otra página (y cierra el panel)
 function FilaEnlace({ a, icono, titulo, texto, alCerrar }) {
   return (
@@ -37,10 +53,10 @@ function FilaEnlace({ a, icono, titulo, texto, alCerrar }) {
 /**
  * Panel de configuración (se abre con la tuerca). Usa <dialog>, que ya maneja el foco y Escape.
  * En escritorio entra desde la derecha; en móvil sube desde abajo. Muestra solo lo que le sirve a cada
- * uno: el estudiante, su cuenta, su rol y cómo lo ven los demás; el administrador, la apariencia
- * (no tiene perfil de estudiante que editar).
+ * uno: el estudiante, su cuenta, su rol y cómo lo ven los demás; el administrador, la apariencia y qué
+ * avisos de moderación quiere en su campana (no tiene perfil de estudiante que editar).
  */
-export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) {
+export default function Configuracion({ abierto, alCerrar, tema, cambiarTema, preferenciasAvisos, cambiarPreferenciasAvisos }) {
   const dialogo = useRef(null)
   const idTema = useId()
   const oscuro = tema === 'oscuro'
@@ -64,7 +80,7 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
         <div className="i-config-barra">
           <div className="i-config-titulo">
             <h2 id="i-titulo-config">Configuración</h2>
-            <p>{estudiante ? 'Haz que RoomMatch se sienta tuyo.' : 'Cómo se ve el panel de administración.'}</p>
+            <p>{estudiante ? 'Haz que RoomMatch se sienta tuyo.' : 'Cómo se ve el panel y qué te avisa.'}</p>
           </div>
           <button type="button" className="i-cerrar" onClick={alCerrar} aria-label="Cerrar configuración">
             <IconoCerrar />
@@ -85,6 +101,27 @@ export default function Configuracion({ abierto, alCerrar, tema, cambiarTema }) 
             </div>
           </div>
         </section>
+
+        {/* Administrador: qué muestra la campana. Se guarda en este navegador */}
+        {!estudiante && preferenciasAvisos && (
+          <section className="i-config-seccion" aria-labelledby="i-config-avisos">
+            <h3 id="i-config-avisos">Avisos de moderación</h3>
+            <div className="i-config-grupo">
+              <FilaInterruptor icono={<IconoBandera />} tono="reporte" titulo="Reportes"
+                texto="Perfiles y publicaciones reportados que esperan revisión" activo={preferenciasAvisos.reportes}
+                alCambiar={(v) => cambiarPreferenciasAvisos({ ...preferenciasAvisos, reportes: v })} />
+              <FilaInterruptor icono={<IconoVerificado />} tono="verificacion" titulo="Solicitudes de verificación"
+                texto="Comprobantes de estudiante por aprobar o rechazar" activo={preferenciasAvisos.verificaciones}
+                alCambiar={(v) => cambiarPreferenciasAvisos({ ...preferenciasAvisos, verificaciones: v })} />
+              <FilaInterruptor icono={<IconoCampana />} tono="atrasado" titulo="Destacar los atrasados"
+                texto="Lo que lleva más de 2 días esperando va primero" activo={preferenciasAvisos.atrasados}
+                alCambiar={(v) => cambiarPreferenciasAvisos({ ...preferenciasAvisos, atrasados: v })} />
+            </div>
+            <p className="i-config-nota">
+              <IconoEscudo /> Solo cambia lo que ves en la campana. Los contadores de la barra lateral siempre muestran todo lo pendiente.
+            </p>
+          </section>
+        )}
 
         {estudiante && (
           <section className="i-config-seccion" aria-labelledby="i-config-cuenta">

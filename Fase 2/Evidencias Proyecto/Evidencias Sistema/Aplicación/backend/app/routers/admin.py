@@ -46,6 +46,62 @@ async def contar_por_dia(coleccion, campo: str, desde: datetime, filtro: dict | 
     return dias
 
 
+MAX_AVISOS = 40
+
+
+@router.get("/avisos")
+async def avisos_admin(_admin: dict = Depends(solo_admin)):
+    """La campana del administrador: lo que espera revisión, del más reciente al más antiguo. Son
+    tareas, no notificaciones: un aviso desaparece cuando el reporte o la solicitud se resuelve. El
+    administrador elige en su configuración qué tipos ve y cuáles cuenta como nuevos (lo guarda su navegador)."""
+    reportes = await db.reportes.find(
+        {"estado": {"$in": REPORTES_ABIERTOS}},
+        {"codigo": 1, "tipo_elemento": 1, "elemento_reportado_id": 1, "usuario_reportado": 1, "motivo": 1,
+         "estado": 1, "fecha_reporte": 1},
+    ).sort("fecha_reporte", -1).limit(MAX_AVISOS).to_list()
+    solicitudes = await db.solicitudes_verificacion.find(
+        {"estado": {"$in": POR_REVISAR}}, {"codigo": 1, "usuario_id": 1, "institucion_id": 1, "estado": 1, "fecha_solicitud": 1},
+    ).sort("fecha_solicitud", -1).limit(MAX_AVISOS).to_list()
+
+    # Nombres de una vez: personas, publicaciones e instituciones
+    ids_usuarios = {r["usuario_reportado"] for r in reportes if r.get("usuario_reportado")} | {s["usuario_id"] for s in solicitudes}
+    personas = {
+        u["_id"]: nombre_completo(u)
+        async for u in db.usuarios.find({"_id": {"$in": list(ids_usuarios)}}, {"nombre": 1, "ap_paterno": 1, "ap_materno": 1})
+    }
+    ids_pub = [r["elemento_reportado_id"] for r in reportes if r["tipo_elemento"] == "publicacion"]
+    titulos = {p["_id"]: p["titulo"] async for p in db.publicaciones.find({"_id": {"$in": ids_pub}}, {"titulo": 1})}
+    instituciones = {
+        i["_id"]: i.get("sigla") or i.get("nombre")
+        async for i in db.instituciones.find(
+            {"_id": {"$in": [s["institucion_id"] for s in solicitudes if s.get("institucion_id")]}}, {"sigla": 1, "nombre": 1})
+    }
+
+    avisos = [
+        {
+            "id": f"reporte-{r['_id']}", "tipo": "reporte", "codigo": r["codigo"], "estado": r["estado"],
+            "fecha": r["fecha_reporte"], "enlace": f"/admin/reportes/{r['_id']}", "motivo": r["motivo"],
+            "tipo_elemento": r["tipo_elemento"],
+            "nombre": (titulos.get(r["elemento_reportado_id"]) if r["tipo_elemento"] == "publicacion"
+                       else personas.get(r.get("usuario_reportado"))),
+        }
+        for r in reportes
+    ] + [
+        {
+            "id": f"verificacion-{s['_id']}", "tipo": "verificacion", "codigo": s["codigo"], "estado": s["estado"],
+            "fecha": s["fecha_solicitud"], "enlace": f"/admin/verificaciones/{s['_id']}",
+            "nombre": personas.get(s["usuario_id"]), "institucion": instituciones.get(s.get("institucion_id")),
+        }
+        for s in solicitudes
+    ]
+    avisos.sort(key=lambda a: a["fecha"], reverse=True)
+    return {
+        "reportes_pendientes": await db.reportes.count_documents({"estado": {"$in": REPORTES_ABIERTOS}}),
+        "verificaciones_pendientes": await db.solicitudes_verificacion.count_documents({"estado": {"$in": POR_REVISAR}}),
+        "avisos": avisos,
+    }
+
+
 @router.get("/resumen")
 async def resumen(_admin: dict = Depends(solo_admin)):
     """Lo que espera revisión (contadores de la barra lateral y saludo del panel) y la actividad de

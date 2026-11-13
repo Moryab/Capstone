@@ -10,6 +10,10 @@ import { CambioRolProvider } from '../rol/CambioRol.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { useAplicarTema, useTema } from '../tema/contexto.js'
 import Avisos from './Avisos.jsx'
+import AvisosAdmin from './AvisosAdmin.jsx'
+import {
+  esNuevo, filtrarAvisos, guardarPreferencias, guardarVisto, leerPreferencias, leerVisto, textoAviso,
+} from './avisosAdmin.js'
 import AvisoNovedades from './AvisoNovedades.jsx'
 import Configuracion from './Configuracion.jsx'
 import Navegacion from './Navegacion.jsx'
@@ -56,13 +60,38 @@ export default function Marco({ children }) {
   // Admin: al cambiar de pestaña, el contenido sale desenfocándose y el nuevo se enfoca (transicion.js)
   useTransicionAdmin(contenido, pathname, admin)
 
-  // Contador de la campana: al entrar, cada minuto y al leer avisos
+  // Admin: qué avisos quiere ver (Configuración) y cuándo abrió la campana por última vez
+  const [preferencias, setPreferenciasEstado] = useState(() => leerPreferencias(usuario.id))
+  const [visto, setVisto] = useState(() => leerVisto(usuario.id))
+  const setPreferencias = (valor) => {
+    setPreferenciasEstado(valor)
+    guardarPreferencias(usuario.id, valor)
+  }
+  const marcarVisto = () => {
+    const ahora = new Date().toISOString()
+    setVisto(ahora)
+    guardarVisto(usuario.id, ahora)
+  }
+
+  // Contador de la campana: al entrar, cada minuto y al leer avisos. El estudiante cuenta sus avisos
+  // sin leer; el administrador, lo que espera revisión y llegó después de su última visita a la campana
+  const [avisosAdmin, setAvisosAdmin] = useState(null)
   const revisarAvisos = useCallback(() => {
+    if (admin) {
+      api('/admin/avisos').then((r) => setAvisosAdmin(r.avisos)).catch(() => {})
+      return
+    }
     api('/notificaciones/resumen').then((r) => {
       setNoLeidas(r.no_leidas)
       setUltimoAviso(r.ultimo ?? null)
     }).catch(() => {})
-  }, [])
+  }, [admin])
+  useEffect(() => {
+    if (!admin || !avisosAdmin) return
+    const nuevos = filtrarAvisos(avisosAdmin, preferencias).filter((a) => esNuevo(a, visto))
+    setNoLeidas(nuevos.length)
+    setUltimoAviso(nuevos[0] ? { id: nuevos[0].id, ...textoAviso(nuevos[0]) } : null)
+  }, [admin, avisosAdmin, preferencias, visto])
   useEffect(() => {
     revisarAvisos()
     const intervalo = setInterval(revisarAvisos, REVISAR_AVISOS_MS)
@@ -104,8 +133,13 @@ export default function Marco({ children }) {
       </div>
 
       <Configuracion abierto={configAbierta} alCerrar={() => setConfigAbierta(false)}
-        tema={tema} cambiarTema={cambiarTema} />
-      <Avisos abierto={avisosAbiertos} alCerrar={() => setAvisosAbiertos(false)} alCambiar={revisarAvisos} />
+        tema={tema} cambiarTema={cambiarTema} preferenciasAvisos={preferencias} cambiarPreferenciasAvisos={setPreferencias} />
+      {admin ? (
+        <AvisosAdmin abierto={avisosAbiertos} alCerrar={() => setAvisosAbiertos(false)} preferencias={preferencias}
+          visto={visto} alVer={marcarVisto} abrirConfig={() => setConfigAbierta(true)} />
+      ) : (
+        <Avisos abierto={avisosAbiertos} alCerrar={() => setAvisosAbiertos(false)} alCambiar={revisarAvisos} />
+      )}
       {/* Novedades: aviso pequeño en la esquina al entrar o cuando llega uno nuevo; lleva a la campana */}
       <AvisoNovedades noLeidas={noLeidas} ultimo={ultimoAviso} panelAbierto={avisosAbiertos}
         abrirAvisos={() => setAvisosAbiertos(true)} />

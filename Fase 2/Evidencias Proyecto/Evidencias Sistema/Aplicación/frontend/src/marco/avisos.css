@@ -91,3 +91,79 @@
 }
 .avisos-vacio { display: grid; justify-items: center; gap: 8px; padding: 24px 8px; text-align: center; color: var(--i-suave); }
 .avisos-vacio span { color: var(--i-acento); }
+
+/* ---------- Avisos del administrador (marco/AvisosAdmin.jsx): lo que espera revisión ---------- */
+.av-admin .i-config-contenido { gap: 16px; }
+/* Totales pendientes, con acceso a cada bandeja */
+.av-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.av-bandeja {
+  --tono: var(--i-peligro);
+  --tono-fondo: var(--i-peligro-fondo);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  color: var(--i-suave);
+  text-decoration: none;
+  background: var(--i-sup);
+  border: 1px solid var(--i-borde);
+  border-radius: 16px;
+  transition: border-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.av-bandeja strong { display: block; font: 700 1.35rem/1.1 'Outfit', system-ui, sans-serif; color: var(--i-titulo); }
+.av-bandeja:hover { border-color: var(--tono); }
+.av-bandeja:active { transform: scale(0.98); }
+.av-bandeja:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+/* Reportes en rojo y verificaciones en violeta (los mismos tonos del panel) */
+.av-admin :is(.av-aviso, .av-bandeja)[data-tipo='verificacion'] { --tono: #5b3a8c; --tono-fondo: #efe8f8; }
+html.tema-oscuro .av-admin :is(.av-aviso, .av-bandeja)[data-tipo='verificacion'] { --tono: #c3a8f0; --tono-fondo: rgb(195 168 240 / 0.14); }
+.av-icono { display: grid; flex: none; place-items: center; width: 36px; height: 36px; color: var(--tono); background: var(--tono-fondo); border-radius: 11px; }
+.av-icono svg { width: 19px; height: 19px; }
+
+/* Grupos: los atrasados (ámbar) y los recientes */
+.av-grupo { display: grid; gap: 8px; }
+.av-grupo h3 { margin: 0 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; color: var(--i-suave); text-transform: uppercase; }
+.av-grupo[data-tono='atrasado'] h3 { color: #8a5300; }
+html.tema-oscuro .av-grupo[data-tono='atrasado'] h3 { color: #f5c565; }
+.av-grupo[data-tono='atrasado'] .avisos-lista { border-color: color-mix(in srgb, #d9a81e 45%, var(--i-borde)); }
+
+/* Cada aviso: ícono del tipo, título, de quién se trata y hace cuánto */
+.aviso.av-aviso { --tono: var(--i-peligro); --tono-fondo: var(--i-peligro-fondo); display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px 14px 28px; }
+.aviso.av-aviso.no-leido::before { top: 28px; }
+.av-textos { display: grid; gap: 3px; min-width: 0; }
+.av-textos > span { overflow-wrap: anywhere; }
+.av-pie { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.av-etiqueta { padding: 1px 8px; font-size: 0.72rem !important; font-weight: 700; color: var(--i-suave); background: var(--i-hover); border-radius: 999px; }
+.av-etiqueta.av-nuevo { color: var(--i-acento); background: var(--i-tinte); }
+
+.av-vacio strong { font: 600 1.05rem 'Outfit', system-ui, sans-serif; color: var(--i-titulo); }
+.av-vacio p { max-width: 32ch; margin: 0; }
+.av-vacio > span { display: grid; place-items: center; width: 56px; height: 56px; background: var(--i-tinte); border-radius: 18px; }
+
+.av-config {
+  justify-self: center;
+  padding: 8px 14px;
+  font: 600 0.85rem 'Work Sans', system-ui, sans-serif;
+  color: var(--i-acento);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+}
+.av-config:hover { background: var(--i-tinte); }
+.av-config:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+/* Mientras carga: filas silueta del mismo alto */
+.av-silueta li { display: grid; gap: 8px; padding: 18px 16px; }
+.av-silueta li span { display: block; height: 12px; background: var(--i-hover); border-radius: 999px; }
+.av-silueta li span:last-child { width: 60%; height: 10px; }
+@media (prefers-reduced-motion: no-preference) {
+  .av-silueta li span { animation: av-pulso 1.4s ease-in-out infinite; }
+  .av-grupo .avisos-lista > li { animation: av-entrar 320ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+  .av-grupo .avisos-lista > li:nth-child(2) { animation-delay: 40ms; }
+  .av-grupo .avisos-lista > li:nth-child(n + 3) { animation-delay: 80ms; }
+}
+@keyframes av-pulso { 50% { opacity: 0.5; } }
+@keyframes av-entrar { from { opacity: 0; transform: translateY(6px); } }
