@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import AnilloCompatibilidad from '../componentes/AnilloCompatibilidad.jsx'
 import Avatar from '../componentes/Avatar.jsx'
 import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import BotonReportar from '../componentes/BotonReportar.jsx'
 import { useCompatibilidad } from '../componentes/Compatibilidad.jsx'
-import FichaPublicacion from '../componentes/FichaPublicacion.jsx'
+import { ErrorCarga, Esqueleto, EsqueletoTexto } from '../componentes/Esqueleto.jsx'
+import FichaPublicacion, { SiluetaFicha } from '../componentes/FichaPublicacion.jsx'
 import { IconoSiguiente } from '../componentes/IconosAlojamiento.jsx'
 import InsigniaVerificacion from '../componentes/InsigniaVerificacion.jsx'
 import { parecido } from '../compatibilidad.js'
@@ -78,9 +79,11 @@ function CompatibilidadCon({ oferente }) {
 
   if (estado === 'cargando') {
     return (
-      <div className="fp-compat cargando" aria-busy="true" aria-label="Calculando compatibilidad">
-        <span className="fp-esqueleto anillo" />
-        <span className="fp-esqueleto lineas"><span /><span /></span>
+      <div className="fp-compat cargando" role="status" aria-label="Calculando compatibilidad">
+        <div className="fp-compat-cabeza">
+          <Esqueleto forma="circulo" ancho={56} alto={56} />
+          <EsqueletoTexto lineas={2} />
+        </div>
       </div>
     )
   }
@@ -149,31 +152,24 @@ function CompatibilidadCon({ oferente }) {
 export default function DetallePublicacion() {
   const { id } = useParams()
   const { state } = useLocation()
-  const [resultado, setResultado] = useState({ id: null, pub: null, error: '' })
+  // Con caché: una publicación ya abierta aparece al instante y se actualiza por detrás. Al cambiar de
+  // publicación nunca se ve la anterior (useApi descarta las respuestas que llegan tarde)
+  const { datos: pub, error, recargar } = useApi(`/publicaciones/${id}`)
 
-  useEffect(() => {
-    let vigente = true // evita mostrar una respuesta vieja si se cambia de publicación rápido
-    api(`/publicaciones/${id}`)
-      .then((pub) => vigente && setResultado({ id, pub, error: '' }))
-      .catch((err) => vigente && setResultado({ id, pub: null, error: err.message }))
-    return () => {
-      vigente = false
-    }
-  }, [id])
+  if (!pub && !error) {
+    return <main className="detalle-publicacion"><SiluetaFicha /></main>
+  }
 
-  if (resultado.id !== id) return <p className="cargando">Cargando alojamiento…</p>
-
-  if (resultado.error) {
+  if (!pub) {
     return (
       <main className="tarjeta">
-        <h1>{resultado.error}</h1>
-        <p className="subtitulo">Es posible que el alojamiento ya no esté disponible.</p>
-        <Link to="/" className="boton">Volver al inicio</Link>
+        <h1>No pudimos abrir este alojamiento</h1>
+        <ErrorCarga mensaje={`${error}. Es posible que ya no esté disponible.`} alReintentar={recargar} />
+        <Link to="/" className="boton secundario">Volver al inicio</Link>
       </main>
     )
   }
 
-  const { pub } = resultado
   const { oferente } = pub
   const aqui = `/alojamientos/${pub.id}`
   // Lo principal de quien publica: edad y género, como en su perfil (CA-16.3)

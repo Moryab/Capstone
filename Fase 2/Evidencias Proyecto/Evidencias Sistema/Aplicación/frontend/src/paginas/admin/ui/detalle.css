@@ -318,20 +318,21 @@ html.tema-oscuro .du-v-birrete { fill: var(--a-acento-claro); }
 
 /* ---------- Movimiento ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .du-s, .du-silueta-bloque span { animation: du-brillo 1.4s ease-in-out infinite; }
+  .du-s, .du-silueta-bloque span { animation: du-brillo 1.5s ease-in-out infinite; }
   .du-silueta-bloque span { background: linear-gradient(90deg, var(--a-sup-2), color-mix(in srgb, var(--a-borde) 60%, var(--a-sup-2)), var(--a-sup-2)) 0 0 / 200% 100%; }
-  .du-cifras > * { animation: md-entrar 460ms var(--a-curva) backwards; }
-  .du-cifras > :nth-child(2) { animation-delay: 50ms; }
-  .du-cifras > :nth-child(3) { animation-delay: 100ms; }
-  .du-cifras > :nth-child(4) { animation-delay: 150ms; }
-  .du-lista > li { animation: md-entrar 420ms var(--a-curva) backwards; }
-  .du-lista > li:nth-child(2) { animation-delay: 40ms; }
-  .du-lista > li:nth-child(3) { animation-delay: 80ms; }
-  .du-lista > li:nth-child(n + 4) { animation-delay: 120ms; }
-  .du-aparecer { animation: du-aparecer 320ms var(--a-curva) backwards; }
-  .du-hecho { animation: du-aparecer 320ms var(--a-curva) backwards; }
-  .du-hecho circle { stroke-dasharray: 63; stroke-dashoffset: 63; animation: du-trazo 520ms var(--a-curva) 80ms forwards; }
-  .du-hecho path { stroke-dasharray: 16; stroke-dashoffset: 16; animation: du-trazo 360ms var(--a-curva) 460ms forwards; }
+  .du-cifras > * { animation: md-entrar var(--mov-medio) var(--curva-entrar) backwards; }
+  .du-cifras > :nth-child(2) { animation-delay: 30ms; }
+  .du-cifras > :nth-child(3) { animation-delay: 60ms; }
+  .du-cifras > :nth-child(4) { animation-delay: 90ms; }
+  .du-lista > li { animation: md-entrar var(--mov-medio) var(--curva-entrar) backwards; }
+  .du-lista > li:nth-child(2) { animation-delay: 25ms; }
+  .du-lista > li:nth-child(3) { animation-delay: 50ms; }
+  .du-lista > li:nth-child(n + 4) { animation-delay: 75ms; }
+  .du-aparecer { animation: du-aparecer var(--mov-medio) var(--curva-entrar) backwards; }
+  .du-hecho { animation: du-aparecer var(--mov-medio) var(--curva-entrar) backwards; }
+  /* El ✓ al completar una acción se dibuja: primero el círculo, después el visto */
+  .du-hecho circle { stroke-dasharray: 63; stroke-dashoffset: 63; animation: du-trazo 380ms var(--curva-entrar) 60ms forwards; }
+  .du-hecho path { stroke-dasharray: 16; stroke-dashoffset: 16; animation: du-trazo 240ms var(--curva-entrar) 340ms forwards; }
   .du-ilus-lapiz { animation: du-lapiz 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 70%; }
   .du-ilus-corazones { animation: du-corazones 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
   .du-ilus-brazo { animation: du-brazo 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 100%; }
@@ -374,3 +375,11 @@ html.tema-oscuro .du-v-birrete { fill: var(--a-acento-claro); }
   .du-vacio { flex-direction: column; }
   .du-vacio svg { width: 80px; }
 }
+
+/* Skeleton de los detalles de moderación (SiluetaModeracion en ui/detalle.jsx) */
+.md-s-ilustracion { justify-self: stretch; }
+.md-s-paso { display: flex; gap: 10px; align-items: center; }
+.md-s-paso > .du-s:last-child { flex: 1; }
+.md-s-marca { flex: none; width: 30px; height: 30px; border-radius: 50%; }
+/* Comprobante descargándose: ocupa todo el visor */
+.dv-visor > .dv-s-visor { position: absolute; inset: 14px; height: auto; border-radius: 12px; }

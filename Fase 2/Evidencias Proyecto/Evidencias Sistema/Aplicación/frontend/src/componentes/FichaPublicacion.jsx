@@ -8,6 +8,7 @@ import {
   IconoAgua, IconoAnterior, IconoAuto, IconoDucha, IconoGas, IconoInternet, IconoLuz, IconoSede,
   IconoPostular, IconoSiguiente, IconoCama,
 } from './IconosAlojamiento.jsx'
+import { Esqueleto, EsqueletoTexto } from './Esqueleto.jsx'
 import SinFoto from './SinFoto.jsx'
 import './fichaPublicacion.css'
 
@@ -33,6 +34,9 @@ const IconoCompartir = () => <Svg><path d="M12 15V4M8 8l4-4 4 4" /><path d="M5 1
 const IconoMapa = () => <Svg><path d="M9 4L3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z" /><path d="M9 4v13.5M15 6.5V20" /></Svg>
 const IconoCerrar = () => <Svg><path d="M6 6l12 12M18 6L6 18" /></Svg>
 const IconoListo = () => <Svg><path d="M5 12.5l4.5 4.5L19 7.5" /></Svg>
+
+// Publicaciones ya abiertas en esta sesión: al volver, la ficha aparece sin animación de entrada
+const fichasVistas = new Set()
 
 // La principal primero, el resto en el orden en que se subieron
 const ordenar = (fotos) => [...fotos].sort((a, b) => Number(b.es_principal) - Number(a.es_principal))
@@ -171,6 +175,11 @@ function BotonCompartir({ titulo }) {
 export default function FichaPublicacion({ pub, acciones, herramientas, children }) {
   const { ubicacion, gastos, reglas, caracteristicas } = pub
   const [visor, setVisor] = useState(null)
+  // La entrada animada solo la primera vez que se abre esta publicación en la sesión
+  const [repetida] = useState(() => fichasVistas.has(pub.id))
+  useEffect(() => {
+    fichasVistas.add(pub.id)
+  }, [pub.id])
   const fotos = ordenar(pub.fotos)
   // Lo que se paga al mes en total: el arriendo más los gastos que no están incluidos
   const incluidos = SERVICIOS.filter(({ clave }) => gastos[clave].incluido).length
@@ -202,7 +211,7 @@ export default function FichaPublicacion({ pub, acciones, herramientas, children
   }
 
   return (
-    <div className="fp">
+    <div className="fp" data-repetida={repetida || undefined}>
       <header className="fp-cabecera">
         <div className="fp-titulo">
           <p className="fp-meta">
@@ -359,6 +368,36 @@ export default function FichaPublicacion({ pub, acciones, herramientas, children
           )}
         </div>
       </section>
+    </div>
+  )
+}
+
+/**
+ * Skeleton de la ficha mientras llega la publicación: la misma grilla (cabecera, fotos, la tarjeta de
+ * información y la del precio) para que nada salte al cargar. Espera 150 ms invisible (anti-parpadeo)
+ */
+export function SiluetaFicha() {
+  return (
+    <div className="fp fp-silueta esq-zona-bloque" role="status" aria-label="Cargando el alojamiento">
+      <div className="fp-sil-cabecera">
+        <Esqueleto className="fp-sil-meta" />
+        <Esqueleto className="fp-sil-titulo" />
+        <Esqueleto className="fp-sil-lugar" />
+      </div>
+      <div className="fp-cuerpo">
+        <div className="fp-principal">
+          <Esqueleto forma="bloque" className="fp-sil-galeria" />
+          <div className="fp-tarjeta fp-sil-tarjeta fp-sil-alto"><Esqueleto ancho="30%" alto={18} /><EsqueletoTexto lineas={5} /></div>
+        </div>
+        <aside className="fp-lateral">
+          <div className="fp-tarjeta fp-sil-tarjeta">
+            <Esqueleto className="fp-sil-precio" />
+            <EsqueletoTexto lineas={4} />
+            <Esqueleto className="fp-sil-boton" />
+          </div>
+          <div className="fp-tarjeta fp-sil-tarjeta"><Esqueleto forma="circulo" ancho={96} alto={96} style={{ justifySelf: 'center' }} /><EsqueletoTexto lineas={2} /></div>
+        </aside>
+      </div>
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import { ErrorCarga, Esqueleto, EsqueletoPersona, EsqueletoTexto } from '../componentes/Esqueleto.jsx'
+import { guardarMemoria, leerMemoria } from '../datos/memoria.js'
 import AnilloCompatibilidad from '../componentes/AnilloCompatibilidad.jsx'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import Avatar from '../componentes/Avatar.jsx'
@@ -376,11 +378,35 @@ function TarjetaPropuesta({ p, alResponder, orden }) {
   )
 }
 
+// Mientras llegan las propuestas: el título, la tarjeta del interruptor y dos propuestas, con la misma
+// grilla que las reales (foto, alojamiento y persona) para que nada salte al cargar
+function SiluetaPropuestas() {
+  return (
+    <main className="pp-pagina esq-zona-bloque" role="status" aria-label="Cargando tus propuestas">
+      <header className="pp-encabezado">
+        <h1>Propuestas de match</h1>
+        <EsqueletoTexto lineas={2} className="pp-sil-texto" />
+      </header>
+      <div className="pp-recibir pp-silueta"><EsqueletoTexto lineas={2} /><Esqueleto forma="bloque" ancho={120} alto={52} /></div>
+      <ul className="pp-grilla" aria-hidden="true">
+        {[0, 1].map((i) => (
+          <li key={i} className="pp-tarjeta pp-silueta">
+            <Esqueleto forma="bloque" className="pp-sil-foto" />
+            <div className="pp-sil-columna"><Esqueleto ancho="40%" /><Esqueleto ancho="75%" alto={20} /><EsqueletoTexto lineas={3} /></div>
+            <div className="pp-sil-columna"><EsqueletoPersona tamano={52} /><EsqueletoTexto lineas={2} /><Esqueleto forma="bloque" ancho="100%" alto={44} /></div>
+          </li>
+        ))}
+      </ul>
+    </main>
+  )
+}
+
 // HU-17: RoomMatch propone el match entre quien busca alojamiento y el oferente de uno compatible;
 // ambos responden y, si los dos aceptan, empieza la convivencia
 function PaginaPropuestas() {
   const { recargarUsuario } = useSesion()
-  const [datos, setDatos] = useState(null)
+  // Con caché: al volver a la página las propuestas aparecen al instante y se actualizan por detrás
+  const [datos, setDatos] = useState(() => leerMemoria('/matches') ?? null)
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
   const [cambiando, setCambiando] = useState(false)
@@ -389,6 +415,7 @@ function PaginaPropuestas() {
   const cargar = useCallback(() => {
     return api('/matches')
       .then((d) => {
+        guardarMemoria('/matches', d)
         setDatos(d)
         setError('')
       })
@@ -436,8 +463,15 @@ function PaginaPropuestas() {
     await Promise.all([cargar(), recargarUsuario()])
   }
 
-  if (!datos && !error) return <p className="cargando">Cargando propuestas…</p>
-  if (!datos) return <main className="tarjeta"><p className="alerta" role="alert">{error}</p></main>
+  if (!datos && !error) return <SiluetaPropuestas />
+  if (!datos) {
+    return (
+      <main className="pp-pagina">
+        <header className="pp-encabezado"><h1>Propuestas de match</h1></header>
+        <ErrorCarga mensaje={error} alReintentar={cargar} />
+      </main>
+    )
+  }
 
   const paraMi = datos.propuestas.filter((p) => p.rol === 'buscador')
   const paraMisAlojamientos = datos.propuestas.filter((p) => p.rol === 'oferente')

@@ -432,11 +432,11 @@ a.mp-senal:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2
 /* ---------- Cargando y vacío ---------- */
 .mp-cargando { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 620px), 1fr)); gap: 22px; }
 .mp-silueta { display: grid; grid-template-columns: minmax(200px, 40%) minmax(0, 1fr); min-height: 300px; overflow: hidden; background: var(--i-sup); border: 1px solid var(--i-borde); border-radius: 24px; }
-.mp-sil-foto, .mp-sil-texto > span { background: var(--i-esqueleto); animation: mp-latido 1.4s ease-in-out infinite; }
+.mp-sil-foto, .mp-sil-texto > span { background: var(--esq-base) linear-gradient(100deg, transparent 20%, var(--esq-brillo) 50%, transparent 80%) no-repeat; background-size: 220% 100%; background-position: 120% 0; }
+@media (prefers-reduced-motion: no-preference) { .mp-sil-foto, .mp-sil-texto > span { animation: esq-brillo 1.5s ease-in-out infinite; } }
 .mp-sil-texto { display: grid; align-content: start; gap: 12px; padding: 24px; }
 .mp-sil-texto > span { display: block; height: 14px; border-radius: 8px; }
 .mp-sil-texto > .mp-sil-datos { height: 64px; margin-top: 8px; border-radius: 14px; }
-@keyframes mp-latido { 50% { opacity: 0.55; } }
 
 .mp-vacio {
   display: grid;
@@ -471,7 +471,7 @@ a.mp-senal:focus-visible { outline: 3px solid var(--i-acento); outline-offset: 2
 
 /* Avisos y la pestaña de publicaciones: aparecen con un fundido corto (las tarjetas las anima GSAP) */
 @media (prefers-reduced-motion: no-preference) {
-  .mp-aviso { animation: mp-aparecer 320ms var(--mp-curva) backwards; }
-  #mp-panel { animation: mp-aparecer 360ms var(--mp-curva) backwards; }
+  .mp-aviso { animation: mp-aparecer var(--mov-medio) var(--curva-entrar) backwards; }
+  #mp-panel { animation: mp-aparecer var(--mov-medio) var(--curva-entrar) backwards; }
 }
-@keyframes mp-aparecer { from { opacity: 0; transform: translateY(8px); } }
+@keyframes mp-aparecer { from { opacity: 0; transform: translateY(6px); } }

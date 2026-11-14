@@ -1,8 +1,17 @@
+import { limpiarMemoria } from './datos/memoria.js'
+
 const CLAVE_TOKEN = 'roommatch_token'
 
 export const obtenerToken = () => localStorage.getItem(CLAVE_TOKEN)
-export const guardarToken = (token) => localStorage.setItem(CLAVE_TOKEN, token)
-export const borrarToken = () => localStorage.removeItem(CLAVE_TOKEN)
+// Al cambiar de sesión se olvida lo guardado de la anterior (datos/memoria.js): podrían ser de otra persona
+export const guardarToken = (token) => {
+  limpiarMemoria()
+  localStorage.setItem(CLAVE_TOKEN, token)
+}
+export const borrarToken = () => {
+  limpiarMemoria()
+  localStorage.removeItem(CLAVE_TOKEN)
+}
 
 // Error de la API con el código HTTP y, en los 422, los mensajes por campo (CA-01.3)
 export class ErrorApi extends Error {
@@ -39,6 +48,8 @@ export async function api(ruta, { metodo = 'GET', datos } = {}) {
   }
 
   const cuerpo = await respuesta.json().catch(() => ({}))
+  // Un cambio exitoso puede dejar desactualizado lo guardado: la próxima visita lo vuelve a pedir
+  if (respuesta.ok && metodo !== 'GET') limpiarMemoria()
   if (respuesta.ok) return cuerpo
   throw errorDeRespuesta(respuesta, cuerpo, token)
 }

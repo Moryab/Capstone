@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import Compatibilidad from '../perfil/Compatibilidad.jsx'
 import DatosClave from '../perfil/DatosClave.jsx'
 import { IconoOjo } from '../perfil/iconos.jsx'
@@ -19,15 +19,13 @@ import { CargandoPerfil } from './LayoutPerfil.jsx'
  */
 export default function VistaPublica() {
   const { usuario } = useSesion()
-  const [perfil, setPerfil] = useState(null)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    api(`/usuarios/${usuario.id}/perfil`)
-      // Como lo vería cualquier otro estudiante sin match contigo: sin el teléfono
-      .then((datos) => setPerfil({ ...datos, es_propio: false, contacto_visible: false, telefono: null }))
-      .catch((err) => setError(err.message))
-  }, [usuario.id])
+  // Con caché (la misma ruta que «Ver perfil»): al ir y volver aparece al instante
+  const { datos, error, recargar } = useApi(`/usuarios/${usuario.id}/perfil`)
+  // Como lo vería cualquier otro estudiante sin match contigo: sin el teléfono
+  const perfil = useMemo(
+    () => (datos ? { ...datos, es_propio: false, contacto_visible: false, telefono: null } : null),
+    [datos],
+  )
 
   return (
     <div className="contenedor-perfil">
@@ -35,7 +33,7 @@ export default function VistaPublica() {
         <Link to="/perfil" viewTransition onClick={marcarTransicionPerfil} className="volver">Volver a mi perfil</Link>
         <span className="p2-vista-previa-etiqueta"><IconoOjo /> Vista previa: así te ven otros estudiantes</span>
       </div>
-      {error && <p className="alerta" role="alert">{error}</p>}
+      {!perfil && error && <CargandoPerfil texto={error} alReintentar={recargar} />}
       {!perfil && !error && <CargandoPerfil />}
       {perfil && (
         <PaginaPerfil perfil={perfil} modo="otro"

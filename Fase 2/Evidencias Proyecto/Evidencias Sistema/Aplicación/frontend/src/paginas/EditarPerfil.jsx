@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import Avatar from '../componentes/Avatar.jsx'
 import Campo from '../componentes/Campo.jsx'
 import SelectorCarrera from '../componentes/SelectorCarrera.jsx'
@@ -56,9 +57,14 @@ function Seccion({ id, Icono, titulo, descripcion, children }) {
 // HU-03 (completar perfil) y HU-04 (editar perfil). Es la pestaña «Editar perfil» de Mi perfil
 export default function EditarPerfil() {
   const { recargarUsuario } = useSesion()
-  const [perfil, setPerfil] = useState(null)
-  const [catalogo, setCatalogo] = useState(null)
-  const [datos, setDatos] = useState(null)
+  // Con caché: al volver a la pestaña el formulario aparece al instante (y se actualiza por detrás
+  // solo si aún no se ha cambiado nada, para no pisar lo que la persona está escribiendo)
+  const remoto = useApi('/perfil')
+  const remotoCatalogo = useApi('/catalogos/perfil')
+  const catalogo = remotoCatalogo.datos ?? null
+  const [perfil, setPerfil] = useState(() => remoto.datos ?? null)
+  const [datos, setDatos] = useState(() => (remoto.datos ? aFormulario(remoto.datos) : null))
+  const perfilVisto = useRef(perfil)
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [enviando, setEnviando] = useState(false)
@@ -66,14 +72,17 @@ export default function EditarPerfil() {
   const [version, setVersion] = useState(0)
 
   useEffect(() => {
-    Promise.all([api('/perfil'), api('/catalogos/perfil')])
-      .then(([perfilApi, catalogoApi]) => {
-        setPerfil(perfilApi)
-        setDatos(aFormulario(perfilApi))
-        setCatalogo(catalogoApi)
-      })
-      .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
-  }, [])
+    const nuevo = remoto.datos
+    if (!nuevo || nuevo === perfilVisto.current) return
+    const anterior = perfilVisto.current
+    perfilVisto.current = nuevo
+    setPerfil(nuevo)
+    setDatos((actual) => {
+      const intacto = actual === null || !anterior || JSON.stringify(actual) === JSON.stringify(aFormulario(anterior))
+      return intacto ? aFormulario(nuevo) : actual
+    })
+    setVersion((v) => v + 1) // la fecha de nacimiento vuelve a leer su valor
+  }, [remoto.datos])
 
   // Hay cambios sin guardar: lo que se ve no es lo que tiene la API
   const sinGuardar = Boolean(datos && perfil) && JSON.stringify(datos) !== JSON.stringify(aFormulario(perfil))
@@ -94,7 +103,10 @@ export default function EditarPerfil() {
   }, [mensaje])
 
   if (!datos || !catalogo) {
-    return <CargandoPerfil texto={mensaje.texto} />
+    return (
+      <CargandoPerfil texto={remoto.error || remotoCatalogo.error}
+        alReintentar={() => { remoto.recargar(); remotoCatalogo.recargar() }} />
+    )
   }
 
   const institucion = catalogo.instituciones.find((i) => i.id === datos.institucion_id)
@@ -147,7 +159,9 @@ export default function EditarPerfil() {
           descripcion: datos.descripcion || null,
         },
       })
+      perfilVisto.current = respuesta.perfil
       setPerfil(respuesta.perfil)
+      remoto.actualizar(respuesta.perfil)
       setDatos(aFormulario(respuesta.perfil))
       setErrores({})
       setVersion((v) => v + 1)

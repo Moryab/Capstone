@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { guardarMemoria, leerMemoria } from '../../datos/memoria.js'
+import { usePrimeraVez } from '../../datos/visitas.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import AvisoVerificacion from '../../componentes/AvisoVerificacion.jsx'
 import { useSesion } from '../../sesion/SesionContext.jsx'
@@ -51,11 +53,16 @@ function resumenDe(conversaciones) {
 
 // Lista de conversaciones a la izquierda y la conversación elegida a la derecha (en el celular, una a la vez)
 function Bandeja({ id, revisarMensajes }) {
-  const [lista, setLista] = useState({ conversaciones: null, error: '' })
+  // Con caché: al volver a Mensajes la lista aparece al instante y se actualiza por detrás
+  const [lista, setLista] = useState(() => ({ conversaciones: leerMemoria('/conversaciones') ?? null, error: '' }))
+  const primeraVez = usePrimeraVez('mensajes')
 
   const cargarLista = useCallback(() => {
     api('/conversaciones')
-      .then((conversaciones) => setLista({ conversaciones, error: '' }))
+      .then((conversaciones) => {
+        guardarMemoria('/conversaciones', conversaciones)
+        setLista({ conversaciones, error: '' })
+      })
       .catch((err) => setLista((actual) => ({ ...actual, error: err.message })))
   }, [])
 
@@ -77,7 +84,7 @@ function Bandeja({ id, revisarMensajes }) {
   const vacia = conversaciones?.length === 0 && !id
 
   return (
-    <main className="chat-pagina">
+    <main className="chat-pagina" data-repetida={!primeraVez || undefined}>
       <header className="chat-encabezado">
         <h1 id="chat-titulo">Mensajes</h1>
         <p aria-live="polite">{resumenDe(conversaciones)}</p>

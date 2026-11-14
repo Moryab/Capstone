@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { CargaTarjeta } from '../../componentes/CargaPagina.jsx'
 import Avatar from '../../componentes/Avatar.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import { mayusculaInicial } from '../../inicio/utilidades.js'
@@ -77,7 +78,8 @@ export default function Terminar() {
     }
   }, [matchId])
 
-  if (resultado.id !== matchId) return <p className="cargando">Cargando…</p>
+  // Mientras carga: una tarjeta silueta en el centro, como la del formulario (nunca un «Cargando…» suelto)
+  if (resultado.id !== matchId) return <CargaTarjeta etiqueta="Cargando la evaluación" />
   if (resultado.error) {
     return (
       <main className="tarjeta">

@@ -185,7 +185,8 @@ body.pagina-landing #root { padding-bottom: 0; }
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
   backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid transparent;
-  transition: padding 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), background-color 0.35s, border-color 0.35s, box-shadow 0.35s;
+  /* La barra es fija (no empuja a nada al compactarse); el cambio es corto */
+  transition: padding var(--mov-medio) var(--curva-entrar), background-color var(--mov-medio), border-color var(--mov-medio), box-shadow var(--mov-medio);
 }
 .l-nav.compacta {
   padding: 10px 0;
@@ -498,8 +499,10 @@ body.pagina-landing #root { padding-bottom: 0; }
   .l-como .l-encabezado { margin-bottom: 30px; }
   .l-paso-ilus-movil { display: none; }
   .l-pasos { gap: 18px; }
-  .l-paso { opacity: 0.45; transition: opacity 0.45s; }
-  .l-paso p { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.4s; }
+  .l-paso { opacity: 0.45; transition: opacity var(--mov-lento); }
+  /* Acordeón de los pasos: la única animación de alto que queda (el paso activo se despliega dentro de
+     la sección fija; no empuja nada fuera de ella) */
+  .l-paso p { max-height: 0; overflow: hidden; opacity: 0; transition: max-height var(--mov-lento) var(--curva-entrar), opacity var(--mov-lento); }
   .l-paso.activo { opacity: 1; }
   .l-paso.activo p { max-height: 6em; opacity: 1; }
   .l-paso.hecho { opacity: 0.7; }

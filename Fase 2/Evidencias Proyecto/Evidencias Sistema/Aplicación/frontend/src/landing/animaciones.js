@@ -40,11 +40,12 @@ export function useAnimacion(ref, crear) {
 }
 
 // Entrada estándar: sube y aparece, escalonado, cuando el bloque entra en pantalla
-export function aparecer(elementos, { disparador, retraso = 0, separacion = 0.12, desplazamiento = 40 } = {}) {
+// (corta: 0,55 s y 20 px; antes 0,9 s y 40 px, y con varios bloques la página se sentía lenta)
+export function aparecer(elementos, { disparador, retraso = 0, separacion = 0.08, desplazamiento = 20 } = {}) {
   return gsap.from(elementos, {
     y: desplazamiento,
     opacity: 0,
-    duration: 0.9,
+    duration: 0.55,
     ease: 'power3.out',
     stagger: separacion,
     delay: retraso,

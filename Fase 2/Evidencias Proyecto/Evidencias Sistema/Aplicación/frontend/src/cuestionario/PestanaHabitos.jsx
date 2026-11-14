@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import { CargandoPerfil } from '../paginas/LayoutPerfil.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
 import { aEstado } from './datos.js'
@@ -15,14 +16,14 @@ import './cuestionario.css'
  */
 export default function PestanaHabitos() {
   const { recargarUsuario } = useSesion()
-  const [estado, setEstado] = useState(null)
+  // Con caché: al volver a la pestaña el resumen aparece al instante y se actualiza por detrás
+  const remoto = useApi('/cuestionario')
+  // Lo guardado aquí manda sobre lo que trae la API hasta la próxima visita
+  const [guardado, setEstado] = useState(null)
+  const estado = useMemo(() => guardado ?? (remoto.datos ? aEstado(remoto.datos) : null), [guardado, remoto.datos])
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [editando, setEditando] = useState(null)
   const [claveFondo, setClaveFondo] = useState(null)
-
-  useEffect(() => {
-    api('/cuestionario').then((c) => setEstado(aEstado(c))).catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
-  }, [])
 
   // Mientras se edita, la página de atrás no se desplaza
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function PestanaHabitos() {
     }
   }, [recargarUsuario])
 
-  if (!estado) return <CargandoPerfil texto={mensaje.texto} />
+  if (!estado) return <CargandoPerfil texto={remoto.error} alReintentar={remoto.recargar} />
 
   return (
     <main className="tarjeta pagina-perfil c-pestana">

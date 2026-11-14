@@ -8,14 +8,14 @@ import { gsap, prefiereSinMovimiento } from '../../../landing/animaciones.js'
  *   data-animar="titulo" | "tarjeta" | "tabla" | "grilla"   → bloque que se enfoca al entrar
  *   data-cargando                                           → aún sin datos: se queda como silueta
  *
- * 1. Salida (~200 ms): al hacer clic en el menú o al volver con «atrás», se copia lo que se ve y la
+ * 1. Salida (~160 ms): al hacer clic en el menú o al volver con «atrás», se copia lo que se ve y la
  *    copia se desvanece con un desenfoque leve sobre la página nueva. Se usa GSAP y no la View
  *    Transitions API porque la prop `viewTransition` de React Router solo existe con el router de
  *    datos (createBrowserRouter) y la app usa <BrowserRouter>.
  * 2. Siluetas: los bloques de la página nueva aparecen en su lugar final, borrosos y translúcidos
  *    (CSS: #contenido[data-entrando] [data-animar]…). Son el estado de carga: no hay spinner.
- * 3. Enfoque: cuando un bloque tiene sus datos se vuelve nítido, en orden de lectura (de arriba
- *    abajo y de izquierda a derecha), con 60 ms entre uno y otro. El título va primero.
+ * 3. Enfoque: cuando un bloque tiene sus datos se vuelve nítido (280 ms), en orden de lectura (de
+ *    arriba abajo y de izquierda a derecha), con 35 ms entre uno y otro. El título va primero.
  * 4. Adentro: las filas visibles de tablas y grillas aparecen con un desplazamiento corto; cifras,
  *    barras y líneas empiezan solas al enfocarse su tarjeta (alEnfocar, en animaciones.js).
  *
@@ -24,7 +24,8 @@ import { gsap, prefiereSinMovimiento } from '../../../landing/animaciones.js'
  * repite: la entrada solo ocurre al cambiar de ruta.
  */
 
-const ENFOQUE = { duracion: 0.45, separacion: 0.06, desenfoque: 10, opacidad: 0.4, escala: 0.98 }
+// Corta y sutil (tokens de movimiento: ~240–300 ms): la página nueva se enfoca sin hacer esperar
+const ENFOQUE = { duracion: 0.28, separacion: 0.035, desenfoque: 6, opacidad: 0.5, escala: 0.99 }
 const VENTANA_MS = 6000 // si algo nunca carga (error de red), a los 6 s deja de ser silueta
 const CON_FILAS = { tabla: 'tbody tr', grilla: '.a-pub' }
 
@@ -71,8 +72,8 @@ function entrar(zona) {
     if (!selector) return
     const filas = [...bloque.querySelectorAll(selector)].filter((f) => f.getBoundingClientRect().top < window.innerHeight)
     if (!filas.length) return
-    animaciones.push(gsap.fromTo(filas, { opacity: 0, y: 7, transition: 'none' }, {
-      opacity: 1, y: 0, duration: 0.35, stagger: 0.035, delay: 0.12, ease: 'power2.out', clearProps: 'opacity,transform,transition',
+    animaciones.push(gsap.fromTo(filas, { opacity: 0, y: 5, transition: 'none' }, {
+      opacity: 1, y: 0, duration: 0.24, stagger: 0.025, delay: 0.06, ease: 'power2.out', clearProps: 'opacity,transform,transition',
       onComplete: revisarFin,
     }))
   }
@@ -171,7 +172,8 @@ export function useTransicionAdmin(ref, pathname, activo) {
       const reducir = prefiereSinMovimiento()
       const tween = gsap.to(capa, {
         opacity: 0,
-        ...(reducir ? { duration: 0.15 } : { filter: 'blur(6px)', duration: 0.2, ease: 'power1.out' }),
+        // Salida: ease-in (acelera al irse), más corta que la entrada
+        ...(reducir ? { duration: 0.15 } : { filter: 'blur(4px)', duration: 0.16, ease: 'power1.in' }),
         onComplete: quitarSalida,
       })
       salida.current = { capa, tween }

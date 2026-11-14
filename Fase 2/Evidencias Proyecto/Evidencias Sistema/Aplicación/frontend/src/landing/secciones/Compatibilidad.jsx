@@ -22,11 +22,11 @@ export default function Compatibilidad() {
     aparecer(q('.l-compat-texto > *'), { disparador: ref.current, separacion: 0.1 })
 
     const tl = gsap.timeline({ scrollTrigger: { trigger: medidor, start: 'top 75%', once: true } })
-    tl.from(q('.l-medidor-arco'), { strokeDashoffset: 100, duration: 1.8, ease: 'power3.out' })
-      .add(contar(q('.l-medidor [data-valor]')[0], { duracion: 1.8 }), '<')
-      .from(q('.l-barra-relleno'), { scaleX: 0, duration: 1.2, ease: 'power3.out', stagger: 0.1 }, '<0.2')
+    tl.from(q('.l-medidor-arco'), { strokeDashoffset: 100, duration: 1.2, ease: 'power3.out' })
+      .add(contar(q('.l-medidor [data-valor]')[0], { duracion: 1.2 }), '<')
+      .from(q('.l-barra-relleno'), { scaleX: 0, duration: 0.8, ease: 'power3.out', stagger: 0.08 }, '<0.15')
 
-    q('.l-barra [data-valor]').forEach((numero, i) => tl.add(contar(numero, { duracion: 1.2 }), 0.2 + i * 0.1))
+    q('.l-barra [data-valor]').forEach((numero, i) => tl.add(contar(numero, { duracion: 0.8 }), 0.15 + i * 0.08))
   })
 
   return (

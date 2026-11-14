@@ -72,7 +72,11 @@ export default function Avisos({ abierto, alCerrar, alCambiar }) {
         </div>
 
         {error && <p className="alerta" role="alert">{error}</p>}
-        {!datos && !error && <p className="avisos-vacio">Cargando…</p>}
+        {!datos && !error && (
+          <ul className="avisos-lista av-silueta esq-zona-bloque" role="status" aria-label="Cargando tus avisos">
+            {[0, 1, 2].map((i) => <li key={i}><span /><span /></li>)}
+          </ul>
+        )}
 
         {datos && datos.avisos.length === 0 && (
           <div className="avisos-vacio">

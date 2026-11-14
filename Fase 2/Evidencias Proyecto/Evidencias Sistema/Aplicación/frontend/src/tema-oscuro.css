@@ -6,6 +6,9 @@
    ===================================================================== */
 
 html.tema-oscuro {
+  /* Skeletons: en oscuro el brillo es apenas más claro que la base */
+  --esq-base: color-mix(in srgb, var(--primario) 8%, var(--campo));
+  --esq-brillo: color-mix(in srgb, #ffffff 7%, var(--esq-base));
   --fondo: #071220;
   --tarjeta: #0d1b2e;
   --texto: #d5e2e8;

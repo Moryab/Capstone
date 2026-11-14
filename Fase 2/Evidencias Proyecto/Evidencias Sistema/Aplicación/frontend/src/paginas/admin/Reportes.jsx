@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { guardarMemoria, leerMemoria } from '../../datos/memoria.js'
 import { useResumenAdmin } from '../../marco/ResumenAdmin.jsx'
 import { textoEstadoReporte, textoMotivo, textoResolucion } from '../../reportes.js'
 import Paginacion from './Paginacion.jsx'
@@ -117,17 +118,23 @@ export default function Reportes() {
   const consultaApi = new URLSearchParams({ ...(tipoUrl && { tipo: tipoUrl }), estado: estadoUrl }).toString()
   const resumen = useResumenModeracion(parametros.get('tipo') ?? '')
   const { resumen: barra } = useResumenAdmin()
-  // Se guarda junto con la consulta pedida: al cambiar los filtros, lo anterior se ve atenuado
+  // Se guarda junto con la consulta pedida. Al cambiar un filtro nunca se ven los reportes de la
+  // consulta anterior: los de esta (si ya se pidió en la sesión, desde la caché) o filas silueta
+  const ruta = `/reportes${consultaApi ? `?${consultaApi}` : ''}`
   const [cargado, setCargado] = useState({ consulta: null, reportes: null, error: '' })
 
   useEffect(() => {
-    api(`/reportes${consultaApi ? `?${consultaApi}` : ''}`)
-      .then((reportes) => setCargado({ consulta: consultaApi, reportes, error: '' }))
+    api(ruta)
+      .then((reportes) => {
+        guardarMemoria(ruta, reportes)
+        setCargado({ consulta: consultaApi, reportes, error: '' })
+      })
       .catch((err) => setCargado({ consulta: consultaApi, reportes: null, error: err.message }))
-  }, [consultaApi])
+  }, [consultaApi, ruta])
 
-  const { reportes, error } = cargado
   const actualizando = cargado.consulta !== consultaApi
+  const reportes = actualizando ? (leerMemoria(ruta) ?? null) : cargado.reportes
+  const error = actualizando ? '' : cargado.error
 
   const filtrar = (cambios) => {
     const nuevos = new URLSearchParams(parametros)

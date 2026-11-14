@@ -82,7 +82,7 @@ export function useLatido(valor, { escala = 1.25 } = {}) {
     previo.current = valor
     const el = ref.current
     if (!el || prefiereSinMovimiento()) return undefined
-    const tween = gsap.fromTo(el, { scale: escala, opacity: 0.55 }, { scale: 1, opacity: 1, duration: 0.45, ease: 'back.out(2.2)', clearProps: 'transform,opacity' })
+    const tween = gsap.fromTo(el, { scale: escala, opacity: 0.55 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(1.6)', clearProps: 'transform,opacity' })
     return () => tween.kill()
   }, [valor, escala])
   return ref

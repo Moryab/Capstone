@@ -30,14 +30,14 @@ export default function PostMatch() {
       gsap.from(etapa.querySelector('.l-etapa-tarjeta'), {
         x: lado,
         opacity: 0,
-        duration: 0.9,
+        duration: 0.55,
         ease: 'power3.out',
         scrollTrigger: { trigger: etapa, start: 'top 78%', once: true },
       })
       gsap.from(etapa.querySelector('.l-etapa-punto'), {
         scale: 0,
-        duration: 0.6,
-        ease: 'back.out(2.5)',
+        duration: 0.4,
+        ease: 'back.out(1.7)',
         scrollTrigger: { trigger: etapa, start: 'top 78%', once: true },
       })
     })

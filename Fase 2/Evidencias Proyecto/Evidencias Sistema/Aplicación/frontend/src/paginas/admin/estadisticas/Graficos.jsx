@@ -120,6 +120,7 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
   const lienzo = useRef(null)
   const recorte = useRef(null)
   const trazosPrevios = useRef({}) // forma de cada línea en el render anterior, para animar el cambio
+  const enCurso = useRef([]) // animaciones de las líneas en marcha (para cortarlas si cambia el ancho)
 
   useEffect(() => {
     const obs = new ResizeObserver(([e]) => setAncho(Math.max(280, Math.round(e.contentRect.width))))
@@ -138,7 +139,9 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
   useLayoutEffect(() => {
     const svg = lienzo.current
     const rect = recorte.current
-    const leer = () => Object.fromEntries([...svg.querySelectorAll('.g-serie')].map((g) => [g.dataset.serie, g.querySelector('.g-trazo').getAttribute('d')]))
+    // La forma que corresponde a cada línea según React (data-d), no la que haya en pantalla: a mitad de
+    // una animación el «d» del DOM es un valor intermedio, y una copia guardada puede ser de otro ancho
+    const leer = () => Object.fromEntries([...svg.querySelectorAll('.g-serie')].map((g) => [g.dataset.serie, g.querySelector('.g-trazo').dataset.d]))
     const anteriores = trazosPrevios.current
     const nuevos = leer()
     trazosPrevios.current = nuevos
@@ -151,6 +154,7 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
       return gsap.to(avance, { v: 1, duration: duracion, ease: 'power2.inOut', onUpdate: () => rect.setAttribute('width', avance.v * anchoTotal()) })
     }
     const animaciones = []
+    const formas = [] // solo los cambios de forma de las líneas (no el dibujo de entrada)
     let dejarDeEsperar = () => {}
     let esperando = false
     if (Object.keys(anteriores).length === 0) {
@@ -169,26 +173,38 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
         const hasta = nuevos[g.dataset.serie]
         if (!desde) animaciones.push(gsap.from(g, { opacity: 0, duration: 0.3, clearProps: 'opacity' }))
         else if (puntos(desde) !== puntos(hasta)) redibujar = true
-        else if (desde !== hasta) animaciones.push(gsap.fromTo(g.querySelector('.g-trazo'), { attr: { d: desde } }, { attr: { d: hasta }, duration: 0.5, ease: 'power3.inOut' }))
+        else if (desde !== hasta) {
+          const forma = gsap.fromTo(g.querySelector('.g-trazo'), { attr: { d: desde } }, { attr: { d: hasta }, duration: 0.5, ease: 'power3.inOut' })
+          animaciones.push(forma)
+          formas.push(forma)
+        }
       })
       if (redibujar) animaciones.push(dibujar(0.8))
     }
+    enCurso.current = formas
     return () => {
       // Cortadas antes de terminar (o el doble montaje de StrictMode): la próxima vez se parte igual
       dejarDeEsperar()
       if (esperando || animaciones.some((a) => a.progress() < 1)) trazosPrevios.current = anteriores
       animaciones.forEach((a) => a.kill())
-      // Si se corta a la mitad, que nada quede recortado ni a medio camino
+      // Si se corta a la mitad, que nada quede recortado ni a medio camino. Cada línea vuelve a la forma
+      // que React indica AHORA (data-d): antes se usaba la copia guardada al empezar, que podía ser de
+      // otros datos o de otro ancho, y dejaba las líneas viejas y encogidas al cambiar un filtro
       rect.setAttribute('width', anchoTotal())
-      svg.querySelectorAll('.g-serie .g-trazo').forEach((t) => { const d = nuevos[t.parentNode.dataset.serie]; if (d) t.setAttribute('d', d) })
+      svg.querySelectorAll('.g-serie .g-trazo').forEach((t) => { if (t.dataset.d) t.setAttribute('d', t.dataset.d) })
     }
     // Solo cuando cambian los datos o las series visibles, no al redimensionar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firma])
-  // Al cambiar el ancho, la forma de referencia se actualiza sin animar
+  // Al cambiar el ancho: si una línea estaba cambiando de forma, termina de inmediato en su forma del
+  // ancho nuevo (la animación iba hacia la del ancho anterior), y la referencia se actualiza sin animar.
+  // El dibujo de entrada (el recorte que se abre) sigue: se mide sobre el ancho del momento
   useLayoutEffect(() => {
     const svg = lienzo.current
-    trazosPrevios.current = Object.fromEntries([...svg.querySelectorAll('.g-serie')].map((g) => [g.dataset.serie, g.querySelector('.g-trazo').getAttribute('d')]))
+    enCurso.current.forEach((a) => a.kill())
+    enCurso.current = []
+    svg.querySelectorAll('.g-serie .g-trazo').forEach((t) => { if (t.dataset.d) t.setAttribute('d', t.dataset.d) })
+    trazosPrevios.current = Object.fromEntries([...svg.querySelectorAll('.g-serie')].map((g) => [g.dataset.serie, g.querySelector('.g-trazo').dataset.d]))
     recorte.current?.setAttribute('width', ancho)
   }, [ancho])
   const maximo = maximoEje(Math.max(1, ...serie.flatMap((m) => visibles.map((s) => m[s.clave]))))
@@ -196,6 +212,7 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
   const altoInterior = ALTO - MARGEN.arriba - MARGEN.abajo
   const x = (i) => MARGEN.izq + (serie.length === 1 ? interior / 2 : (i * interior) / (serie.length - 1))
   const y = (v) => MARGEN.arriba + altoInterior - (v / maximo) * altoInterior
+  const trazo = (clave) => serie.map((m, i) => `${i ? 'L' : 'M'}${x(i)},${y(m[clave])}`).join(' ')
   const cada = Math.max(1, Math.ceil(serie.length / Math.max(2, Math.floor(interior / 70)))) // etiquetas sin encimarse
 
   const alternar = (clave) => {
@@ -264,7 +281,8 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
           <g clipPath={`url(#${idRecorte})`}>
           {visibles.map((s) => (
             <g key={s.clave} className={`g-serie ${s.clase}`} data-serie={s.clave}>
-              <path className="g-trazo" d={serie.map((m, i) => `${i ? 'L' : 'M'}${x(i)},${y(m[s.clave])}`).join(' ')} />
+              {/* data-d: la forma que le corresponde, aunque una animación esté cambiando el «d» */}
+              <path className="g-trazo" d={trazo(s.clave)} data-d={trazo(s.clave)} />
               {serie.map((m, i) => (
                 <circle key={m.mes} className="g-punto" cx={x(i)} cy={y(m[s.clave])} r={indice === i ? 5.5 : serie.length === 1 ? 4.5 : 0} />
               ))}
@@ -274,7 +292,7 @@ export function Lineas({ serie, activas, alCambiarActivas }) {
           {/* Zona invisible y gruesa sobre cada línea: al pasar el cursor por ella, se resalta
               igual que desde la leyenda */}
           {visibles.map((s) => (
-            <path key={s.clave} className="g-trazo-zona" d={serie.map((m, i) => `${i ? 'L' : 'M'}${x(i)},${y(m[s.clave])}`).join(' ')}
+            <path key={s.clave} className="g-trazo-zona" d={trazo(s.clave)}
               onPointerEnter={() => setResaltada(s.clave)} onPointerLeave={() => setResaltada(null)} />
           ))}
         </svg>

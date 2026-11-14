@@ -65,7 +65,8 @@ export function BotonMagnetico({ to, children, className = '' }) {
       moverX((e.clientX - (caja.left + caja.width / 2)) * 0.35)
       moverY((e.clientY - (caja.top + caja.height / 2)) * 0.35)
     }
-    const salir = () => gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: 'elastic.out(1, 0.4)' })
+    // Al soltarlo vuelve a su lugar con un rebote corto (antes oscilaba casi un segundo)
+    const salir = () => gsap.to(el, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1, 0.6)' })
     el.addEventListener('pointermove', mover)
     el.addEventListener('pointerleave', salir)
     return () => {

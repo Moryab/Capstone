@@ -24,7 +24,7 @@ export default function Alojamientos() {
   useAnimacion(ref, ({ escritorio }) => {
     const q = gsap.utils.selector(ref)
     aparecer(q('.l-encabezado > *, .l-filtros'), { disparador: ref.current, separacion: 0.1 })
-    aparecer(q('.l-aloj'), { disparador: pista.current, separacion: 0.08, desplazamiento: 50 })
+    aparecer(q('.l-aloj'), { disparador: pista.current, separacion: 0.08, desplazamiento: 24 })
 
     if (!escritorio) return undefined
 

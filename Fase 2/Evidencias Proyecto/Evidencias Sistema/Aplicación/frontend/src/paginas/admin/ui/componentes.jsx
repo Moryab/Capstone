@@ -271,7 +271,7 @@ export function TarjetaKpi({ etiqueta, valor, detalle, variacion, icono, tono = 
  */
 export function FilasSilueta({ columnas, filas = 5 }) {
   return Array.from({ length: filas }, (_, f) => (
-    <tr key={f} className="a-fila-silueta" aria-hidden="true">
+    <tr key={f} className="a-fila-silueta esq-zona-bloque" aria-hidden="true">
       {Array.from({ length: columnas }, (_, c) => (
         <td key={c}>{c === 0 ? <span className="a-silueta-persona"><span /><span /></span> : <span className="a-silueta-linea" />}</td>
       ))}

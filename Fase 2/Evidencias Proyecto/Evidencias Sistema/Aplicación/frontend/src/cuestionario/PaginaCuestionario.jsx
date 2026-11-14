@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import { CargaTarjeta } from '../componentes/CargaPagina.jsx'
 import { IconoLogo } from '../componentes/Logo.jsx'
 import { lanzarConfeti } from '../inicio/confeti.js'
 import { gsap, prefiereSinMovimiento } from '../landing/animaciones.js'
@@ -24,8 +25,8 @@ function Bienvenida({ nombre, respondidas, alEmpezar }) {
   useLayoutEffect(() => {
     if (prefiereSinMovimiento()) return undefined
     const contexto = gsap.context(() => {
-      gsap.from('.c-bienvenida > *', { y: 24, opacity: 0, duration: 0.6, stagger: 0.08, ease: 'power3.out' })
-      gsap.from('.c-chip', { scale: 0.6, opacity: 0, duration: 0.45, stagger: 0.05, delay: 0.35, ease: 'back.out(2.2)' })
+      gsap.from('.c-bienvenida > *', { y: 10, opacity: 0, duration: 0.3, stagger: 0.04, ease: 'power2.out' })
+      gsap.from('.c-chip', { scale: 0.85, opacity: 0, duration: 0.26, stagger: 0.03, delay: 0.12, ease: 'back.out(1.4)' })
     }, ref)
     return () => contexto.revert()
   }, [])
@@ -105,8 +106,8 @@ export default function PaginaCuestionario() {
     if (prefiereSinMovimiento()) return () => clearTimeout(t)
     const contexto = gsap.context(() => {
       // El sello tiene su propia animación de CSS
-      gsap.from('.c-final-cabecera > :not(.c-final-sello)', { y: 20, opacity: 0, duration: 0.6, stagger: 0.08, ease: 'power3.out' })
-      gsap.from('.c-resumen-item', { y: 16, opacity: 0, duration: 0.45, stagger: 0.05, delay: 0.3, ease: 'power2.out' })
+      gsap.from('.c-final-cabecera > :not(.c-final-sello)', { y: 10, opacity: 0, duration: 0.3, stagger: 0.04, ease: 'power2.out' })
+      gsap.from('.c-resumen-item', { y: 8, opacity: 0, duration: 0.26, stagger: 0.03, delay: 0.12, ease: 'power2.out' })
     }, final)
     return () => {
       clearTimeout(t)
@@ -167,7 +168,7 @@ export default function PaginaCuestionario() {
       </header>
 
       {error && <p className="c-error" role="alert">{error}</p>}
-      {!estado && !error && <p className="c-cargando" role="status">Cargando tu cuestionario…</p>}
+      {!estado && !error && <CargaTarjeta etiqueta="Cargando tu cuestionario" />}
 
       {estado && fase === 'bienvenida' && (
         <Bienvenida nombre={usuario.nombre.charAt(0).toUpperCase() + usuario.nombre.slice(1)}

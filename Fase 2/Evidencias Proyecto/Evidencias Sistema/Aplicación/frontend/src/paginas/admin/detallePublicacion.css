@@ -153,7 +153,7 @@ html.tema-oscuro .dp-foto-cuenta { color: #06101d; }
   .dp .md-ilus-bandera { transform-box: fill-box; transform-origin: left center; }
   .dp-ilus-pin { animation: dp-pin 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
   .dp-ilus-precio { animation: dp-precio 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: right center; }
-  .dp-evento { animation: md-entrar 420ms var(--a-curva) backwards; }
+  .dp-evento { animation: md-entrar var(--mov-medio) var(--curva-entrar) backwards; }
 }
 @keyframes dp-pin { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes dp-precio { 50% { transform: rotate(-4deg); } }

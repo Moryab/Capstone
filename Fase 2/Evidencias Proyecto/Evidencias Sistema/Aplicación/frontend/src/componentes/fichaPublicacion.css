@@ -35,12 +35,13 @@ html.tema-oscuro .fp { --fp-ambar: #f0b46a; }
   .fp { padding: 14px; border-radius: 24px; }
 }
 
-/* Entrada: un solo momento al cargar (título, fotos y contenido, escalonados) */
+/* Entrada: un solo momento corto, la primera vez que se abre esta publicación en la sesión (al volver
+   a ella, o al cambiarla por otra en la misma vista, no se repite: data-repetida). El esqueleto no anima */
 @media (prefers-reduced-motion: no-preference) {
-  .fp-cabecera, .fp-cuerpo { animation: fp-entra 520ms var(--fp-curva) both; }
-  .fp-cuerpo { animation-delay: 80ms; }
+  .fp:not([data-repetida]):not(.fp-silueta) :is(.fp-cabecera, .fp-cuerpo) { animation: fp-entra var(--mov-lento) var(--curva-entrar) backwards; }
+  .fp:not([data-repetida]):not(.fp-silueta) .fp-cuerpo { animation-delay: 40ms; }
 }
-@keyframes fp-entra { from { opacity: 0; transform: translateY(10px); } }
+@keyframes fp-entra { from { opacity: 0; transform: translateY(6px); } }
 
 /* ---------- Cabecera ---------- */
 .fp-cabecera {
@@ -377,7 +378,7 @@ html.tema-oscuro .fp { --fp-ambar: #f0b46a; }
 .fp-compat-barra { display: flex; gap: 3px; height: 8px; }
 .fp-compat-barra span { min-width: 8px; border-radius: 999px; transform-origin: left; }
 @media (prefers-reduced-motion: no-preference) {
-  .fp-compat-barra span { animation: fp-barra 700ms var(--fp-curva) both; }
+  .fp-compat-barra span { animation: fp-barra 450ms var(--curva-entrar) both; }
   .fp-compat-barra span:nth-child(2) { animation-delay: 80ms; }
   .fp-compat-barra span:nth-child(3) { animation-delay: 160ms; }
 }
@@ -498,15 +499,9 @@ li.parecido > .fp-habito-estado { color: var(--fp-ambar); }
 
 /* Esqueleto mientras se calcula la compatibilidad (mismo alto aproximado que el resultado) */
 .fp-compat.cargando { display: flex; gap: 14px; align-items: center; min-height: 88px; }
-.fp-esqueleto { display: block; background: var(--campo); }
-.fp-esqueleto.anillo { flex: none; width: 56px; height: 56px; border-radius: 50%; }
-.fp-esqueleto.lineas { display: grid; flex: 1; gap: 8px; background: none; }
-.fp-esqueleto.lineas span { height: 11px; background: var(--campo); border-radius: 6px; }
-.fp-esqueleto.lineas span + span { width: 60%; }
-@media (prefers-reduced-motion: no-preference) {
-  .fp-esqueleto.anillo, .fp-esqueleto.lineas span { animation: fp-pulso 1.4s ease-in-out infinite; }
-}
-@keyframes fp-pulso { 50% { opacity: 0.55; } }
+/* Compatibilidad calculándose: el anillo y dos líneas (piezas de Esqueleto) */
+.fp-compat.cargando .fp-compat-cabeza { display: flex; gap: 14px; align-items: center; }
+.fp-compat.cargando .esq-texto { flex: 1; }
 
 /* ---------- Datos clave, descripción y gastos (una sola tarjeta) ---------- */
 /* Ficha: cada dato con su ícono, su nombre (pequeño) y su valor; lo que no tiene queda atenuado */
@@ -652,4 +647,18 @@ li.parecido > .fp-habito-estado { color: var(--fp-ambar); }
   .fp-ubicacion > .fp-casa { display: flex; flex-direction: column; min-height: clamp(380px, 32vw, 500px); }
   .fp-casa:has(.fp-tu-sede) { padding-bottom: 22px; }
   .fp-casa > .fp-tu-sede { margin-block: auto; }
+}
+
+/* ---------- Skeleton de la ficha (SiluetaFicha): la misma grilla, con piezas de Esqueleto ---------- */
+.fp-silueta .fp-sil-cabecera { display: grid; gap: 12px; margin-bottom: 22px; }
+.fp-silueta .fp-sil-meta { width: 180px; height: 22px; }
+.fp-silueta .fp-sil-titulo { width: min(560px, 80%); height: 34px; border-radius: 12px; }
+.fp-silueta .fp-sil-lugar { width: 240px; height: 14px; }
+.fp-silueta .fp-sil-galeria { width: 100%; aspect-ratio: 8 / 3; border-radius: var(--fp-radio); }
+.fp-silueta .fp-sil-tarjeta { display: grid; align-content: start; gap: 16px; }
+.fp-silueta .fp-sil-alto { min-height: 340px; }
+.fp-silueta .fp-sil-precio { width: 55%; height: 34px; border-radius: 12px; }
+.fp-silueta .fp-sil-boton { width: 100%; height: 46px; border-radius: 999px; }
+@container ficha (max-width: 640px) {
+  .fp-silueta .fp-sil-galeria { aspect-ratio: 4 / 3; }
 }

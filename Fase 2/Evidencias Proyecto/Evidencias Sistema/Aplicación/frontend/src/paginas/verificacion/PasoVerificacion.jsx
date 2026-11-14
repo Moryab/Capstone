@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { api } from '../../api.js'
+import { ErrorCarga, Esqueleto } from '../../componentes/Esqueleto.jsx'
 import { IconoLogo } from '../../componentes/Logo.jsx'
 import { useSesion } from '../../sesion/SesionContext.jsx'
 import { useAplicarTema } from '../../tema/contexto.js'
@@ -54,8 +55,16 @@ export default function PasoVerificacion() {
         <p className="v-paso-nota">
           Mientras revisamos un documento podrás completar tu perfil y ver alojamientos. Te avisaremos cuando tu cuenta esté verificada.
         </p>
-        {error && <p className="alerta" role="alert">{error}</p>}
-        {(!instituciones || !verificacion) && !error && <p className="cargando">Cargando…</p>}
+        {error && <ErrorCarga mensaje={error} alReintentar={() => window.location.reload()} />}
+        {/* Mientras carga: la forma del formulario (campos y botón), en el mismo lugar */}
+        {(!instituciones || !verificacion) && !error && (
+          <div className="v-paso-silueta esq-zona-bloque" role="status" aria-label="Cargando el formulario">
+            <Esqueleto ancho="35%" /><Esqueleto forma="bloque" ancho="100%" alto={48} />
+            <Esqueleto ancho="45%" /><Esqueleto forma="bloque" ancho="100%" alto={48} />
+            <Esqueleto forma="bloque" ancho="100%" alto={120} />
+            <Esqueleto forma="bloque" ancho="55%" alto={46} style={{ justifySelf: 'center', borderRadius: 999 }} />
+          </div>
+        )}
         {instituciones && verificacion && (
           <FormComprobante instituciones={instituciones} alEnviar={alEnviar} textoEnviar="Enviar y continuar"
             textoCorreo="Verificar y continuar"

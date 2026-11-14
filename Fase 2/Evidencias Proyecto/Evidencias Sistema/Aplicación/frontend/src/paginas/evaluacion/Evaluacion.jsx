@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { CargaTarjeta } from '../../componentes/CargaPagina.jsx'
 import Avatar from '../../componentes/Avatar.jsx'
 import { mayusculaInicial } from '../../inicio/utilidades.js'
 import { formatearFecha } from '../../publicaciones.js'
@@ -115,7 +116,8 @@ export default function Evaluacion() {
     }
   }, [matchId])
 
-  if (resultado.id !== matchId) return <p className="cargando">Cargando…</p>
+  // Mientras carga: una tarjeta silueta en el centro, como la del formulario (nunca un «Cargando…» suelto)
+  if (resultado.id !== matchId) return <CargaTarjeta etiqueta="Cargando la evaluación" />
   if (resultado.error) {
     return (
       <main className="tarjeta">
@@ -220,7 +222,7 @@ export default function Evaluacion() {
 
           {!datos.mi_evaluacion && datos.habilitada && (
             <div className="ev-avance" aria-label="Tu avance">
-              <div className="ev-avance-barra" aria-hidden="true"><span style={{ width: `${(hechas / 3) * 100}%` }} /></div>
+              <div className="ev-avance-barra" aria-hidden="true"><span style={{ transform: `scaleX(${hechas / 3})` }} /></div>
               <p>{hechas === 3 ? 'Todo listo para enviar' : `${hechas} de 3 respuestas · toma 1 minuto`}</p>
             </div>
           )}

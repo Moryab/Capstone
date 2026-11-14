@@ -34,14 +34,14 @@ export default function Seguridad() {
     // Los íconos parten sin dibujar solo cuando hay animación; sin ella se ven completos
     ref.current.classList.add('animado')
     gsap.from(q('.l-encabezado > *'), {
-      y: 30, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1,
+      y: 16, opacity: 0, duration: 0.55, ease: 'power3.out', stagger: 0.07,
       scrollTrigger: { trigger: ref.current, start: 'top 80%', once: true },
     })
     const lotes = ScrollTrigger.batch(q('.l-seguro'), {
       start: 'top 85%',
       once: true,
       onEnter: (elementos) => {
-        gsap.from(elementos, { y: 40, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.12 })
+        gsap.from(elementos, { y: 20, opacity: 0, duration: 0.55, ease: 'power3.out', stagger: 0.08 })
         elementos.forEach((el, i) => setTimeout(() => el.classList.add('visible'), 250 + i * 120))
       },
     })

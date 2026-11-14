@@ -127,7 +127,7 @@
   cursor: pointer;
   transition: transform 160ms var(--r-curva), border-color 200ms ease, box-shadow 200ms ease;
   -webkit-tap-highlight-color: transparent;
-  animation: r-entrar 320ms var(--r-curva) both;
+  animation: r-entrar var(--mov-medio) var(--curva-entrar) both;
 }
 .r-opcion:nth-child(2) { animation-delay: 60ms; }
 .r-opcion:active { transform: scale(0.98); }

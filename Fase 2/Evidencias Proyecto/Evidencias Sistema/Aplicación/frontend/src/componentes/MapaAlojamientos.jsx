@@ -1,6 +1,7 @@
 import L from 'leaflet'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Esqueleto } from './Esqueleto.jsx'
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
 import { api } from '../api.js'
 import { desdeURL, radioDe } from '../busqueda.js'
@@ -238,7 +239,7 @@ export default function MapaAlojamientos({ consulta, desde, alActivarCerca }) {
       <div className="mapa-aviso" role="note">
         <span className="mapa-aviso-icono"><IconoInfo /></span>
         <p className="mapa-aviso-texto">
-          {!datos && 'Cargando el mapa…'}
+          {!datos && <><Esqueleto ancho="72%" /><span className="visualmente-oculto">Cargando el mapa</span></>}
           {datos && datos.mostrados < datos.total && <strong>Se muestran los {datos.mostrados} más recientes de {datos.total}. </strong>}
           {datos && 'Cada alojamiento aparece en su dirección o, si no marcó su punto, en el centro de su comuna.'}
           {datos && !sede && <> <Link to="/perfil/editar">Indica tu institución y sede</Link> para verla en el mapa y saber qué queda cerca.</>}

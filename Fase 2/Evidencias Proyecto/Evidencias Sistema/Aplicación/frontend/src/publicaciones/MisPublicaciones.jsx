@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import { guardarMemoria, leerMemoria } from '../datos/memoria.js'
 import Confirmar from '../componentes/Confirmar.jsx'
 import { IconoPapelera } from '../componentes/Iconos.jsx'
 import ModalPausadas from '../inicio/ModalPausadas.jsx'
@@ -269,9 +270,16 @@ export default function MisPublicaciones() {
   const navegar = useNavigate()
   const ref = useRef(null)
   const panel = useRef(null)
-  const [publicaciones, setPublicaciones] = useState(null)
+  // Con caché: al volver a la página todo aparece al instante y se actualiza por detrás
+  const [publicaciones, setPublicaciones] = useState(() => leerMemoria('/publicaciones/mias') ?? null)
   const [error, setError] = useState('')
-  const [matches, setMatches] = useState(undefined) // undefined: cargando; null: no disponibles
+  // undefined: cargando; null: no disponibles
+  const [matches, setMatches] = useState(() => {
+    const guardadas = leerMemoria('/matches')
+    return guardadas ? porPublicacion(guardadas) : undefined
+  })
+  // La entrada animada solo la primera vez en la sesión (o si hubo que esperar los datos)
+  const [conEntrada] = useState(() => leerMemoria('/publicaciones/mias') === undefined)
   const [filtro, setFiltro] = useState('todas')
   const [aviso, setAviso] = useState(state?.aviso ?? null)
   const [porEliminar, setPorEliminar] = useState(null)
@@ -282,13 +290,13 @@ export default function MisPublicaciones() {
   const verificado = estaVerificado(usuario)
 
   const cargar = useCallback(() => api('/publicaciones/mias')
-    .then((l) => { setPublicaciones(l); setError('') })
+    .then((l) => { guardarMemoria('/publicaciones/mias', l); setPublicaciones(l); setError('') })
     .catch((err) => { setError(err.message); setPublicaciones([]) }), [])
 
   useEffect(() => {
     cargar()
     // Las propuestas piden la cuenta verificada: sin ellas la página igual funciona
-    api('/matches').then((r) => setMatches(porPublicacion(r))).catch(() => setMatches(null))
+    api('/matches').then((r) => { guardarMemoria('/matches', r); setMatches(porPublicacion(r)) }).catch(() => setMatches(null))
   }, [cargar])
 
   // El aviso al volver de publicar o editar se muestra una vez
@@ -313,21 +321,22 @@ export default function MisPublicaciones() {
 
   const listo = publicaciones !== null && matches !== undefined
 
-  // Entrada de la página: cabecera, cifras, pendientes, pestañas y tarjetas, en ese orden
+  // Entrada de lo que llega con los datos: cifras, pendientes, pestañas y tarjetas. La cabecera NO se
+  // anima: ya estaba a la vista mientras cargaba y hacerla aparecer de nuevo era un parpadeo. Con datos
+  // en caché (al volver a la página) no hay entrada: todo está en su lugar desde el primer cuadro
   useLayoutEffect(() => {
     if (!listo || prefiereSinMovimiento()) return undefined
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(ref)
-      gsap.timeline({ defaults: { ease: 'power3.out' } })
-        .from(q('.mp-cabecera'), { opacity: 0, y: 18, duration: 0.55 })
-        .from(q('.mp-cabecera-texto > *'), { opacity: 0, y: 12, stagger: 0.06, duration: 0.45 }, '-=0.35')
-        .from(q('.mp-cifra'), { opacity: 0, y: 12, stagger: 0.06, duration: 0.45 }, '-=0.3')
-        .from(q('.mp-casas'), { opacity: 0, x: 24, duration: 0.6 }, '<')
-        .from(q('.mp-pendiente'), { opacity: 0, y: 12, stagger: 0.06, duration: 0.4 }, '-=0.25')
-        .from(q('.mp-pestanas-zona'), { opacity: 0, y: 10, duration: 0.4 }, '-=0.2')
-        .from(q('.mp-tarjeta'), { opacity: 0, y: 22, scale: 0.98, stagger: 0.07, duration: 0.55 }, '-=0.2')
-        .from(q('.mp-barra-relleno'), { scaleX: 0, stagger: 0.07, duration: 0.7 }, '-=0.45')
-      q('[data-valor]').forEach((el) => contar(el, { duracion: 1.1, retraso: 0.25 }))
+      if (conEntrada) {
+        gsap.timeline({ defaults: { ease: 'power2.out', duration: 0.26 } })
+          .from(q('.mp-cifra'), { opacity: 0, y: 6, stagger: 0.03 })
+          .from(q('.mp-pendiente'), { opacity: 0, y: 6, stagger: 0.03 }, '-=0.2')
+          .from(q('.mp-pestanas-zona'), { opacity: 0, y: 6 }, '-=0.2')
+          .from(q('.mp-tarjeta'), { opacity: 0, y: 8, stagger: 0.04 }, '-=0.18')
+          .from(q('.mp-barra-relleno'), { scaleX: 0, stagger: 0.04, duration: 0.45 }, '-=0.2')
+        q('[data-valor]').forEach((el) => contar(el, { duracion: 0.8, retraso: 0.1 }))
+      }
       gsap.to(q('.mp-casa-flota'), { y: -6, duration: 2.6, ease: 'sine.inOut', yoyo: true, repeat: -1, stagger: 0.5 })
     }, ref)
     return () => ctx.revert()
@@ -342,7 +351,7 @@ export default function MisPublicaciones() {
     const ctx = gsap.context(() => {
       const q = gsap.utils.selector(panel)
       // Con un desenfoque breve: lo que entra se funde en vez de aparecer de golpe
-      gsap.from(q('.mp-tarjeta'), { opacity: 0, y: 14, filter: 'blur(3px)', duration: 0.4, stagger: 0.05, ease: 'power3.out', clearProps: 'filter' })
+      gsap.from(q('.mp-tarjeta'), { opacity: 0, y: 6, duration: 0.24, stagger: 0.03, ease: 'power2.out' })
       gsap.from(q('.mp-barra-relleno'), { scaleX: 0, duration: 0.6, stagger: 0.05, ease: 'power3.out', delay: 0.1 })
     }, panel)
     return () => ctx.revert()
@@ -441,7 +450,7 @@ export default function MisPublicaciones() {
       )}
 
       {!listo && (
-        <div className="mp-cargando" role="status" aria-label="Cargando tus publicaciones">
+        <div className="mp-cargando esq-zona-bloque" role="status" aria-label="Cargando tus publicaciones">
           {[0, 1].map((i) => (
             <div key={i} className="mp-silueta">
               <span className="mp-sil-foto" />

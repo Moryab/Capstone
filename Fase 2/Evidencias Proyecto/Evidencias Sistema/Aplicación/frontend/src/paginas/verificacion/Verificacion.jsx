@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { api, apiArchivo } from '../../api.js'
+import { apiArchivo } from '../../api.js'
 import { useAvisoBreve } from '../../componentes/AvisoBreve.jsx'
+import { ErrorCarga } from '../../componentes/Esqueleto.jsx'
+import { useApi } from '../../datos/useApi.js'
 import { useSesion } from '../../sesion/SesionContext.jsx'
 import { COMPROBANTE_MAX_MB, fechaHora, textoSituacion, textoTipo, TIPOS_COMPROBANTE } from './datos.js'
 import FormComprobante from './FormComprobante.jsx'
@@ -48,26 +50,24 @@ export default function Verificacion() {
   const { usuario, recargarUsuario } = useSesion()
   const { hash } = useLocation()
   const { avisar } = useAvisoBreve()
-  const [verificacion, setVerificacion] = useState(null)
-  const [instituciones, setInstituciones] = useState(null)
-  const [institucionPerfil, setInstitucionPerfil] = useState('')
+  // Con caché: al volver a la pestaña el estado aparece al instante y se actualiza por detrás
+  const rVerificacion = useApi('/verificacion')
+  const rCatalogo = useApi('/catalogos/perfil')
+  const rPerfil = useApi('/perfil')
+  const verificacion = rVerificacion.datos ?? null
+  const setVerificacion = rVerificacion.actualizar
+  const instituciones = rCatalogo.datos?.instituciones ?? null
+  // Se propone la institución del perfil; el estudiante la puede cambiar
+  const institucionPerfil = rPerfil.datos?.institucion_id ?? ''
+  const errorCarga = rVerificacion.error || rCatalogo.error
   const [error, setError] = useState('')
   const [abriendo, setAbriendo] = useState(false)
   const formulario = useRef(null)
 
-  useEffect(() => {
-    Promise.all([api('/verificacion'), api('/catalogos/perfil'), api('/perfil')])
-      .then(([verificacionApi, catalogo, perfil]) => {
-        setVerificacion(verificacionApi)
-        setInstituciones(catalogo.instituciones)
-        // Se propone la institución del perfil; el estudiante la puede cambiar
-        setInstitucionPerfil(perfil.institucion_id ?? '')
-      })
-      .catch((err) => setError(err.message))
-  }, [])
 
   // Desde el aviso de rechazo o revocación: directo al formulario
-  const listo = Boolean(verificacion && instituciones)
+  // El perfil solo propone la institución: si falla, igual se puede seguir
+  const listo = Boolean(verificacion && instituciones && (rPerfil.datos || rPerfil.error))
   useEffect(() => {
     if (listo && hash === '#formulario' && formulario.current) {
       formulario.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -105,8 +105,8 @@ export default function Verificacion() {
     return (
       <div className="vf-pagina">
         <h1 className="visualmente-oculto">Verificación de estudiante</h1>
-        {error ? <p className="alerta" role="alert">{error}</p> : (
-          <div className="vf-grilla" aria-busy="true" aria-label="Cargando tu verificación">
+        {errorCarga ? <ErrorCarga mensaje={errorCarga} alReintentar={() => { rVerificacion.recargar(); rCatalogo.recargar(); rPerfil.recargar() }} /> : (
+          <div className="vf-grilla esq-zona-bloque" aria-busy="true" aria-label="Cargando tu verificación">
             <div className="vf-tarjeta vf-silueta"><span className="vf-sil-sello" /><span /><span /><span /></div>
             <div className="vf-tarjeta vf-silueta"><span /><span /><span /><span /></div>
           </div>

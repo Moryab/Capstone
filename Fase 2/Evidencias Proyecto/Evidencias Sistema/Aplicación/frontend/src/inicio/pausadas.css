@@ -165,7 +165,7 @@
 .p-exito-texto { margin: 4px 0 0; font-size: 0.9rem; color: var(--i-suave); }
 .p-exito.eliminada .p-exito-titulo { color: var(--i-titulo); }
 
-.p-check { width: 52px; height: 52px; animation: p-pop 420ms var(--p-curva) both; }
+.p-check { width: 52px; height: 52px; animation: p-pop var(--mov-lento) var(--p-curva) both; }
 .p-check.grande { width: 84px; height: 84px; }
 .p-check-circulo {
   fill: var(--l-teal);

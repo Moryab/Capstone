@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { api } from '../api.js'
+import { ErrorCarga } from '../componentes/Esqueleto.jsx'
+import { useApi } from '../datos/useApi.js'
 import AnilloCompatibilidad from '../componentes/AnilloCompatibilidad.jsx'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import Avatar from '../componentes/Avatar.jsx'
@@ -85,7 +85,7 @@ function TarjetaRoomie({ roomie, desde, orden }) {
 // Mientras llega la primera respuesta: tarjetas silueta del mismo tamaño que las reales
 function Siluetas() {
   return (
-    <ul className="rm-grilla" aria-hidden="true">
+    <ul className="rm-grilla esq-zona-bloque" role="status" aria-label="Buscando posibles roomies">
       {[0, 1, 2].map((i) => (
         <li key={i} className="rm-tarjeta rm-silueta">
           <div className="rm-cabeza"><span className="rm-sil redonda" /><span className="rm-sil" /></div>
@@ -102,25 +102,14 @@ function ListaRoomies() {
   const [params, setParams] = useSearchParams()
   const { pathname, search } = useLocation()
   const pagina = Math.max(1, Number(params.get('pagina')) || 1)
-  const [resultado, setResultado] = useState({ pagina: null, datos: null, error: '' })
-
-  useEffect(() => {
-    let vigente = true
-    api(`/compatibilidades?pagina=${pagina}`)
-      .then((datos) => vigente && setResultado({ pagina, datos, error: '' }))
-      .catch((err) => vigente && setResultado({ pagina, datos: null, error: err.message }))
-    return () => {
-      vigente = false
-    }
-  }, [pagina])
+  // Con caché por página: una ya vista aparece al instante; al cambiar de página nunca se ve la anterior
+  const { datos, error, recargar } = useApi(`/compatibilidades?pagina=${pagina}`)
 
   const irA = (nueva) => {
     setParams(nueva > 1 ? { pagina: String(nueva) } : {})
     window.scrollTo({ top: 0 })
   }
 
-  const { datos, error } = resultado
-  const cargando = resultado.pagina !== pagina
   // Solo se muestran estudiantes con el rol opuesto (la API filtra; la compatibilidad no cambia)
   const oferente = usuario.modo === 'oferente'
 
@@ -140,7 +129,7 @@ function ListaRoomies() {
         )}
       </header>
 
-      {error && !cargando && <p className="alerta" role="alert">{error}</p>}
+      {!datos && error && <ErrorCarga mensaje={error} alReintentar={recargar} />}
       {!datos && !error && <Siluetas />}
 
       {/* CA-15.4: se explica qué falta para ver resultados */}
@@ -167,7 +156,7 @@ function ListaRoomies() {
 
       {datos?.cuestionario_completo && datos.total > 0 && (
         <>
-          <ul className={`rm-grilla${cargando ? ' actualizando' : ''}`} aria-busy={cargando}>
+          <ul key={pagina} className="rm-grilla">
             {datos.resultados.map((r, i) => (
               <TarjetaRoomie key={r.usuario.id} roomie={r} desde={pathname + search} orden={i} />
             ))}

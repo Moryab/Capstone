@@ -69,7 +69,7 @@ export function IlustracionSaludo() {
 // ---------- Siluetas de carga: ocupan el mismo lugar que el contenido, así nada salta ----------
 export function SiluetaLista({ filas = 6 }) {
   return (
-    <ul className="chat-items chat-silueta" aria-hidden="true">
+    <ul className="chat-items chat-silueta esq-zona-bloque" role="status" aria-label="Cargando tus conversaciones">
       {Array.from({ length: filas }, (_, i) => (
         <li key={i} className="chat-item">
           <span className="sil sil-avatar" />
@@ -87,7 +87,7 @@ const BURBUJAS = [['', 46], ['', 30], ['mia', 52], ['', 38], ['mia', 28], ['mia'
 
 export function SiluetaConversacion() {
   return (
-    <div className="chat-conversacion chat-silueta" role="status" aria-label="Cargando la conversación">
+    <div className="chat-conversacion chat-silueta esq-zona-bloque" role="status" aria-label="Cargando la conversación">
       <header className="chat-cabecera">
         <span className="sil sil-avatar" />
         <span className="chat-cabecera-textos">

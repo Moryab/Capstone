@@ -104,8 +104,8 @@ export default function Flujo({
     titulo.current?.focus({ preventScroll: true })
     if (prefiereSinMovimiento()) return undefined
     const contexto = gsap.context(() => {
-      gsap.fromTo(panel.current, { x: direccion.current * 56, opacity: 0 }, { x: 0, opacity: 1, duration: 0.42, ease: 'power3.out' })
-      gsap.from('.c-opcion, .c-formulario', { y: 18, opacity: 0, duration: 0.4, stagger: 0.06, delay: 0.08, ease: 'power2.out' })
+      gsap.fromTo(panel.current, { x: direccion.current * 32, opacity: 0 }, { x: 0, opacity: 1, duration: 0.28, ease: 'power2.out' })
+      gsap.from('.c-opcion, .c-formulario', { y: 8, opacity: 0, duration: 0.24, stagger: 0.03, delay: 0.05, ease: 'power2.out' })
     }, panel)
     return () => contexto.revert()
   }, [indice])
@@ -131,7 +131,7 @@ export default function Flujo({
       return
     }
     gsap.to(panel.current, {
-      x: -dir * 56, opacity: 0, duration: 0.2, ease: 'power2.in', onComplete: () => setIndice(nuevo),
+      x: -dir * 32, opacity: 0, duration: 0.16, ease: 'power2.in', onComplete: () => setIndice(nuevo),
     })
   }, [conPerfil, soloUna])
 
@@ -213,7 +213,7 @@ export default function Flujo({
     autoguardar(nuevo, c)
     if (prefiereSinMovimiento()) return
     // Rebote de la tarjeta elegida y, enseguida, la importancia a la vista
-    if (tarjeta) gsap.fromTo(tarjeta, { scale: 0.94 }, { scale: 1, duration: 0.5, ease: 'back.out(3)' })
+    if (tarjeta) gsap.fromTo(tarjeta, { scale: 0.96 }, { scale: 1, duration: 0.28, ease: 'back.out(1.8)' })
     clearTimeout(temporizador.current)
     temporizador.current = setTimeout(() => {
       importanciaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })

@@ -35,21 +35,21 @@ export default function Hero() {
     // Texto: título palabra por palabra y luego el resto
     const entrada = gsap.timeline({ defaults: { ease: 'power3.out' } })
     entrada
-      .from(q('.l-hero-titulo .l-palabra-in'), { yPercent: 110, duration: 0.9, stagger: 0.07 })
-      .from(q('.l-hero-anim'), { y: 24, opacity: 0, duration: 0.8, stagger: 0.1 }, '-=0.5')
+      .from(q('.l-hero-titulo .l-palabra-in'), { yPercent: 110, duration: 0.6, stagger: 0.05 })
+      .from(q('.l-hero-anim'), { y: 14, opacity: 0, duration: 0.5, stagger: 0.07 }, '-=0.35')
 
     // Visual: las tarjetas llegan, se acercan, aparece el corazón y sube el porcentaje
     const match = gsap.timeline({ delay: 0.35, defaults: { ease: 'power3.out' } })
     match
-      .from(q('.l-perfil-a'), { x: -90, opacity: 0, duration: 1 })
-      .from(q('.l-perfil-b'), { x: 90, opacity: 0, duration: 1 }, '<0.1')
-      .to(q('.l-perfil-a'), { x: 18, duration: 0.9, ease: 'power2.inOut' })
-      .to(q('.l-perfil-b'), { x: -18, duration: 0.9, ease: 'power2.inOut' }, '<')
-      .from(q('.l-hero-conexion path'), { strokeDashoffset: 1, duration: 0.9, ease: 'power2.inOut' }, '<0.2')
-      .from(q('.l-hero-corazon'), { scale: 0, opacity: 0, duration: 0.7, ease: 'back.out(2.2)' }, '-=0.3')
-      .from(q('.l-hero-porcentaje'), { y: 16, opacity: 0, duration: 0.6 }, '-=0.2')
+      .from(q('.l-perfil-a'), { x: -60, opacity: 0, duration: 0.7 })
+      .from(q('.l-perfil-b'), { x: 60, opacity: 0, duration: 0.7 }, '<0.08')
+      .to(q('.l-perfil-a'), { x: 18, duration: 0.6, ease: 'power2.inOut' })
+      .to(q('.l-perfil-b'), { x: -18, duration: 0.6, ease: 'power2.inOut' }, '<')
+      .from(q('.l-hero-conexion path'), { strokeDashoffset: 1, duration: 0.6, ease: 'power2.inOut' }, '<0.15')
+      .from(q('.l-hero-corazon'), { scale: 0.4, opacity: 0, duration: 0.45, ease: 'back.out(1.7)' }, '-=0.25')
+      .from(q('.l-hero-porcentaje'), { y: 10, opacity: 0, duration: 0.4 }, '-=0.15')
       .add(contar(q('[data-contador]')[0], { duracion: 1.4 }), '<')
-      .from(q('.l-etiqueta-ejemplo'), { opacity: 0, duration: 0.5 }, '-=0.6')
+      .from(q('.l-etiqueta-ejemplo'), { opacity: 0, duration: 0.35 }, '-=0.4')
 
     // Después, todo flota suavemente
     gsap.to(q('.l-hero-corazon'), { y: -8, duration: 2.2, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: 3 })

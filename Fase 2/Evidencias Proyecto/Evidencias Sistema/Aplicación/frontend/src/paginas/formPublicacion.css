@@ -57,7 +57,7 @@
 .pf-numero[data-completa] { color: #fff; background: var(--primario); }
 .pf-numero svg { width: 17px; height: 17px; }
 @media (prefers-reduced-motion: no-preference) {
-  .pf-numero[data-completa] svg { animation: pf-visto 320ms var(--pf-curva); }
+  .pf-numero[data-completa] svg { animation: pf-visto var(--mov-medio) var(--pf-curva); }
 }
 @keyframes pf-visto { from { opacity: 0; transform: scale(0.6); } }
 .pf .pf-seccion-cabeza h2 { margin: 2px 0 4px; font: 600 1.22rem 'Outfit', system-ui, sans-serif; color: var(--marca); }

@@ -42,7 +42,7 @@ export default function QueEs() {
 
   useAnimacion(ref, () => {
     aparecer(ref.current.querySelectorAll('.l-encabezado > *'), { disparador: ref.current, separacion: 0.1 })
-    aparecer(ref.current.querySelectorAll('.l-idea'), { disparador: ref.current.querySelector('.l-ideas'), separacion: 0.15, desplazamiento: 60 })
+    aparecer(ref.current.querySelectorAll('.l-idea'), { disparador: ref.current.querySelector('.l-ideas'), separacion: 0.1, desplazamiento: 28 })
   })
 
   return (

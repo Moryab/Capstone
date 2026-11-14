@@ -4,11 +4,16 @@ import { api } from '../../../api.js'
 // Respuestas recientes por consulta: varias tarjetas con el mismo período comparten una sola petición
 const cache = new Map()
 const VIGENCIA_MS = 30000
+// Lo último que respondió cada consulta en esta sesión: al volver a Estadísticas, las tarjetas aparecen
+// con sus datos al instante (sin silueta) y se actualizan por detrás
+const respuestas = new Map()
+let ultimoAlgoritmo = null
 
 export function pedir(consulta) {
   const guardada = cache.get(consulta)
   if (guardada && Date.now() - guardada.hora < VIGENCIA_MS) return guardada.promesa
   const promesa = api(`/admin/estadisticas${consulta ? `?${consulta}` : ''}`)
+  promesa.then((datos) => respuestas.set(consulta, datos), () => {})
   cache.set(consulta, { promesa, hora: Date.now() })
   promesa.catch(() => cache.delete(consulta))
   return promesa
@@ -19,6 +24,7 @@ let algoritmo = null
 export function pedirAlgoritmo() {
   if (algoritmo && Date.now() - algoritmo.hora < VIGENCIA_MS) return algoritmo.promesa
   const promesa = api('/admin/estadisticas/algoritmo')
+  promesa.then((datos) => { ultimoAlgoritmo = datos }, () => {})
   algoritmo = { promesa, hora: Date.now() }
   promesa.catch(() => { algoritmo = null })
   return promesa
@@ -26,7 +32,7 @@ export function pedirAlgoritmo() {
 
 /** Datos de «Aprendizaje del algoritmo»; solo los pide la tarjeta que los usa (`activo`) */
 export function useAlgoritmo(activo) {
-  const [estado, setEstado] = useState({ datos: null, error: '' })
+  const [estado, setEstado] = useState(() => ({ datos: ultimoAlgoritmo, error: '' }))
   useEffect(() => {
     if (!activo) return undefined
     let vigente = true
@@ -54,7 +60,9 @@ export function consultaDe({ desde, hasta, ciudad }) {
  * anterior (`cargando` en true), así los gráficos pasan al valor nuevo en vez de vaciarse.
  */
 export function useEstadisticas(consulta) {
-  const [estado, setEstado] = useState({ consulta: null, datos: null, error: '', errores: {} })
+  const [estado, setEstado] = useState(() => (respuestas.has(consulta)
+    ? { consulta, datos: respuestas.get(consulta), error: '', errores: {} }
+    : { consulta: null, datos: null, error: '', errores: {} }))
   useEffect(() => {
     let vigente = true
     pedir(consulta)

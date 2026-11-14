@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { guardarMemoria, leerMemoria } from '../../datos/memoria.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { ESTADOS_SOLICITUD, textoSituacion, textoTipo } from '../verificacion/datos.js'
 import { ChipEstado, EncabezadoAdmin, EstadoVacio, FilasSilueta, ICONOS_ESTADO, PaginaAdmin, TablaAdmin, TarjetaKpi } from './ui/componentes.jsx'
@@ -30,13 +31,18 @@ export default function Verificaciones() {
   const [cargado, setCargado] = useState({ vista: null, solicitudes: null, error: '' })
   const [ahora] = useState(() => Date.now())
 
+  // Con caché por vista: al volver a «Pendientes» o al historial, la tabla aparece al instante
   useEffect(() => {
     api(`/verificacion/solicitudes?estado=${vista}`)
-      .then((solicitudes) => setCargado({ vista, solicitudes, error: '' }))
+      .then((solicitudes) => {
+        guardarMemoria(`/verificacion/solicitudes?estado=${vista}`, solicitudes)
+        setCargado({ vista, solicitudes, error: '' })
+      })
       .catch((err) => setCargado({ vista, solicitudes: null, error: err.message }))
   }, [vista])
 
-  const { solicitudes: todas, error } = cargado.vista === vista ? cargado : { solicitudes: null, error: '' }
+  const { solicitudes: todas, error } = cargado.vista === vista ? cargado
+    : { solicitudes: leerMemoria(`/verificacion/solicitudes?estado=${vista}`) ?? null, error: '' }
   // En el historial, «Aprobadas» o «Rechazadas» filtran aquí mismo
   const solicitudes = todas && resultado ? todas.filter((s) => s.estado === resultado) : todas
   const ir = (nuevaVista, nuevoResultado = '') => setParametros(

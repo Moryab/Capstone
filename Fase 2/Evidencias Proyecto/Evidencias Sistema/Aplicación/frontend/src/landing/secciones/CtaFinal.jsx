@@ -9,8 +9,8 @@ export default function CtaFinal() {
   useAnimacion(ref, () => {
     const q = gsap.utils.selector(ref)
     const tl = gsap.timeline({ scrollTrigger: { trigger: ref.current, start: 'top 65%', once: true } })
-    tl.from(q('.l-palabra-in'), { yPercent: 110, duration: 0.9, ease: 'power3.out', stagger: 0.06 })
-      .from(q('.l-cta-anim'), { y: 24, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.1 }, '-=0.5')
+    tl.from(q('.l-palabra-in'), { yPercent: 110, duration: 0.6, ease: 'power3.out', stagger: 0.045 })
+      .from(q('.l-cta-anim'), { y: 14, opacity: 0, duration: 0.5, ease: 'power3.out', stagger: 0.07 }, '-=0.35')
 
     // El fondo se desplaza un poco más lento que la página (parallax)
     gsap.fromTo(q('.l-cta-fondo'), { yPercent: -8 }, {

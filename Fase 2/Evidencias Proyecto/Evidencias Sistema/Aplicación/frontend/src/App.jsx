@@ -8,7 +8,9 @@ import Alojamientos from './paginas/Alojamientos.jsx'
 import DetallePublicacion from './paginas/DetallePublicacion.jsx'
 import EditarPerfil from './paginas/EditarPerfil.jsx'
 import FormPublicacion from './paginas/FormPublicacion.jsx'
+import { CargaApp, CargaContenido, CargaLanding, CargaTarjeta } from './componentes/CargaPagina.jsx'
 import LayoutPerfil, { CargandoPerfil } from './paginas/LayoutPerfil.jsx'
+import { useScrollPorPagina } from './marco/scroll.js'
 import Marco from './marco/Marco.jsx'
 import Propuestas from './paginas/Propuestas.jsx'
 import Recuperar from './paginas/Recuperar.jsx'
@@ -49,7 +51,7 @@ const Mensajes = lazy(() => import('./paginas/mensajes/Mensajes.jsx'))
 // En «/»: quien no ha iniciado sesión ve la landing; quien sí, su página de inicio
 function Raiz() {
   const { usuario, cargando } = useSesion()
-  if (cargando) return <p className="cargando">Cargando…</p>
+  if (cargando) return <CargaApp />
   if (usuario?.rol === 'administrador') return <Navigate to="/admin" replace />
   // Primero verificar el correo con el código que le llegó
   if (usuario && !usuario.correo_verificado) return <Navigate to="/verifica-correo" replace />
@@ -60,7 +62,7 @@ function Raiz() {
   // Luego elige su rol: buscador u oferente
   if (usuario && !usuario.modo) return <Navigate to="/bienvenida" replace />
   return (
-    <Suspense fallback={usuario ? <p className="cargando">Cargando…</p> : null}>
+    <Suspense fallback={usuario ? <CargaApp /> : <CargaLanding />}>
       {usuario ? <Marco><Inicio /></Marco> : <Landing />}
     </Suspense>
   )
@@ -75,6 +77,8 @@ function IrAVerificacion() {
 
 export default function App() {
   const { pathname } = useLocation()
+  // También para las páginas fuera del marco (landing, acceso, cuestionario, elegir rol…)
+  useScrollPorPagina()
   // La cabecera con el logo solo va en el acceso; la landing y las páginas con sesión traen su
   // propia navegación (las segundas, con el marco común: barra lateral y configuración)
   const enAcceso = pathname === '/login' || pathname === '/registro'
@@ -101,13 +105,13 @@ export default function App() {
         {/* HU-13: obligatorio justo después del registro, a pantalla completa y sin la barra */}
         <Route path="/cuestionario" element={
           <RutaProtegida sinCuestionario sinVerificacion sinRol>
-            <Suspense fallback={<p className="cargando">Cargando…</p>}><PaginaCuestionario /></Suspense>
+            <Suspense fallback={<CargaTarjeta etiqueta="Cargando el cuestionario" />}><PaginaCuestionario /></Suspense>
           </RutaProtegida>
         } />
         {/* «¿Qué te trae a RoomMatch?»: elegir el rol después del cuestionario, también sin la barra */}
         <Route path="/bienvenida" element={
           <RutaProtegida sinRol>
-            <Suspense fallback={<p className="cargando">Cargando…</p>}><PaginaRol /></Suspense>
+            <Suspense fallback={<CargaTarjeta />}><PaginaRol /></Suspense>
           </RutaProtegida>
         } />
         {/* Páginas con sesión: comparten el marco (barra lateral y configuración), que no se
@@ -117,7 +121,7 @@ export default function App() {
           <Route path="/perfil" element={<LayoutPerfil />}>
             <Route index element={<Suspense fallback={<CargandoPerfil />}><MiPerfil /></Suspense>} />
             <Route path="editar" element={<EditarPerfil />} />
-            <Route path="cuestionario" element={<Suspense fallback={null}><PestanaHabitos /></Suspense>} />
+            <Route path="cuestionario" element={<Suspense fallback={<CargandoPerfil />}><PestanaHabitos /></Suspense>} />
             {/* EP-02: verificación de estudiante (HU-21) */}
             <Route path="verificacion" element={<Verificacion />} />
           </Route>
@@ -125,7 +129,7 @@ export default function App() {
           {/* Vista previa del propio perfil como lo ven los demás */}
           <Route path="/perfil-publico" element={conCarga(<VistaPublica />)} />
           {/* EP-03: publicación de alojamientos */}
-          <Route path="/mis-publicaciones" element={<Suspense fallback={null}><MisPublicaciones /></Suspense>} />
+          <Route path="/mis-publicaciones" element={<Suspense fallback={<CargaContenido etiqueta="Cargando tus publicaciones" />}><MisPublicaciones /></Suspense>} />
           <Route path="/publicaciones/nueva" element={<FormPublicacion />} />
           <Route path="/publicaciones/:id/editar" element={<FormPublicacion />} />
           <Route path="/alojamientos/:id" element={<DetallePublicacion />} />
@@ -141,8 +145,8 @@ export default function App() {
           {/* La verificación pasó a ser una pestaña de «Mi perfil»: la dirección antigua lleva ahí */}
           <Route path="/verificacion" element={<IrAVerificacion />} />
           {/* Mensajes entre estudiantes (chat) */}
-          <Route path="/mensajes" element={<Suspense fallback={null}><Mensajes /></Suspense>} />
-          <Route path="/mensajes/:id" element={<Suspense fallback={null}><Mensajes /></Suspense>} />
+          <Route path="/mensajes" element={<Suspense fallback={<CargaContenido etiqueta="Cargando tus mensajes" />}><Mensajes /></Suspense>} />
+          <Route path="/mensajes/:id" element={<Suspense fallback={<CargaContenido etiqueta="Cargando tus mensajes" />}><Mensajes /></Suspense>} />
         </Route>
         {/* Panel de administración: mismo marco, con las opciones del administrador */}
         <Route element={<RutaAdmin><Marco /></RutaAdmin>}>

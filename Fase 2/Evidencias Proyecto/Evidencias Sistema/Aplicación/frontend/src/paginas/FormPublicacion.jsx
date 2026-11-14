@@ -1,6 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api.js'
+import { CargaContenido } from '../componentes/CargaPagina.jsx'
+import { ErrorCarga } from '../componentes/Esqueleto.jsx'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import { NOMBRES_ROL, SIN_CAMBIO_CON_CONVIVENCIA, useCambioRol } from '../rol/CambioRol.jsx'
 import { useSesion } from '../sesion/SesionContext.jsx'
@@ -169,7 +171,11 @@ function Formulario() {
       </main>
     )
   }
-  if (!datos || !comunas) return <p className="cargando">{mensaje.texto || 'Cargando…'}</p>
+  // Mientras carga: la forma del formulario (nunca un «Cargando…» suelto). Con un error, el mensaje
+  if (!datos || !comunas) {
+    if (mensaje.texto) return <main className="tarjeta"><ErrorCarga mensaje={mensaje.texto} alReintentar={() => window.location.reload()} /></main>
+    return <CargaContenido etiqueta="Cargando el formulario" tarjetas={2} />
+  }
 
   const cambiar = (e) => {
     const { name, type, checked } = e.target

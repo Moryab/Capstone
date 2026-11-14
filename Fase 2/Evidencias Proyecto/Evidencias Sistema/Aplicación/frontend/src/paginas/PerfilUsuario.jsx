@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
-import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import BotonMensaje from '../componentes/BotonMensaje.jsx'
 import BotonReportar from '../componentes/BotonReportar.jsx'
 import { useCompatibilidad } from '../componentes/Compatibilidad.jsx'
@@ -22,42 +21,27 @@ export default function PerfilUsuario() {
   const { id } = useParams()
   const { usuario } = useSesion()
   const { state } = useLocation()
-  const [resultado, setResultado] = useState({ id: null, perfil: null, error: '' })
-  const compat = useCompatibilidad(id === usuario.id ? null : id)
-  const match = useMatchCon(id === usuario.id ? null : id)
-
-
-  const cargar = useCallback(() => {
-    let vigente = true // evita mostrar una respuesta vieja si se cambia de perfil rápido
-    api(`/usuarios/${id}/perfil`)
-      .then((perfil) => vigente && setResultado({ id, perfil, error: '' }))
-      .catch((err) => vigente && setResultado({ id, perfil: null, error: err.message }))
-    return () => {
-      vigente = false
-    }
-  }, [id])
-
-  useEffect(() => {
-    if (id === usuario.id) return undefined
-    return cargar()
-  }, [id, usuario.id, cargar])
+  // Con caché: un perfil ya visto aparece al instante; al cambiar de persona nunca se ve la anterior
+  const propio = id === usuario.id
+  const { datos: perfil, error, recargar } = useApi(propio ? null : `/usuarios/${id}/perfil`)
+  const compat = useCompatibilidad(propio ? null : id)
+  const match = useMatchCon(propio ? null : id)
 
   // El propio perfil se ve en «Mi perfil», donde además se puede editar
   if (id === usuario.id) return <Navigate to="/perfil" replace />
-  if (resultado.id !== id) return <div className="contenedor-perfil"><CargandoPerfil /></div>
+  if (!perfil && !error) return <div className="contenedor-perfil"><CargandoPerfil /></div>
 
   // CA-16.4: cuenta suspendida o inexistente
-  if (resultado.error) {
+  if (!perfil) {
     return (
       <main className="tarjeta">
-        <h1>{resultado.error}</h1>
+        <h1>{error}</h1>
         <p className="subtitulo">Es posible que la cuenta ya no esté activa.</p>
         <Link to="/" className="boton">Volver al inicio</Link>
       </main>
     )
   }
 
-  const { perfil } = resultado
   // La importancia de cada hábito de la otra persona llega con el cálculo de compatibilidad
   const importancia = compat.estado === 'lista'
     ? Object.fromEntries(compat.datos.detalle.map((d) => [d.categoria, d.su_importancia]))
@@ -89,7 +73,7 @@ export default function PerfilUsuario() {
         lateral={(
           <>
             {/* Al confirmarse el match se recarga el perfil para mostrar el teléfono */}
-            <TarjetaEstadoMatch match={match} nombre={perfil.nombre} alCambiar={cargar}
+            <TarjetaEstadoMatch match={match} nombre={perfil.nombre} alCambiar={recargar}
           miModo={usuario.modo} suModo={perfil.modo} situacion={perfil.situacion} />
             <TarjetaContacto perfil={perfil} />
             <DatosClave perfil={perfil} />

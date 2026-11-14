@@ -17,6 +17,7 @@ import {
 import AvisoNovedades from './AvisoNovedades.jsx'
 import Configuracion from './Configuracion.jsx'
 import Navegacion from './Navegacion.jsx'
+import { useScrollPorPagina } from './scroll.js'
 import { ResumenAdminProvider } from './ResumenAdmin.jsx'
 
 const CLAVE_BARRA = 'rm_barra_contraida'
@@ -57,6 +58,10 @@ export default function Marco({ children }) {
   const [noLeidas, setNoLeidas] = useState(0)
   const [ultimoAviso, setUltimoAviso] = useState(null) // el aviso sin leer más reciente (AvisoNovedades)
   const contenido = useRef(null)
+  // Cada página nueva se ve desde el inicio (y con «Atrás», donde se dejó). Va antes de la transición del
+  // admin, que mide qué filas están a la vista para animarlas
+  useScrollPorPagina()
+
   // Admin: al cambiar de pestaña, el contenido sale desenfocándose y el nuevo se enfoca (transicion.js)
   useTransicionAdmin(contenido, pathname, admin)
 

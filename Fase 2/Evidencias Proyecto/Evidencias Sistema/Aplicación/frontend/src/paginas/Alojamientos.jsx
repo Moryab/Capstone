@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
+import { guardarMemoria, leerMemoria } from '../datos/memoria.js'
+import { usePrimeraVez } from '../datos/visitas.js'
 import { useAvisoBreve } from '../componentes/AvisoBreve.jsx'
 import Buscador from '../componentes/Buscador.jsx'
 import Campo from '../componentes/Campo.jsx'
@@ -178,6 +180,8 @@ export default function Alojamientos() {
   const [claveBorrador, setClaveBorrador] = useState(claveFiltros)
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
+  // Resultado de la búsqueda, guardado por su clave (los filtros en la URL). Una búsqueda ya hecha en la
+  // sesión aparece al instante; una nueva nunca muestra los resultados de la anterior mientras carga
   const [resultado, setResultado] = useState({ clave: null, datos: null, error: '' })
   const [ocupado, setOcupado] = useState(false)
   const [panelAbierto, setPanelAbierto] = useState(false)
@@ -191,15 +195,24 @@ export default function Alojamientos() {
   }
 
   useEffect(() => {
+    const guardadas = leerMemoria('/publicaciones/filtros')
+    if (guardadas) setOpciones(guardadas)
     api('/publicaciones/filtros')
-      .then(setOpciones)
+      .then((o) => {
+        guardarMemoria('/publicaciones/filtros', o)
+        setOpciones(o)
+      })
       .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
   }, [])
 
   useEffect(() => {
     let vigente = true // evita mostrar una respuesta vieja si se cambia de filtros rápido
     api(`/publicaciones?${clave}`)
-      .then((datos) => vigente && setResultado({ clave, datos, error: '' }))
+      .then((datos) => {
+        if (!vigente) return
+        guardarMemoria(`/publicaciones?${clave}`, datos)
+        setResultado({ clave, datos, error: '' })
+      })
       .catch((err) => {
         if (!vigente) return
         setResultado({ clave, datos: null, error: err.message })
@@ -322,7 +335,8 @@ export default function Alojamientos() {
   }
 
   const cargando = resultado.clave !== clave
-  const { datos } = resultado
+  // Lo de esta búsqueda: su respuesta, o lo guardado de una vez anterior. Nunca lo de otra búsqueda
+  const datos = cargando ? (leerMemoria(`/publicaciones?${clave}`) ?? null) : resultado.datos
   const conFiltros = hayFiltros(filtrosURL)
   const institucion = opciones?.institucion
   const zonas = ZONAS.map((zona) => ({
@@ -353,11 +367,13 @@ export default function Alojamientos() {
   ].filter(Boolean)
 
   const total = datos?.total
+  // La entrada de la página solo la primera vez que se abre en la sesión
+  const primeraVez = usePrimeraVez('alojamientos')
   const textoTotal = total == null ? 'Buscando alojamientos…'
     : `${total === 1 ? '1 alojamiento' : `${total.toLocaleString('es-CL')} alojamientos`}${conFiltros ? ' con tu búsqueda' : ' disponibles'}`
 
   return (
-    <main className="al-pagina">
+    <main className="al-pagina" data-repetida={!primeraVez || undefined}>
       <header className="al-encabezado">
         <div>
           <h1>Alojamientos</h1>
@@ -410,7 +426,11 @@ export default function Alojamientos() {
         <h2 id="titulo-resultados" className="visualmente-oculto">Resultados</h2>
 
         {resultado.error && !cargando && <p className="alerta" role="alert">{resultado.error}</p>}
-        {!datos && !resultado.error && (enMapa ? <div className="al-mapa-silueta sil" /> : <SiluetaTarjetas />)}
+        {!datos && !(resultado.error && !cargando) && (
+          <div className="esq-zona-bloque" role="status" aria-label="Buscando alojamientos">
+            {enMapa ? <div className="al-mapa-silueta sil" /> : <SiluetaTarjetas />}
+          </div>
+        )}
 
         {datos && datos.total === 0 && (
           <div className="al-vacio">
@@ -436,8 +456,8 @@ export default function Alojamientos() {
         )}
 
         {datos && datos.total > 0 && !enMapa && (
-          // La clave vuelve a montar la grilla con cada búsqueda: las tarjetas nuevas entran en cascada
-          <ul key={resultado.clave} className={`al-grilla${cargando ? ' actualizando' : ''}`}>
+          // La clave vuelve a montar la grilla con cada búsqueda: las tarjetas nuevas entran en cascada corta
+          <ul key={clave} className="al-grilla">
             {datos.resultados.map((pub, i) => (
               <TarjetaAlojamiento key={pub.id} pub={pub} desde={pathname + search} orden={i} />
             ))}

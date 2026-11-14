@@ -653,7 +653,6 @@ html.tema-oscuro .m-tarjeta[data-destacada] .a-desplegable-lista {
 .a-buscador-campo button:hover { color: var(--a-titulo); background: var(--a-hover); }
 
 .a-listado { display: grid; gap: 12px; transition: opacity 200ms ease; }
-.a-listado[data-actualizando] { opacity: 0.55; }
 .a-conteo { font-size: 0.88rem; font-weight: 600; color: var(--a-suave); }
 
 /* Persona en una fila: avatar + nombre + correo */
@@ -1121,7 +1120,8 @@ html.tema-oscuro .es-admin .a-filtros .a-buscador-campo input[type='search'], ht
 .a-salida > main { margin: 0; }
 @media (prefers-reduced-motion: no-preference) {
   /* Siluetas: el bloque ya está en su lugar, borroso y translúcido, hasta que se enfoca */
-  #contenido[data-entrando] [data-animar]:not([data-enfocado]) { filter: blur(10px); opacity: 0.4; transform: scale(0.98); }
+  /* Mismos valores que el punto de partida del enfoque (ENFOQUE en transicion.js) */
+  #contenido[data-entrando] [data-animar]:not([data-enfocado]) { filter: blur(6px); opacity: 0.5; transform: scale(0.99); }
   /* Mientras es silueta, sus barras y medidores esperan en cero; al enfocarse crecen (transition) */
   #contenido[data-entrando] [data-animar]:not([data-enfocado]) .g-barra { transform: scaleY(0); }
   #contenido[data-entrando] [data-animar]:not([data-enfocado]) :is(.g-meta-valor, .g-ranking-pista span, .m-embudo-pista span) { transform: scaleX(0); }
@@ -1152,10 +1152,9 @@ html.tema-oscuro .es-admin .a-filtros .a-buscador-campo input[type='search'], ht
 .a-nav-grupos[data-indicador] .i-nav-item[aria-current='page'] { background: none; }
 .a-nav-grupos[data-indicador] .i-nav-item[aria-current='page']::before { display: none; }
 
-/* Sin pulso de carga: la silueta borrosa ya es el estado de carga */
-.m-esqueleto { animation: none; }
 
-/* Siluetas de carga: mismas medidas que el contenido real, sin pulso (la entrada las muestra borrosas) */
+/* Siluetas de carga: mismas medidas que el contenido real. Al entrar a la pestaña la transición las
+   muestra borrosas; al cambiar un filtro (sin transición) el brillo menta indica que se está cargando */
 .a-fila-silueta td { height: 69px; }
 .a-silueta-linea { display: block; width: 70%; height: 10px; background: var(--a-sup-2); border-radius: 999px; }
 .a-silueta-linea.corta { width: 40%; }
@@ -1164,6 +1163,15 @@ html.tema-oscuro .es-admin .a-filtros .a-buscador-campo input[type='search'], ht
 .a-silueta-persona > span:last-child { width: 60%; height: 12px; background: var(--a-sup-2); border-radius: 999px; }
 .a-pub-silueta .a-pub-foto { background: var(--a-sup-2); }
 .a-pub-silueta .a-pub-cuerpo { display: grid; gap: 12px; min-height: 120px; align-content: start; }
+:is(.a-silueta-linea, .a-silueta-persona > span, .r-motivo-silueta span),
+.a-pub-silueta .a-pub-foto {
+  background: var(--a-sup-2) linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--a-acento-claro) 14%, var(--a-sup)) 50%, transparent 80%) no-repeat;
+  background-size: 220% 100%;
+  background-position: 120% 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :is(.a-silueta-linea, .a-silueta-persona > span, .r-motivo-silueta span), .a-pub-silueta .a-pub-foto { animation: esq-brillo 1.5s ease-in-out infinite; }
+}
 
 /* ======================================================================
    Reportes: resumen (estados + total por tipo) y motivos más reportados

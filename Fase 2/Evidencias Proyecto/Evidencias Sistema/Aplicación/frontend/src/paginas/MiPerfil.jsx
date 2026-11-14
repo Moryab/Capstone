@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import { IconoCamara } from '../componentes/Iconos.jsx'
 import Completitud from '../perfil/Completitud.jsx'
@@ -19,19 +20,13 @@ import { useSesion } from '../sesion/SesionContext.jsx'
 // Pestaña «Ver perfil»: el propio perfil, con la foto editable, «Sobre mí» en línea y el avance
 export default function MiPerfil() {
   const { usuario, recargarUsuario } = useSesion()
-  const [perfil, setPerfil] = useState(null)
+  // Con caché: al volver a la pestaña el perfil aparece al instante y se actualiza por detrás
+  const { datos: perfil, error, actualizar: setPerfil, recargar } = useApi(`/usuarios/${usuario.id}/perfil`)
+  // La importancia de cada hábito (no solo los imprescindibles) se ve en las fichas
+  const importancia = useApi('/cuestionario').datos?.importancia ?? null
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' })
   const [subiendo, setSubiendo] = useState(false)
-  const [importancia, setImportancia] = useState(null)
   const selectorFoto = useRef(null)
-
-  useEffect(() => {
-    api(`/usuarios/${usuario.id}/perfil`)
-      .then(setPerfil)
-      .catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
-    // La importancia de cada hábito (no solo los imprescindibles) se ve en las fichas
-    api('/cuestionario').then((c) => setImportancia(c.importancia)).catch(() => {})
-  }, [usuario.id])
 
   const guardarFoto = async (pedir, textoExito) => {
     setSubiendo(true)
@@ -72,7 +67,7 @@ export default function MiPerfil() {
     guardarFoto(() => api('/perfil/foto', { metodo: 'DELETE' }), 'Quitaste tu foto de perfil.')
 
   if (!perfil) {
-    return <CargandoPerfil texto={mensaje.texto} />
+    return <CargandoPerfil texto={error} alReintentar={recargar} />
   }
 
   const controlesFoto = (

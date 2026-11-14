@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { contar, gsap, prefiereSinMovimiento, useAnimacion } from '../landing/animaciones.js'
 import Cabecera from './Cabecera.jsx'
 import './perfil.css'
@@ -9,11 +9,12 @@ import './perfil.css'
  * React reescribe className al volver a dibujar y la sección quedaría oculta otra vez. También toma las que aparecen después,
  * como la compatibilidad, que llega aparte. Los contadores (`[data-valor]`) suben desde 0 con GSAP.
  */
-function useEntrada(ref) {
+function useEntrada(ref, repetida) {
   useEffect(() => {
     const raiz = ref.current
     if (!raiz) return undefined
-    const quieto = prefiereSinMovimiento() || !('IntersectionObserver' in window)
+    // Un perfil que ya se vio en esta sesión aparece completo, sin volver a animar cada sección
+    const quieto = repetida || prefiereSinMovimiento() || !('IntersectionObserver' in window)
     const animarCifras = (el) => {
       if (quieto) return
       el.querySelectorAll('[data-valor]').forEach((n) => contar(n, { duracion: 1.3 }))
@@ -41,8 +42,11 @@ function useEntrada(ref) {
       cambios.disconnect()
       observador?.disconnect()
     }
-  }, [ref])
+  }, [ref, repetida])
 }
+
+// Perfiles que ya se mostraron en esta sesión: al volver a ellos no se repite la entrada
+const perfilesVistos = new Set()
 
 /**
  * Armazón del perfil, común al propio, al de otro estudiante y a la vista previa: cabecera con la
@@ -50,7 +54,12 @@ function useEntrada(ref) {
  */
 export default function PaginaPerfil({ perfil, modo, sobreAvatar, acciones, aviso, principal, lateral, pie }) {
   const ref = useRef(null)
-  useEntrada(ref)
+  // Se decide una vez por montaje: ¿este perfil ya se había visto? (luego queda marcado)
+  const [repetida] = useState(() => perfilesVistos.has(perfil.id))
+  useEffect(() => {
+    perfilesVistos.add(perfil.id)
+  }, [perfil.id])
+  useEntrada(ref, repetida)
 
   // Al cambiar de persona se vuelve arriba
   useLayoutEffect(() => {
@@ -64,8 +73,10 @@ export default function PaginaPerfil({ perfil, modo, sobreAvatar, acciones, avis
       yPercent: 16, ease: 'none',
       scrollTrigger: { trigger: q('.p2-cabecera')[0], start: 'top top', end: 'bottom top', scrub: true },
     })
-    gsap.from(q('.p2-avatar-zona'), { scale: 0.85, opacity: 0, duration: 0.7, ease: 'back.out(1.6)' })
-    gsap.from(q('.p2-identidad > *, .p2-acciones'), { y: 16, opacity: 0, duration: 0.6, stagger: 0.07, delay: 0.15, ease: 'power3.out' })
+    // Entrada corta de la cabecera, solo la primera vez que se ve este perfil
+    if (repetida) return
+    gsap.from(q('.p2-avatar-zona'), { scale: 0.94, opacity: 0, duration: 0.3, ease: 'power2.out' })
+    gsap.from(q('.p2-identidad > *, .p2-acciones'), { y: 8, opacity: 0, duration: 0.28, stagger: 0.04, delay: 0.06, ease: 'power2.out' })
   })
 
   return (

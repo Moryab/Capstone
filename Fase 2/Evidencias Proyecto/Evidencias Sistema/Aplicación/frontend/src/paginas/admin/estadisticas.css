@@ -127,8 +127,14 @@ html.tema-oscuro .m-periodo option { color: #eef5f8; background: #0d1b2e; }
 .m-cuerpo { min-width: 0; transition: opacity 200ms ease; }
 .m-cuerpo[data-cargando] { opacity: 0.55; }
 .m-falla { padding: 14px 16px; font-size: 0.88rem; line-height: 1.5; color: var(--a-error); background: var(--a-error-fondo); border-radius: 12px; }
-.m-esqueleto { height: 120px; background: var(--a-sup-2); border-radius: 14px; animation: m-latido 1.3s ease-in-out infinite; }
-@keyframes m-latido { 50% { opacity: 0.5; } }
+.m-esqueleto {
+  height: 120px;
+  background: var(--a-sup-2) linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--a-acento-claro) 14%, var(--a-sup)) 50%, transparent 80%) no-repeat;
+  background-size: 220% 100%;
+  background-position: 120% 0;
+  border-radius: 14px;
+}
+@media (prefers-reduced-motion: no-preference) { .m-esqueleto { animation: esq-brillo 1.5s ease-in-out infinite; } }
 
 /* KPI de convivencias */
 /* El cuerpo ocupa todo el alto de la tarjeta: el contenido se reparte y no queda espacio muerto */
@@ -816,7 +822,7 @@ html.tema-oscuro .es-admin .c-mes td button[data-elegido]:hover:not(:disabled) {
 }
 @media (prefers-reduced-motion: reduce) {
   .g-barra, .g-serie, .m-cuerpo { transition: none; }
-  .g-tooltip, .m-esqueleto { animation: none; }
+  .g-tooltip { animation: none; }
 }
 
 /* ---------- Entrada de los gráficos ----------

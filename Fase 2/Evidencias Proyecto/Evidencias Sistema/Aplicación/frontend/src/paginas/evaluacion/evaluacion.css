@@ -196,7 +196,8 @@
 
 .ev-avance { display: grid; gap: 8px; padding: 16px 18px; background: var(--ev-vidrio); border: 1px solid var(--ev-borde); border-radius: 18px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .ev-avance-barra { height: 8px; overflow: hidden; background: color-mix(in srgb, var(--primario) 12%, transparent); border-radius: 999px; }
-.ev-avance-barra span { display: block; height: 100%; background: linear-gradient(90deg, #0f766e, #3fd1b8); border-radius: inherit; transition: width 420ms var(--ev-curva); }
+/* Avance con transform (no width): crece sin recalcular el layout */
+.ev-avance-barra span { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #0f766e, #3fd1b8); border-radius: inherit; transform-origin: left; transition: transform var(--mov-lento) var(--curva-entrar); }
 .ev-avance p { margin: 0; font-size: 0.86rem; font-weight: 600; color: var(--texto-suave); }
 .ev-privado { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 4px 6px; font-size: 0.82rem; line-height: 1.45; color: var(--texto-suave); }
 .ev-privado svg { flex: none; width: 16px; height: 16px; margin-top: 1px; color: var(--primario); }
@@ -236,7 +237,7 @@
 .ev-seccion[data-lista] .ev-numero { color: #fff; background: var(--primario); }
 .ev-numero svg { width: 18px; height: 18px; }
 @media (prefers-reduced-motion: no-preference) {
-  .ev-seccion[data-lista] .ev-numero svg { animation: ev-pop 360ms var(--ev-curva); }
+  .ev-seccion[data-lista] .ev-numero svg { animation: ev-pop 240ms var(--ev-curva); }
 }
 .ev .ev-seccion h2 { margin: 3px 0 4px; font: 600 1.25rem/1.25 'Outfit', system-ui, sans-serif; color: var(--marca); text-align: left; }
 .ev-seccion-cabeza p { margin: 0; font-size: 0.9rem; line-height: 1.45; color: var(--texto-suave); }
@@ -272,7 +273,7 @@
 }
 .ev-opcion[data-elegida] .ev-opcion-icono, .ev-ninguno[data-elegida] .ev-opcion-icono { color: #fff; background: var(--tono); }
 @media (prefers-reduced-motion: no-preference) {
-  .ev-opcion[data-elegida] .ev-opcion-icono svg, .ev-ninguno[data-elegida] .ev-opcion-icono svg { animation: ev-pop 360ms var(--ev-curva); }
+  .ev-opcion[data-elegida] .ev-opcion-icono svg, .ev-ninguno[data-elegida] .ev-opcion-icono svg { animation: ev-pop 240ms var(--ev-curva); }
 }
 .ev-opcion:has(input:focus-visible), .ev-ninguno:has(input:focus-visible), .ev-nota:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
 
@@ -306,7 +307,7 @@
 .ev-nota[data-elegida] { background: var(--tono); border-color: var(--tono); box-shadow: 0 14px 28px -16px var(--tono); transform: translateY(-3px); }
 .ev-nota[data-elegida] strong, .ev-nota[data-elegida] span { color: #fff; }
 @media (prefers-reduced-motion: no-preference) {
-  .ev-nota[data-elegida] strong { animation: ev-pop 360ms var(--ev-curva); }
+  .ev-nota[data-elegida] strong { animation: ev-pop 240ms var(--ev-curva); }
 }
 
 /* 3 · Hábitos: «Ningún problema» y los hábitos en una grilla ancha (4 columnas en computador) */
@@ -414,7 +415,7 @@
 .ev-motivo[data-elegida] { background: color-mix(in srgb, var(--tono) 8%, var(--tarjeta)); border-color: var(--tono); box-shadow: 0 10px 24px -18px var(--tono); }
 .ev-motivo[data-elegida] .ev-opcion-icono { color: #fff; background: var(--tono); }
 @media (prefers-reduced-motion: no-preference) {
-  .ev-motivo[data-elegida] .ev-opcion-icono svg { animation: ev-pop 360ms var(--ev-curva); }
+  .ev-motivo[data-elegida] .ev-opcion-icono svg { animation: ev-pop 240ms var(--ev-curva); }
 }
 .ev-motivo:has(input:focus-visible), .ev-seguir:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
 .ev-nota-info { margin: 0; padding: 10px 14px; font-size: 0.86rem; color: var(--primario); background: color-mix(in srgb, var(--primario) 8%, transparent); border-radius: 12px; }

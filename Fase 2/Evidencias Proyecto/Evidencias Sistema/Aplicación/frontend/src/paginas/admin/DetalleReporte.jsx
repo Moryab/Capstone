@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api } from '../../api.js'
 import { useAvisoBreve } from '../../componentes/AvisoBreve.jsx'
+import { ErrorCarga } from '../../componentes/Esqueleto.jsx'
 import Avatar from '../../componentes/Avatar.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import InsigniaVerificacion from '../../componentes/InsigniaVerificacion.jsx'
@@ -17,6 +18,7 @@ import ReactivarCuenta from './ReactivarCuenta.jsx'
 import './detalleModeracion.css'
 import './reportes.css'
 import { ChipEstado, PaginaAdmin } from './ui/componentes.jsx'
+import { SiluetaModeracion } from './ui/detalle.jsx'
 import { nombrePropio } from './ui/formato.js'
 
 const fechaDia = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -405,15 +407,14 @@ export default function DetalleReporte() {
     return (
       <PaginaAdmin className="md">
         {botonVolver}
-        <div className="md-panel"><h1 className="md-titulo">{error}</h1></div>
+        <div className="md-panel"><ErrorCarga mensaje={error} alReintentar={cargar} /></div>
       </PaginaAdmin>
     )
   }
   if (!reporte) {
     return (
       <PaginaAdmin className="md">
-        {botonVolver}
-        <div className="md-panel md-cargando" aria-busy="true"><p className="cargando">Cargando el reporte…</p></div>
+        <SiluetaModeracion botonVolver={botonVolver} etiqueta="Cargando el reporte" />
       </PaginaAdmin>
     )
   }

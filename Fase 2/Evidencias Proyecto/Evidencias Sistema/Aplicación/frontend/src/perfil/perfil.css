@@ -25,7 +25,7 @@ html.transicion-perfil .p2 { view-transition-name: perfil; }
 ::view-transition-group(perfil) { animation-duration: 0.45s; }
 
 /* Entrada al bajar (la clase la pone PaginaPerfil) */
-.p2-anima { opacity: 0; transform: translateY(22px); transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1); }
+.p2-anima { opacity: 0; transform: translateY(12px); transition: opacity var(--mov-lento) var(--curva-entrar), transform var(--mov-lento) var(--curva-entrar); }
 .p2-anima[data-visible] { opacity: 1; transform: none; }
 
 /* ---------- Cabecera ---------- */

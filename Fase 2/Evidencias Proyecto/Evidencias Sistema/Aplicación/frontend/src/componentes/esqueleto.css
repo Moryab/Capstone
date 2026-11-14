@@ -1,0 +1,83 @@
+/* Skeletons de toda la plataforma (componentes/Esqueleto.jsx). Tonos menta suaves (--esq-base y
+   --esq-brillo en index.css, con su versión oscura) y un brillo que recorre cada pieza */
+
+.esq {
+  display: block;
+  flex: none;
+  max-width: 100%;
+  height: 12px;
+  background: var(--esq-base) linear-gradient(100deg, transparent 20%, var(--esq-brillo) 50%, transparent 80%) no-repeat;
+  background-size: 220% 100%;
+  background-position: 120% 0;
+  border-radius: 999px;
+}
+.esq-circulo { border-radius: 50%; }
+.esq-bloque { border-radius: 16px; }
+
+.esq-texto { display: grid; gap: 9px; width: 100%; }
+.esq-persona { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.esq-persona-textos { display: grid; flex: 1; gap: 8px; min-width: 0; }
+.esq-tarjeta { display: grid; gap: 14px; width: 100%; }
+.esq-filas { display: grid; width: 100%; }
+.esq-fila { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.6fr); gap: 16px; align-items: center; min-height: 64px; padding: 10px 4px; }
+.esq-fila + .esq-fila { border-top: 1px solid color-mix(in srgb, var(--borde) 60%, transparent); }
+.esq-burbujas { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.esq-burbuja { align-self: flex-start; border-radius: 20px 20px 20px 6px; }
+.esq-burbuja.propia { align-self: flex-end; border-radius: 20px 20px 6px 20px; }
+
+/* La zona del skeleton: espera 150 ms invisible (ocupando su lugar) y aparece con un fundido */
+.esq-zona { display: contents; }
+/* El contenido que llega después del skeleton entra con un fundido corto */
+.esq-llega { display: contents; }
+
+.esq-error { display: grid; gap: 10px; justify-items: center; padding: 32px 20px; text-align: center; color: var(--texto-suave); }
+.esq-error svg { width: 30px; height: 30px; fill: none; stroke: var(--error); stroke-width: 2; stroke-linecap: round; }
+.esq-error p { max-width: 42ch; margin: 0; line-height: 1.5; }
+.esq-error .boton { margin: 4px 0 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .esq { animation: esq-brillo 1.5s ease-in-out infinite; }
+  .esq-zona > * { animation: esq-aparecer var(--mov-medio) var(--curva-entrar) 150ms backwards; }
+  .esq-llega > * { animation: esq-aparecer var(--mov-medio) var(--curva-entrar); }
+}
+
+/* ---------- Skeletons de página (componentes/CargaPagina.jsx) ---------- */
+.carga-contenido { display: grid; gap: 14px; width: 100%; padding: clamp(16px, 3vw, 40px); }
+.carga-contenido .carga-titulo { width: min(340px, 70%); height: 30px; border-radius: 12px; }
+.carga-contenido .carga-subtitulo { width: min(480px, 85%); height: 14px; margin-bottom: 10px; }
+.carga-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 20px; }
+.carga-tarjeta { padding: 20px; background: var(--tarjeta); border: 1px solid color-mix(in srgb, var(--borde) 60%, transparent); border-radius: 22px; }
+
+.carga-app { display: flex; flex: 1; min-height: 100vh; }
+.carga-app-barra { display: grid; flex: none; align-content: start; gap: 14px; width: 248px; padding: 24px 18px; background: var(--tarjeta); border-right: 1px solid var(--borde); }
+.carga-app-barra .carga-app-logo { width: 150px; height: 34px; margin-bottom: 18px; border-radius: 10px; }
+.carga-app-barra .carga-app-item { width: 100%; height: 36px; border-radius: 12px; }
+@media (max-width: 899px) { .carga-app-barra { display: none; } }
+
+.carga-centrada { display: grid; flex: 1; place-items: center; min-height: 80vh; padding: 24px; }
+.carga-tarjeta-sola { display: grid; justify-items: center; gap: 16px; width: min(560px, 100%); padding: 40px 32px; background: var(--tarjeta); border-radius: 28px; box-shadow: 0 30px 70px rgb(15 59 74 / 0.12); }
+.carga-tarjeta-sola .carga-titulo { width: 70%; height: 28px; border-radius: 12px; }
+.carga-tarjeta-sola .carga-subtitulo { width: 85%; height: 14px; }
+.carga-tarjeta-sola .carga-bloque { width: 100%; height: 160px; }
+.carga-tarjeta-sola .carga-boton { width: 60%; height: 46px; }
+
+/* Paso «Confirma que eres estudiante»: campos del formulario mientras carga */
+.v-paso-silueta { display: grid; gap: 12px; margin-top: 8px; }
+
+/* La landing mientras se descarga (CargaLanding) */
+.carga-landing { display: grid; gap: clamp(32px, 6vw, 80px); width: min(1160px, calc(100% - 40px)); margin: 0 auto; padding: 22px 0 60px; }
+.carga-landing-barra { display: flex; align-items: center; justify-content: space-between; }
+.carga-landing .carga-app-logo { width: 150px; height: 34px; border-radius: 10px; }
+.carga-landing .carga-landing-boton { width: 150px; height: 46px; border-radius: 999px; }
+.carga-landing-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.carga-landing-texto { display: grid; gap: 16px; }
+.carga-landing .carga-landing-etiqueta { width: 180px; height: 26px; }
+.carga-landing .carga-landing-titulo { width: 92%; height: 52px; border-radius: 14px; }
+.carga-landing .carga-landing-titulo.corto { width: 60%; }
+.carga-landing .carga-subtitulo { width: 85%; height: 14px; }
+.carga-landing-botones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.carga-landing .carga-landing-ilus { width: 100%; aspect-ratio: 5 / 4; border-radius: 28px; }
+@media (max-width: 899px) {
+  .carga-landing-hero { grid-template-columns: minmax(0, 1fr); }
+  .carga-landing .carga-landing-ilus { aspect-ratio: 16 / 10; }
+}

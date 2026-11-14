@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import { useApi } from '../datos/useApi.js'
 import AvisoVerificacion from '../componentes/AvisoVerificacion.jsx'
 import '../landing/landing.css'
 import { gsap, useAnimacion } from '../landing/animaciones.js'
@@ -26,6 +27,9 @@ const FUNCIONES = [
   { tipo: 'match', titulo: 'Propuestas de match', a: '/propuestas', texto: 'RoomMatch te propone alojamientos compatibles y ambos deciden si aceptan.' },
 ]
 
+// ¿Ya se mostró el inicio en esta sesión? Al volver no se repite la entrada
+let inicioVisto = false
+
 /**
  * Inicio para quien ya inició sesión: hero según la hora y una grilla bento. La barra y la
  * configuración vienen del marco común (marco/Marco.jsx). Se carga aparte (lazy) porque usa GSAP.
@@ -34,9 +38,15 @@ export default function Inicio() {
   const { usuario } = useSesion()
   const { state } = useLocation()
   const navegar = useNavigate()
-  const [publicaciones, setPublicaciones] = useState(null)
-  const [errorPubs, setErrorPubs] = useState('')
-  const [perfil, setPerfil] = useState(null)
+  // Con caché: al volver al inicio las tarjetas aparecen al instante y se actualizan por detrás
+  const rPublicaciones = useApi('/publicaciones/mias')
+  const publicaciones = rPublicaciones.error ? [] : (rPublicaciones.datos ?? null)
+  const errorPubs = rPublicaciones.error
+  const setPublicaciones = rPublicaciones.actualizar
+  const rPerfil = useApi(`/usuarios/${usuario.id}/perfil`)
+  const perfil = rPerfil.error ? false : (rPerfil.datos ?? null)
+  // La entrada animada solo la primera vez que se abre el inicio en la sesión
+  const [repetida] = useState(() => inicioVisto)
   const [momento] = useState(momentoDelDia)
   const ref = useRef(null)
 
@@ -45,19 +55,14 @@ export default function Inicio() {
     return () => document.body.classList.remove('pagina-inicio')
   }, [])
 
-  const cargarPublicaciones = useCallback(() => api('/publicaciones/mias')
-    .then((pubs) => {
-      setErrorPubs('')
-      setPublicaciones(pubs)
-    })
-    .catch((err) => {
-      setErrorPubs(err.message)
-      setPublicaciones([])
-    }), [])
+  const cargarPublicaciones = rPublicaciones.recargar
 
   // También al cambiar de rol: si el cambio se hace desde aquí el inicio no se vuelve a montar, y
   // sin recargar seguiría mostrando las publicaciones como estaban antes (activas o pausadas)
+  const modoAnterior = useRef(usuario.modo)
   useEffect(() => {
+    if (modoAnterior.current === usuario.modo) return
+    modoAnterior.current = usuario.modo
     cargarPublicaciones()
   }, [cargarPublicaciones, usuario.modo])
 
@@ -70,19 +75,21 @@ export default function Inicio() {
   const [revision, setRevision] = useState(null)
 
   useEffect(() => {
-    api(`/usuarios/${usuario.id}/perfil`).then(setPerfil).catch(() => setPerfil(false))
-  }, [usuario.id])
+    inicioVisto = true
+  }, [])
 
-  // Entrada: el saludo se revela palabra por palabra y las tarjetas aparecen escalonadas
+  // Entrada, solo la primera vez en la sesión: el saludo se revela palabra por palabra y las tarjetas
+  // aparecen escalonadas. Corta (todo termina en ~0,6 s); al volver al inicio ya está todo en su lugar
   useAnimacion(ref, () => {
+    if (repetida) return
     const q = gsap.utils.selector(ref)
-    gsap.timeline({ defaults: { ease: 'power3.out' } })
-      .from(q('.i-hero-avatar'), { scale: 0.6, opacity: 0, duration: 0.6 })
-      .from(q('.i-saludo .l-palabra-in'), { yPercent: 110, duration: 0.8, stagger: 0.08, ease: 'power4.out' }, '-=0.35')
-      .from(q('.i-correo, .i-frase-fila'), { y: 16, opacity: 0, duration: 0.6, stagger: 0.08 }, '-=0.45')
+    gsap.timeline({ defaults: { ease: 'power2.out' } })
+      .from(q('.i-hero-avatar'), { scale: 0.9, opacity: 0, duration: 0.3 })
+      .from(q('.i-saludo .l-palabra-in'), { yPercent: 100, duration: 0.32, stagger: 0.04 }, '-=0.2')
+      .from(q('.i-correo, .i-frase-fila'), { y: 8, opacity: 0, duration: 0.26, stagger: 0.04 }, '-=0.2')
     gsap.from(q('.i-tarjeta'), {
-      y: 28, opacity: 0, scale: 0.97, duration: 0.7, ease: 'power3.out', delay: 0.25,
-      stagger: { each: 0.07, grid: 'auto', from: 'start' },
+      y: 10, opacity: 0, duration: 0.3, ease: 'power2.out', delay: 0.1,
+      stagger: { each: 0.04, grid: 'auto', from: 'start' },
     })
   })
 
@@ -96,7 +103,6 @@ export default function Inicio() {
     navegar('.', { replace: true, state: null })
     api('/publicaciones/mias')
       .then((pubs) => {
-        setErrorPubs('')
         setPublicaciones(pubs)
         const porRevisar = pubs.filter((p) => p.estado === 'pausada')
         if (porRevisar.length > 0) setRevision(porRevisar)

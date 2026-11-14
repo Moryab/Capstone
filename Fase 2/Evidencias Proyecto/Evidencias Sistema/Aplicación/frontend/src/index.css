@@ -17,8 +17,22 @@
   --exito-fondo: #e8f5e9;
   --aviso: #8a4b08;
   --aviso-fondo: #fff4dc;
-  --duracion: 0.6s;
-  --curva: ease-in-out;
+  /* Panel deslizante del login y registro: un panel grande que cruza toda la tarjeta, así que va más
+     pausado que el resto (0,42 s se sentía apurado; el original era 0,6 s) */
+  --duracion: 0.52s;
+  --curva: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Movimiento compartido de toda la plataforma: duraciones cortas y curvas naturales.
+     Rápido: hover, pestañas y botones. Medio: modales, paneles, cambio de contenido. Lento: solo
+     entradas de página. Entrar: ease-out (frena al llegar). Salir: ease-in (acelera al irse) */
+  --mov-rapido: 150ms;
+  --mov-medio: 240ms;
+  --mov-lento: 300ms;
+  --curva-entrar: cubic-bezier(0.22, 1, 0.36, 1);
+  --curva-salir: cubic-bezier(0.55, 0, 1, 0.45);
+  --curva-mover: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Skeletons: el tono menta de la marca, muy suave */
+  --esq-base: color-mix(in srgb, var(--primario) 7%, var(--campo));
+  --esq-brillo: color-mix(in srgb, #ffffff 70%, var(--esq-base));
   font-family: 'Work Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--texto);
   background: var(--fondo);
@@ -118,7 +132,9 @@ h1, h2 { font-family: 'Outfit', system-ui, sans-serif; }
   overflow-y: auto;
   /* Fondo opaco: el formulario de arriba tapa al que queda detrás */
   background: var(--tarjeta);
-  transition: all var(--duracion) var(--curva);
+  /* También el z-index: al volver al login, el registro debe bajar de capa durante el deslizamiento
+     (no de golpe), para que el login que viene cruzando no se vea encima del lado del registro */
+  transition: transform var(--duracion) var(--curva), opacity var(--duracion) var(--curva), z-index var(--duracion) var(--curva);
 }
 
 /* El login parte a la izquierda, encima */
@@ -473,7 +489,7 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
   background: var(--primario);
   border-radius: 999px;
   box-shadow: 0 4px 10px rgb(15 118 110 / 0.3);
-  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--mov-medio) var(--curva-mover);
 }
 /* --pestana es el índice de la pestaña activa (PestanasPerfil) */
 .pestanas-indicador { transform: translateX(calc(var(--pestana, 0) * 100%)); }
@@ -488,7 +504,7 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
   color: var(--texto-suave);
   text-decoration: none;
   border-radius: 999px;
-  transition: color 0.32s ease;
+  transition: color var(--mov-medio) ease;
 }
 .pestana:hover { color: var(--primario); }
 .pestana.activa, .pestana.activa:hover { color: #fff; }
@@ -506,12 +522,12 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
 
 .perfil-nota { margin: 0; font-size: 0.85rem; color: var(--texto-suave); }
 
-/* El contenido de cada pestaña entra con un fundido y un leve desplazamiento hacia arriba */
-.pestana-contenido { animation: entrar-pestana 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-@keyframes entrar-pestana {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
+/* Al cambiar de pestaña solo entra el contenido nuevo (no el contenedor): fundido y un desplazamiento
+   corto. Las pestañas y la nota de arriba no se mueven */
+@media (prefers-reduced-motion: no-preference) {
+  .pestana-contenido > * { animation: entrar-pestana var(--mov-medio) var(--curva-entrar) backwards; }
 }
+@keyframes entrar-pestana { from { opacity: 0; transform: translateY(6px); } }
 
 /* Mientras carga, se reserva el espacio de la tarjeta para que la página no salte */
 .perfil-cargando {
@@ -525,7 +541,6 @@ a.boton { display: inline-flex; align-items: center; justify-content: center; te
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pestana-contenido { animation: none; }
   .pestanas-indicador, .pestana { transition: none; }
 }
 
@@ -1500,18 +1515,41 @@ p.compat-oferente { font-size: 0.85rem; }
 
 /* Esqueleto mientras carga el perfil (LayoutPerfil): la forma de la portada, la foto y las columnas */
 .perfil-cargando.pv-esqueleto { display: block; overflow: hidden; padding: 0; background: transparent; }
-.pv-esqueleto > span, .pv-esq-cuerpo span { display: block; background: var(--campo); animation: pv-latir 1.4s ease-in-out infinite; }
-.pv-esq-portada { height: clamp(200px, 26vw, 300px); border-radius: 24px; }
-.pv-esq-avatar { width: 168px; height: 168px; margin: -92px 0 0 40px; border: 6px solid var(--tarjeta); border-radius: 50%; }
-.pv-esq-linea { width: 34%; height: 16px; margin: 14px 40px 0; border-radius: 8px; }
-.pv-esq-linea.ancha { width: 48%; height: 28px; margin-top: 18px; }
+.pv-esqueleto > .esq, .pv-esqueleto .pv-esq-cuerpo .esq { display: block; max-width: none; }
+.pv-esqueleto .pv-esq-portada { height: clamp(200px, 26vw, 300px); border-radius: 24px; }
+.pv-esqueleto .pv-esq-avatar { width: 168px; height: 168px; margin: -92px 0 0 40px; border: 6px solid var(--tarjeta); border-radius: 50%; }
+.pv-esqueleto .pv-esq-linea { width: 34%; height: 16px; margin: 14px 40px 0; border-radius: 8px; }
+.pv-esqueleto .pv-esq-linea.ancha { width: 48%; height: 28px; margin-top: 18px; }
 .pv-esq-cuerpo { display: grid; grid-template-columns: 1fr 360px; gap: 24px; padding: 28px 0; }
-.pv-esq-cuerpo span { height: 260px; border-radius: 20px; }
-@keyframes pv-latir { 50% { opacity: 0.55; } }
+.pv-esqueleto .pv-esq-cuerpo .esq { height: 260px; border-radius: 20px; }
 @media (max-width: 980px) { .pv-esq-cuerpo { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .pv-esqueleto > span, .pv-esq-cuerpo span { animation: none; } }
 
 /* Fotos que aparecen con un fundido al terminar de cargar (Avatar e ImagenSuave del admin) */
 img.avatar, img.a-imagen-suave { transition: opacity 260ms ease; }
 img.avatar:not([data-cargada]), img.a-imagen-suave:not([data-cargada]) { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { img.avatar, img.a-imagen-suave { transition-duration: 150ms; } }
+
+/* ---------- Skeletons: animaciones compartidas (componentes/Esqueleto.jsx y los de cada página) ----------
+   esq-brillo: el brillo menta que recorre cada pieza. esq-aparecer: el fundido de entrada.
+   .esq-zona-bloque: un skeleton que espera 150 ms invisible (ocupando su lugar) antes de verse, para
+   que en una carga rápida no destelle */
+@keyframes esq-brillo { to { background-position: -120% 0; } }
+@keyframes esq-aparecer { from { opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .esq-zona-bloque { animation: esq-aparecer var(--mov-medio) var(--curva-entrar) 150ms backwards; }
+}
+
+/* ---------- Reducir movimiento (ajuste del sistema operativo) ----------
+   Una sola regla para toda la plataforma: si la persona pidió menos movimiento, las animaciones y
+   transiciones terminan al instante (quedan en su estado final) y el scroll no se desliza. Así
+   ninguna animación nueva se escapa, aunque su archivo olvide su propia condición */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

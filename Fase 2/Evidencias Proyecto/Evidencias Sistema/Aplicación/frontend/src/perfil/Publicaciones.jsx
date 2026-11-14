@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import { ErrorCarga } from '../componentes/Esqueleto.jsx'
+import { useApi } from '../datos/useApi.js'
 import Confirmar from '../componentes/Confirmar.jsx'
 import { IconoEditar, IconoMas, IconoPapelera } from '../componentes/Iconos.jsx'
 import { Inclinable } from '../landing/componentes.jsx'
@@ -106,10 +108,8 @@ function TarjetaPublicacion({ p, alEliminar }) {
  * publicaciones activas, como en la búsqueda; si no tiene ninguna, la sección no aparece.
  */
 export function PublicacionesDe({ usuarioId, nombre }) {
-  const [publicaciones, setPublicaciones] = useState(null)
-  useEffect(() => {
-    api(`/usuarios/${usuarioId}/publicaciones`).then(setPublicaciones).catch(() => setPublicaciones([]))
-  }, [usuarioId])
+  // Con caché: al volver al perfil aparecen al instante. Si falla, la sección simplemente no aparece
+  const publicaciones = useApi(`/usuarios/${usuarioId}/publicaciones`).datos
   if (!publicaciones?.length) return null
   return (
     <section className="p2-tarjeta p2-publicaciones p2-anima" aria-labelledby="p2-titulo-pubs-de">
@@ -132,17 +132,14 @@ export function PublicacionesDe({ usuarioId, nombre }) {
  * muestra el aviso que llega en el historial.
  */
 export default function Publicaciones() {
-  const [publicaciones, setPublicaciones] = useState(null)
+  const { datos, error, actualizar: setPublicaciones, recargar } = useApi('/publicaciones/mias')
+  const publicaciones = datos ?? null
   const navegar = useNavigate()
   const { state } = useLocation()
   const seccion = useRef(null)
   const [mensaje, setMensaje] = useState(state?.aviso ?? { tipo: '', texto: '' })
   const [porEliminar, setPorEliminar] = useState(null)
   const [eliminando, setEliminando] = useState(false)
-
-  useEffect(() => {
-    api('/publicaciones/mias').then(setPublicaciones).catch((err) => setMensaje({ tipo: 'alerta', texto: err.message }))
-  }, [])
 
   useEffect(() => {
     if (!state?.aviso) return
@@ -174,8 +171,9 @@ export default function Publicaciones() {
       </div>
 
       {mensaje.texto && <p className={mensaje.tipo} role={mensaje.tipo === 'alerta' ? 'alert' : 'status'}>{mensaje.texto}</p>}
-      {publicaciones === null && !mensaje.texto && (
-        <ul className="p2-pubs p2-pubs-silueta" role="status" aria-label="Cargando tus publicaciones">
+      {publicaciones === null && error && <ErrorCarga mensaje={error} alReintentar={recargar} />}
+      {publicaciones === null && !error && (
+        <ul className="p2-pubs p2-pubs-silueta esq-zona-bloque" role="status" aria-label="Cargando tus publicaciones">
           {[0, 1].map((i) => (
             <li key={i}><span className="p2-sil-foto" /><span className="p2-sil-linea" /><span className="p2-sil-linea corta" /></li>
           ))}

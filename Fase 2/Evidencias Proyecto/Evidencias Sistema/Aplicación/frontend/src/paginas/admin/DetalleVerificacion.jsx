@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, apiArchivo } from '../../api.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { useAvisoBreve } from '../../componentes/AvisoBreve.jsx'
+import { ErrorCarga } from '../../componentes/Esqueleto.jsx'
 import Confirmar from '../../componentes/Confirmar.jsx'
 import { useResumenAdmin } from '../../marco/ResumenAdmin.jsx'
 import { ESTADOS_SOLICITUD, textoSituacion, textoTipo } from '../verificacion/datos.js'
@@ -10,6 +11,7 @@ import IlustracionVerificacion from './IlustracionVerificacion.jsx'
 import RestaurarVerificacion from './RestaurarVerificacion.jsx'
 import './detalleModeracion.css'
 import { ChipEstado, PaginaAdmin } from './ui/componentes.jsx'
+import { SiluetaModeracion } from './ui/detalle.jsx'
 import { nombrePropio } from './ui/formato.js'
 
 const MAX_MOTIVO = 300
@@ -54,7 +56,7 @@ function VistaComprobante({ solicitud }) {
       </div>
       <div className="dv-visor" aria-busy={!url && !error}>
         {error ? <p className="alerta">{error}</p>
-          : !url ? <p className="cargando">Cargando comprobante…</p>
+          : !url ? <span className="du-s dv-s-visor esq-zona-bloque" role="status" aria-label="Cargando el comprobante" />
             : solicitud.archivo_formato === 'pdf'
               ? <iframe src={url} title={`Comprobante: ${solicitud.archivo_nombre}`} />
               : <img src={url} alt={`Comprobante: ${solicitud.archivo_nombre}`} />}
@@ -285,10 +287,12 @@ export default function DetalleVerificacion() {
   if (!solicitud) {
     return (
       <PaginaAdmin className="md">
-        {botonVolver}
-        <div className="md-panel md-cargando" aria-busy={!mensaje.texto}>
-          <p className={mensaje.texto ? 'alerta' : 'cargando'}>{mensaje.texto || 'Cargando la solicitud…'}</p>
-        </div>
+        {mensaje.texto ? (
+          <>
+            {botonVolver}
+            <div className="md-panel"><ErrorCarga mensaje={mensaje.texto} alReintentar={() => { setMensaje({ tipo: '', texto: '' }); cargar() }} /></div>
+          </>
+        ) : <SiluetaModeracion botonVolver={botonVolver} etiqueta="Cargando la solicitud" columnas="md-cuerpo dv-cuerpo" />}
       </PaginaAdmin>
     )
   }

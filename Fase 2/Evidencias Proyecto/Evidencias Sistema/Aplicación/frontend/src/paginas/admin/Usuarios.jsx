@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { guardarMemoria, leerMemoria } from '../../datos/memoria.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { GENEROS, textoGenero } from '../../perfil.js'
 import { ESTADOS_CUENTA, ESTADOS_VERIFICACION, FILTRO_MODOS, textoCuenta, textoModo, textoVerificacion } from './datos.js'
@@ -48,17 +49,23 @@ export default function Usuarios() {
   const [parametros, setParametros] = useSearchParams()
   const aviso = useLocation().state?.aviso // al volver de eliminar una cuenta desde su ficha
   const consulta = parametros.toString()
-  // Se guarda junto con la consulta pedida: al cambiar, lo anterior se ve atenuado hasta que llega
+  // Se guarda junto con la consulta pedida. Al cambiar un filtro nunca se ven los resultados de la
+  // consulta anterior: los de esta (si ya se pidió en la sesión, desde la caché) o filas silueta
+  const ruta = `/admin/usuarios${consulta ? `?${consulta}` : ''}`
   const [cargado, setCargado] = useState({ consulta: null, datos: null, error: '' })
 
   useEffect(() => {
-    api(`/admin/usuarios${consulta ? `?${consulta}` : ''}`)
-      .then((datos) => setCargado({ consulta, datos, error: '' }))
+    api(ruta)
+      .then((datos) => {
+        guardarMemoria(ruta, datos)
+        setCargado({ consulta, datos, error: '' })
+      })
       .catch((err) => setCargado({ consulta, datos: null, error: err.message }))
-  }, [consulta])
+  }, [consulta, ruta])
 
-  const { datos, error } = cargado
   const actualizando = cargado.consulta !== consulta
+  const datos = actualizando ? (leerMemoria(ruta) ?? null) : cargado.datos
+  const error = actualizando ? '' : cargado.error
 
   // Cambiar el buscador o un filtro vuelve a la primera página
   const aplicar = (cambios) => {

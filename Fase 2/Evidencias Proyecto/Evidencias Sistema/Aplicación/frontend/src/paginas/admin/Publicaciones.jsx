@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../../api.js'
+import { guardarMemoria, leerMemoria } from '../../datos/memoria.js'
 import Avatar from '../../componentes/Avatar.jsx'
 import { formatearPesos, textoDe, TIPOS } from '../../publicaciones.js'
 import { ESTADOS_PUBLICACION, textoPublicacion } from './datos.js'
@@ -59,7 +60,7 @@ function FotoPublicacion({ url }) {
 const SILUETAS = Array.from({ length: 6 }, (_, i) => i)
 function TarjetaSilueta() {
   return (
-    <li className="a-pub a-pub-silueta" aria-hidden="true">
+    <li className="a-pub a-pub-silueta esq-zona-bloque" aria-hidden="true">
       <div className="a-pub-foto" />
       <div className="a-pub-cuerpo">
         <span className="a-silueta-linea corta" />
@@ -129,14 +130,21 @@ export default function Publicaciones() {
     api('/catalogos/publicacion').then(({ comunas: lista }) => setComunas(lista)).catch(() => {})
   }, [])
 
+  // Al cambiar un filtro nunca se ven los resultados de la consulta anterior: los de esta (si ya se
+  // pidió en la sesión, desde la caché) o tarjetas silueta
+  const ruta = `/admin/publicaciones${consulta ? `?${consulta}` : ''}`
   useEffect(() => {
-    api(`/admin/publicaciones${consulta ? `?${consulta}` : ''}`)
-      .then((datos) => setCargado({ consulta, datos, error: '' }))
+    api(ruta)
+      .then((datos) => {
+        guardarMemoria(ruta, datos)
+        setCargado({ consulta, datos, error: '' })
+      })
       .catch((err) => setCargado({ consulta, datos: null, error: err.message }))
-  }, [consulta])
+  }, [consulta, ruta])
 
-  const { datos, error } = cargado
   const actualizando = cargado.consulta !== consulta
+  const datos = actualizando ? (leerMemoria(ruta) ?? null) : cargado.datos
+  const error = actualizando ? '' : cargado.error
 
   // Cambiar el buscador o un filtro vuelve a la primera página
   const aplicar = (cambios) => {

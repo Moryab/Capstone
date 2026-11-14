@@ -207,7 +207,6 @@ html.tema-oscuro .al-contador { color: var(--sobre-primario); }
   list-style: none;
   transition: opacity 240ms var(--al-curva);
 }
-.al-grilla.actualizando { opacity: 0.5; pointer-events: none; }
 
 .al-tarjeta {
   position: relative;
@@ -429,22 +428,20 @@ html.tema-oscuro .al-comuna input:checked + span, html.tema-oscuro .al-comuna in
 
 /* ---------- Movimiento ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  /* Al entrar a la página: título, barra de búsqueda y filtros suben en cascada corta (una vez) */
-  .al-encabezado, .al-barra, .al-chips { animation: al-subir 460ms var(--al-curva) backwards; }
-  .al-barra { animation-delay: 60ms; }
-  .al-chips { animation-delay: 120ms; }
-  /* Mientras llega la búsqueda nueva, lo anterior se atenúa y desenfoca apenas: se nota que cambia */
-  .al-grilla { transition: opacity 240ms var(--al-curva), filter 240ms var(--al-curva); }
-  .al-grilla.actualizando { filter: blur(1.5px); }
-  /* Al llegar resultados nuevos, las tarjetas entran en cascada corta */
-  .al-grilla > .al-tarjeta:not(.al-silueta) { animation: al-entrar 460ms var(--al-curva) backwards; animation-delay: calc(var(--orden) * 45ms); }
-  .al-chip { animation: al-aparecer 260ms var(--al-curva) backwards; }
-  .al-contador { animation: al-latido 360ms var(--al-curva); }
-  .al-vacio { animation: al-aparecer 360ms var(--al-curva) backwards; }
-  /* Lista ↔ mapa: la vista nueva llega con un fundido y un desenfoque breve */
-  .al-vista { animation: al-cambiar 340ms var(--al-curva) backwards; }
-  .al-panel[open] { animation: al-deslizar 380ms var(--al-curva); }
-  .al-panel[open]::backdrop { animation: al-fundido 300ms ease; }
+  /* Al entrar a la página: título, barra de búsqueda y filtros suben en cascada corta. Solo la primera
+     vez en la sesión (data-repetida la apaga al volver) */
+  .al-pagina:not([data-repetida]) :is(.al-encabezado, .al-barra, .al-chips) { animation: al-subir var(--mov-lento) var(--curva-entrar) backwards; }
+  .al-pagina:not([data-repetida]) .al-barra { animation-delay: 40ms; }
+  .al-pagina:not([data-repetida]) .al-chips { animation-delay: 80ms; }
+  /* Al llegar resultados nuevos, las tarjetas entran en cascada corta (las primeras 8; el resto, juntas) */
+  .al-grilla > .al-tarjeta:not(.al-silueta) { animation: al-entrar var(--mov-medio) var(--curva-entrar) backwards; animation-delay: calc(min(var(--orden), 8) * 25ms); }
+  .al-chip { animation: al-aparecer var(--mov-rapido) var(--curva-entrar) backwards; }
+  .al-contador { animation: al-latido var(--mov-medio) var(--curva-entrar); }
+  .al-vacio { animation: al-aparecer var(--mov-medio) var(--curva-entrar) backwards; }
+  /* Lista ↔ mapa: la vista nueva llega con un fundido corto */
+  .al-vista { animation: al-aparecer var(--mov-medio) var(--curva-entrar) backwards; }
+  .al-panel[open] { animation: al-deslizar var(--mov-lento) var(--curva-entrar); }
+  .al-panel[open]::backdrop { animation: al-fundido var(--mov-medio) ease-out; }
   .sil, .al-silueta .al-foto { animation: al-pulso 1.6s ease-in-out infinite; }
   .al-ilustracion .il-lupa { animation: al-buscar 6s ease-in-out infinite; transform-origin: 174px 66px; }
 }
@@ -453,11 +450,10 @@ html.tema-oscuro .al-comuna input:checked + span, html.tema-oscuro .al-comuna in
   .al-tarjeta:hover { transform: none; }
   .al-tarjeta:hover .al-foto img { transform: none; }
 }
-@keyframes al-entrar { from { opacity: 0; transform: translateY(14px); } }
-@keyframes al-subir { from { opacity: 0; transform: translateY(14px); } }
-@keyframes al-cambiar { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } }
+@keyframes al-entrar { from { opacity: 0; transform: translateY(8px); } }
+@keyframes al-subir { from { opacity: 0; transform: translateY(8px); } }
 @keyframes al-aparecer { from { opacity: 0; transform: scale(0.96); } }
-@keyframes al-latido { 40% { transform: scale(1.25); } }
+@keyframes al-latido { 40% { transform: scale(1.15); } }
 @keyframes al-deslizar { from { transform: translateX(40px); opacity: 0; } }
 @keyframes al-fundido { from { opacity: 0; } }
 @keyframes al-pulso { 50% { opacity: 0.55; } }

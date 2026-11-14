@@ -119,3 +119,37 @@ export function Actividad({ id, titulo, icono, elementos, vacio, dibujo = id, ch
   )
 }
 
+
+/**
+ * Skeleton de los detalles de moderación (reporte y verificación): la ilustración, el rótulo, el título,
+ * los tres pasos y las dos columnas (lo que se revisa y la decisión), con las mismas medidas que la
+ * página real. Espera 150 ms invisible: si la carga es rápida, no se ve
+ */
+export function SiluetaModeracion({ botonVolver, etiqueta, columnas = 'md-cuerpo' }) {
+  return (
+    <>
+      {botonVolver}
+      <div className="md-panel du-silueta esq-zona-bloque" role="status" aria-label={etiqueta}>
+        <div className="md-cabeza">
+          <span className="du-s du-s-ilustracion md-s-ilustracion" />
+          <div className="md-cabeza-texto">
+            <span className="du-s" style={{ width: '45%' }} />
+            <span className="du-s du-s-titulo" />
+            <div className="md-pasos" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="md-s-paso"><span className="du-s md-s-marca" /><span className="du-s" style={{ width: '70%' }} /></span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className={columnas}>
+          <div className="md-columna">
+            <span className="du-s du-s-tarjeta" style={{ height: 240 }} />
+            <span className="du-s du-s-tarjeta" style={{ height: 180 }} />
+          </div>
+          <span className="du-s du-s-tarjeta" style={{ height: 436 }} />
+        </div>
+      </div>
+    </>
+  )
+}
