@@ -257,9 +257,10 @@ html.tema-oscuro .al-contador { color: var(--sobre-primario); }
   border-radius: 999px;
 }
 .al-insignia { color: var(--marca); background: var(--al-vidrio); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-html.tema-oscuro .al-insignia { color: #fff; }
+/* En oscuro, el mismo vidrio oscuro del contador de fotos: el texto blanco sobre el vidrio claro no se leía */
+html.tema-oscuro .al-insignia { color: #fff; background: rgb(11 31 58 / 0.55); }
 .al-insignia.propia { color: #fff; background: var(--primario); }
-html.tema-oscuro .al-insignia.propia { color: var(--sobre-primario); }
+html.tema-oscuro .al-insignia.propia { color: var(--sobre-primario); background: var(--primario); }
 .al-fotos-n { position: absolute; top: 12px; right: 12px; z-index: 1; color: #fff; background: rgb(11 31 58 / 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .al-fotos-n svg { width: 14px; height: 14px; }
 .al-distancia { position: absolute; bottom: 12px; left: 12px; z-index: 1; color: #fff; background: rgb(11 31 58 / 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
