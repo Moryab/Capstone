@@ -83,7 +83,7 @@ scp -i "$env:USERPROFILE\.ssh\roommatch-vm_key.pem" "azureuser@roommatch-g6.nort
 | Síntoma | Qué revisar |
 |---|---|
 | La página no carga | Que la VM esté *En ejecución* en el portal (quizás se apagó a las 23:00) |
-| Advertencia de certificado o error de HTTPS | `sudo docker compose logs web`: el `DOMINIO` del `.env` debe ser exactamente el nombre DNS de la VM |
+| Advertencia de certificado o error de HTTPS | `sudo docker compose -f docker-compose.yml -f docker-compose.produccion.yml logs web`: el `DOMINIO` del `.env` debe ser exactamente el nombre DNS de la VM |
 | La página carga pero no inicia sesión | `sudo docker compose logs api` |
 | La API no arranca | `sudo docker compose logs inicializar-bd` (preparación de la base) |
 | Ver qué está corriendo | `sudo docker ps` (deben estar `web`, `api` y `mongo` *Up*) |
