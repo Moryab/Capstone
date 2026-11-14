@@ -1,0 +1,4 @@
+# Solo para las pruebas automatizadas (no van en la imagen de la API)
+pytest==8.*
+pytest-cov==6.*
+httpx==0.28.*

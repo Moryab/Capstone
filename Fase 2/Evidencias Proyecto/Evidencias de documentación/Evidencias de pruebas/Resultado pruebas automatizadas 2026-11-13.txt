@@ -1,0 +1,162 @@
+RoomMatch - Resultado de las pruebas automatizadas
+Fecha: 2026-11-13 22:37 | Rama: main | Commit: 119f5ca (más la carpeta backend/tests)
+Base de datos: roommatch_test (se crea antes y se borra al terminar)
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.16, pytest-8.4.2, pluggy-1.7.0 -- /usr/local/bin/python
+rootdir: /app
+plugins: cov-6.3.0, anyio-4.16.0
+collecting ... collected 71 items
+
+tests/test_integracion.py::test_pi01_registro PASSED                     [  1%]
+tests/test_integracion.py::test_pi02_registro_invalido PASSED            [  2%]
+tests/test_integracion.py::test_pi03_registro_duplicado PASSED           [  4%]
+tests/test_integracion.py::test_pi04_sesion_y_cierre PASSED              [  5%]
+tests/test_integracion.py::test_pi05_mensaje_generico PASSED             [  7%]
+tests/test_integracion.py::test_pi06_cuestionario_calcula_compatibilidad PASSED [  8%]
+tests/test_integracion.py::test_pi07_lista_de_posibles_roomies PASSED    [  9%]
+tests/test_integracion.py::test_pi08_solicitud_pendiente PASSED          [ 11%]
+tests/test_integracion.py::test_pi09_aprobacion_da_acceso PASSED         [ 12%]
+tests/test_integracion.py::test_pi10_busqueda_con_filtro_de_costo PASSED [ 14%]
+tests/test_rendimiento.py::test_pr01_cuestionario_con_mil_candidatos FAILED [ 15%]
+tests/test_rendimiento.py::test_pr02_listado_de_roomies PASSED           [ 16%]
+tests/test_rendimiento.py::test_pr03_busqueda_de_alojamientos PASSED     [ 18%]
+tests/test_rendimiento.py::test_pr04_inicio_de_sesion PASSED             [ 19%]
+tests/test_seguridad.py::test_ps01_contrasena_con_bcrypt PASSED          [ 21%]
+tests/test_seguridad.py::test_ps02_bloqueo_por_fuerza_bruta PASSED       [ 22%]
+tests/test_seguridad.py::test_ps03_token_ausente_o_falso PASSED          [ 23%]
+tests/test_seguridad.py::test_ps04_sin_verificar_no_accede PASSED        [ 25%]
+tests/test_seguridad.py::test_ps05_estudiante_sin_rutas_de_admin PASSED  [ 26%]
+tests/test_seguridad.py::test_ps06_tipo_por_contenido PASSED             [ 28%]
+tests/test_seguridad.py::test_ps07_tamano_maximo PASSED                  [ 29%]
+tests/test_seguridad.py::test_ps08_comprobante_privado PASSED            [ 30%]
+tests/test_seguridad.py::test_ps09_inyeccion_nosql PASSED                [ 32%]
+tests/test_seguridad.py::test_ps10_suspension_corta_la_sesion PASSED     [ 33%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[horario_sueno-temprano-temprano-1.0] PASSED [ 35%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[horario_sueno-temprano-intermedio-0.5] PASSED [ 36%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[horario_sueno-temprano-tarde-0.0] PASSED [ 38%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[horario_estudio-manana-variable-0.5] PASSED [ 39%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[fumar-no_fuma_no_tolera-no_fuma_tolera-1.0] PASSED [ 40%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[fumar-no_fuma_tolera-fuma-0.75] PASSED [ 42%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[fumar-no_fuma_no_tolera-fuma-0.0] PASSED [ 43%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[mascotas-no_tiene_tolera-tiene-0.75] PASSED [ 45%]
+tests/test_unitarias.py::test_pu01_puntaje_por_categoria[mascotas-no_tiene_no_tolera-tiene-0.0] PASSED [ 46%]
+tests/test_unitarias.py::test_pu02_nivel_segun_porcentaje[75-alta] PASSED [ 47%]
+tests/test_unitarias.py::test_pu02_nivel_segun_porcentaje[74.9-media] PASSED [ 49%]
+tests/test_unitarias.py::test_pu02_nivel_segun_porcentaje[50-media] PASSED [ 50%]
+tests/test_unitarias.py::test_pu02_nivel_segun_porcentaje[49.9-baja] PASSED [ 52%]
+tests/test_unitarias.py::test_pu03_ejemplo_del_anexo PASSED              [ 53%]
+tests/test_unitarias.py::test_pu04_simetrico PASSED                      [ 54%]
+tests/test_unitarias.py::test_pu05_iguales_dan_100 PASSED                [ 56%]
+tests/test_unitarias.py::test_pu06_choque_imprescindible_descarta PASSED [ 57%]
+tests/test_unitarias.py::test_pu07_choque_importante_no_descarta PASSED  [ 59%]
+tests/test_unitarias.py::test_pu08_ajuste_personal_baja_mas PASSED       [ 60%]
+tests/test_unitarias.py::test_pu09_rut_valido_se_normaliza[12.345.678-5-12345678-5] PASSED [ 61%]
+tests/test_unitarias.py::test_pu09_rut_valido_se_normaliza[123456785-12345678-5] PASSED [ 63%]
+tests/test_unitarias.py::test_pu09_rut_valido_se_normaliza[12345678-5-12345678-5] PASSED [ 64%]
+tests/test_unitarias.py::test_pu09_rut_valido_se_normaliza[10.000.013-k-10000013-K] PASSED [ 66%]
+tests/test_unitarias.py::test_pu10_rut_invalido_se_rechaza[12.345.678-9] PASSED [ 67%]
+tests/test_unitarias.py::test_pu10_rut_invalido_se_rechaza[12345678-K] PASSED [ 69%]
+tests/test_unitarias.py::test_pu10_rut_invalido_se_rechaza[abc] PASSED   [ 70%]
+tests/test_unitarias.py::test_pu10_rut_invalido_se_rechaza[123] PASSED   [ 71%]
+tests/test_unitarias.py::test_pu10_rut_invalido_se_rechaza[] PASSED      [ 73%]
+tests/test_unitarias.py::test_pu11_telefono_se_normaliza[9 1234 5678] PASSED [ 74%]
+tests/test_unitarias.py::test_pu11_telefono_se_normaliza[912345678] PASSED [ 76%]
+tests/test_unitarias.py::test_pu11_telefono_se_normaliza[+56 9 1234 5678] PASSED [ 77%]
+tests/test_unitarias.py::test_pu11_telefono_se_normaliza[+56912345678] PASSED [ 78%]
+tests/test_unitarias.py::test_pu11_telefono_se_normaliza[(9) 1234-5678] PASSED [ 80%]
+tests/test_unitarias.py::test_pu11_telefono_incompleto_se_rechaza PASSED [ 81%]
+tests/test_unitarias.py::test_pu12_contrasena[Clave123-True] PASSED      [ 83%]
+tests/test_unitarias.py::test_pu12_contrasena[corta1-False] PASSED       [ 84%]
+tests/test_unitarias.py::test_pu12_contrasena[solamenteletras-False] PASSED [ 85%]
+tests/test_unitarias.py::test_pu12_contrasena[12345678-False] PASSED     [ 87%]
+tests/test_unitarias.py::test_pu13_edad[fecha0-True] PASSED              [ 88%]
+tests/test_unitarias.py::test_pu13_edad[fecha1-False] PASSED             [ 90%]
+tests/test_unitarias.py::test_pu13_edad[fecha2-True] PASSED              [ 91%]
+tests/test_unitarias.py::test_pu13_edad[fecha3-False] PASSED             [ 92%]
+tests/test_unitarias.py::test_pu14_maximo_tres_imprescindibles PASSED    [ 94%]
+tests/test_unitarias.py::test_pu14_documento_segun_situacion[certificado_alumno_regular-matriculado] PASSED [ 95%]
+tests/test_unitarias.py::test_pu14_documento_segun_situacion[comprobante_matricula-matriculado] PASSED [ 97%]
+tests/test_unitarias.py::test_pu14_documento_segun_situacion[credencial_estudiantil-matriculado] PASSED [ 98%]
+tests/test_unitarias.py::test_pu14_documento_segun_situacion[carta_aceptacion-seleccionado] PASSED [100%]
+
+=================================== FAILURES ===================================
+__________________ test_pr01_cuestionario_con_mil_candidatos ___________________
+tests/test_rendimiento.py:75: in test_pr01_cuestionario_con_mil_candidatos
+    assert duracion < 5
+E   assert 6.9226093769975705 < 5
+------------------------------ Captured log setup ------------------------------
+WARNING  uvicorn.error:correo.py:43 SMTP sin configurar. Correo para prueba.f215fe24c44a@pruebas.cl | Tu código de RoomMatch: 926788
+Hola Prueba,
+
+Tu código para verificar tu correo en RoomMatch es: 926788
+
+Vence en 15 minutos. Si no creaste una cuenta en RoomMatch, ignora este mensaje.
+WARNING  uvicorn.error:correo.py:43 SMTP sin configurar. Correo para prueba.58cb7944bae7@pruebas.cl | Tu código de RoomMatch: 191494
+Hola Prueba,
+
+Tu código para verificar tu correo en RoomMatch es: 191494
+
+Vence en 15 minutos. Si no creaste una cuenta en RoomMatch, ignora este mensaje.
+========================== Mediciones de rendimiento ===========================
+PR-01 Cuestionario con 1006 candidatos: 6.923 s (meta < 5 s)
+PR-02 Posibles roomies (30 peticiones): p95 0.246 s, máx. 0.282 s (meta p95 < 2 s)
+PR-03 Búsqueda de alojamientos (30 peticiones): p95 0.095 s, máx. 0.095 s (meta p95 < 2 s)
+PR-04 Inicio de sesión (10 peticiones): máx. 0.372 s (meta < 1 s)
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.16-final-0 _______________
+
+Name                              Stmts   Miss  Cover
+-----------------------------------------------------
+app/__init__.py                       0      0   100%
+app/administrador.py                 10      1    90%
+app/aprendizaje.py                  130     86    34%
+app/codigos.py                       48     18    62%
+app/compatibilidad.py                90     13    86%
+app/comunas_chile.py                  1      0   100%
+app/config.py                        25      0   100%
+app/correo.py                        32     19    41%
+app/db.py                             7      0   100%
+app/deps.py                          49      5    90%
+app/main.py                          72      5    93%
+app/matching.py                     127     76    40%
+app/media.py                         41     12    71%
+app/modos.py                         54     35    35%
+app/notificaciones.py                 8      0   100%
+app/routers/__init__.py               0      0   100%
+app/routers/admin.py                187    138    26%
+app/routers/auth.py                 170     76    55%
+app/routers/catalogos.py             43     27    37%
+app/routers/compatibilidades.py      73     25    66%
+app/routers/conversaciones.py       131     93    29%
+app/routers/cuestionario.py          41     12    71%
+app/routers/estadisticas.py          92     68    26%
+app/routers/evaluaciones.py          84     60    29%
+app/routers/matches.py              183    134    27%
+app/routers/moderacion.py           292    210    28%
+app/routers/notificaciones.py        35     18    49%
+app/routers/perfil.py               157    101    36%
+app/routers/publicaciones.py        264    152    42%
+app/routers/reportes.py             103     73    29%
+app/routers/usuarios.py              46     32    30%
+app/routers/verificacion.py         228    111    51%
+app/schemas/__init__.py               0      0   100%
+app/schemas/admin.py                 90      0   100%
+app/schemas/busqueda.py              56      6    89%
+app/schemas/conversaciones.py        14      4    71%
+app/schemas/cuestionario.py          49      0   100%
+app/schemas/moderacion.py            45      1    98%
+app/schemas/perfil.py               129     22    83%
+app/schemas/publicaciones.py        150     12    92%
+app/schemas/reportes.py              83      4    95%
+app/schemas/seguimiento.py           51     19    63%
+app/schemas/usuarios.py             157     13    92%
+app/schemas/verificacion.py          90      8    91%
+app/security.py                      15      0   100%
+app/seguimiento.py                   96     66    31%
+app/ubicacion.py                      8      4    50%
+-----------------------------------------------------
+TOTAL                              3856   1759    54%
+=========================== short test summary info ============================
+FAILED tests/test_rendimiento.py::test_pr01_cuestionario_con_mil_candidatos
+=================== 1 failed, 70 passed in 152.43s (0:02:32) ===================
