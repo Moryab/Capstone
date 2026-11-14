@@ -34,7 +34,7 @@ Archivos que se usan: `docker-compose.produccion.yml`, `frontend/Dockerfile` y `
 
 Después de subir cambios a GitHub, entrar al servidor (ver «Entrar al servidor») y ejecutar:
 ```bash
-cd ~/Capstone/Fase\ 2/Evidencias\ Proyecto/Evidencias\ Sistema/Aplicación
+cd ~/Capstone/Fase\ 2/Evidencias\ Proyecto/Evidencias\ de\ sistema/Aplicación
 git pull
 python3 preparar.py   # solo agrega variables nuevas del .env.example, si las hay
 sudo docker compose -f docker-compose.yml -f docker-compose.produccion.yml up -d --build
@@ -70,12 +70,12 @@ Queda una línea `azureuser@roommatch-vm:~$`: lo que se escriba ahí se ejecuta 
 
 En el servidor:
 ```bash
-cd ~/Capstone/Fase\ 2/Evidencias\ Proyecto/Evidencias\ Sistema/Base\ de\ datos
+cd ~/Capstone/Fase\ 2/Evidencias\ Proyecto/Evidencias\ de\ sistema/Base\ de\ datos
 python3 respaldo.py crear
 ```
 Para bajarlo al computador (desde PowerShell, no dentro del servidor):
 ```Terminal
-scp -i "$env:USERPROFILE\.ssh\roommatch-vm_key.pem" "azureuser@roommatch-g6.northcentralus.cloudapp.azure.com:Capstone/Fase 2/Evidencias Proyecto/Evidencias Sistema/Base de datos/respaldos/*" .
+scp -i "$env:USERPROFILE\.ssh\roommatch-vm_key.pem" "azureuser@roommatch-g6.northcentralus.cloudapp.azure.com:Capstone/Fase 2/Evidencias Proyecto/Evidencias de sistema/Base de datos/respaldos/*" .
 ```
 
 ## Si algo falla
@@ -133,7 +133,7 @@ sudo usermod -aG docker azureuser
 ### 4. Descargar el proyecto y crear el `.env`
 ```bash
 cd ~ && git clone https://github.com/Moryab/Capstone.git
-cd ~/Capstone/Fase\ 2/Evidencias\ Proyecto/Evidencias\ Sistema/Aplicación
+cd ~/Capstone/Fase\ 2/Evidencias\ Proyecto/Evidencias\ de\ sistema/Aplicación
 python3 preparar.py
 sed -i 's/^DOMINIO=.*/DOMINIO=roommatch-g6.northcentralus.cloudapp.azure.com/' .env
 ```

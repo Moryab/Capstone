@@ -20,7 +20,7 @@ La plataforma permitirá registrar usuarios, crear perfiles, publicar alojamient
 
 ## Cómo ejecutar el proyecto
 
-El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
+El código está en `Fase 2/Evidencias Proyecto/Evidencias de sistema/`:
 - `Aplicación/backend/`: API en FastAPI, corre en Docker.
 - `Aplicación/frontend/`: interfaz en React + Vite, corre con Node.
 - `Base de datos/`: todo lo de MongoDB. Se levanta junto con la API (el `docker-compose.yml` de `Aplicación` lo incluye), así que no hay que hacer nada aparte.
@@ -38,7 +38,7 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
 ### Solo la primera vez
 1. Crear el archivo `.env` con el script `preparar.py`, en la carpeta `Aplicación`. Copia `.env.example` y genera claves aleatorias para la base de datos, las sesiones y la cuenta de administrador, así que no hay que reemplazar nada a mano. Al terminar muestra el correo y la clave del administrador. El `.env` no se sube a git porque contiene contraseñas.
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias de sistema\Aplicación"
    python preparar.py
    ```
    Si el `.env` ya existe, el script no cambia sus claves (la de la base queda fijada al levantarla por primera vez); solo le agrega las variables nuevas que falten. Por eso conviene volver a ejecutarlo después de un `git pull` que cambie `.env.example`. Para empezar de cero, borrar el `.env`, ejecutar `docker compose down -v` (borra los datos locales) y volver a correr el script.
@@ -46,7 +46,7 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
    La cuenta de administrador se crea al levantar la API. Su correo y su clave quedan en el `.env` (`ADMIN_CORREO` y `ADMIN_PASSWORD`); al iniciar sesión con ella se entra al panel de administración.
 2. Instalar las dependencias del frontend:
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación\frontend"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias de sistema\Aplicación\frontend"
    npm install
    ```
 
@@ -54,12 +54,12 @@ El código está en `Fase 2/Evidencias Proyecto/Evidencias Sistema/`:
 1. Abrir **Docker Desktop** y esperar a que diga que está corriendo.
 2. Levantar la base de datos y la API (terminal 1):
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias de sistema\Aplicación"
    docker compose up -d --build
    ```
 3. Levantar el frontend (terminal 2):
    ```Terminal
-   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Aplicación\frontend"
+   cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias de sistema\Aplicación\frontend"
    npm run dev
    ```
 4. Abrir http://localhost:5173 en el navegador.
@@ -107,13 +107,13 @@ La contraseña de aplicación se crea en la cuenta de Google → Seguridad → V
 
 ## Publicar en Azure
 
-La plataforma se publica en una máquina virtual de Azure con HTTPS. La guía paso a paso (crear la VM, prepararla, levantar, prender y apagar, actualizar) está en [`Aplicación/DESPLIEGUE_AZURE.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20Sistema/Aplicación/DESPLIEGUE_AZURE.md).
+La plataforma se publica en una máquina virtual de Azure con HTTPS. La guía paso a paso (crear la VM, prepararla, levantar, prender y apagar, actualizar) está en [`Aplicación/DESPLIEGUE_AZURE.md`](Fase%202/Evidencias%20Proyecto/Evidencias%20de%20sistema/Aplicación/DESPLIEGUE_AZURE.md).
 
 ## Respaldar la base de datos
 
 Con la base levantada, en la carpeta `Base de datos`:
 ```Terminal
-cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias Sistema\Base de datos"
+cd "C:\Capstone\Fase 2\Evidencias Proyecto\Evidencias de sistema\Base de datos"
 python respaldo.py crear
 ```
 Deja el respaldo en `Base de datos/respaldos/` (no se sube a git porque tiene datos de los usuarios). Para volver a ese estado, reemplazando los datos actuales:
